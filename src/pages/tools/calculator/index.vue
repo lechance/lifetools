@@ -1,29 +1,29 @@
 /**
  * 专业科学计算器
- * 行业标准：函数即时计算、运算符优先级、括号、记忆功能
- * 表达式仅含数字/运算符/括号，函数调用显示为 sin(30) 并立即计算
+ * 行业标准布局：四列键区、分组科学函数、大号等号
  */
 <template>
   <view class="calc">
     <!-- ====== 显示区 ====== -->
     <view class="calc__display">
-      <text class="calc__history">{{ history }}</text>
-      <scroll-view class="calc__expr" scroll-x show-scrollbar="false">
-        <text class="calc__expr-text">{{ expr || '0' }}</text>
-      </scroll-view>
-      <text class="calc__result" :class="{ 'calc__result--err': isErr }">{{ result }}</text>
-      <text v-if="memory !== 0" class="calc__mem-indicator">M</text>
+      <view class="calc__display-inner">
+        <text class="calc__history">{{ history }}</text>
+        <scroll-view class="calc__expr" scroll-x show-scrollbar="false" enhanced>
+          <text class="calc__expr-text">{{ expr || '0' }}</text>
+        </scroll-view>
+        <text class="calc__result" :class="{ 'calc__result--err': isErr }">{{ result }}</text>
+      </view>
     </view>
 
     <!-- ====== 记忆行 ====== -->
     <view class="calc__mem">
       <text v-for="m in memBtns" :key="m.label" class="calc__mem-btn"
-        :class="{ 'calc__mem-btn--active': m.act === 'mr' && memory !== 0 }"
+        :class="{ 'calc__mem-btn--on': m.act === 'mr' && memory !== 0 }"
         @tap="handleMem(m)">{{ m.label }}</text>
     </view>
 
     <!-- ====== 科学函数行 ====== -->
-    <scroll-view class="calc__sci" scroll-x show-scrollbar="false">
+    <scroll-view class="calc__sci" scroll-x show-scrollbar="false" enhanced>
       <view v-for="b in sciBtns" :key="b.label" class="calc__sci-btn" @tap="handleSci(b)">
         <text>{{ b.label }}</text>
       </view>
@@ -55,6 +55,7 @@ const memBtns = [
   { label: 'M-', act: 'mSub' }
 ]
 
+// 科学函数（按分组排列）
 const sciBtns = [
   { label: '(',  act: '(' },
   { label: ')',  act: ')' },
@@ -63,22 +64,24 @@ const sciBtns = [
   { label: 'xⁿ', act: 'pow' },
   { label: '√',  act: 'sqrt' },
   { label: '∛',  act: 'cbrt' },
-  { label: 'x!', act: 'fact' },
-  { label: '1/x', act: 'recip' },
-  { label: '|x|', act: 'abs' },
-  { label: 'π',  act: 'pi' },
-  { label: 'e',  act: 'e' },
   { label: 'sin', act: 'sin' },
   { label: 'cos', act: 'cos' },
   { label: 'tan', act: 'tan' },
   { label: 'log', act: 'log' },
-  { label: 'ln',  act: 'ln' }
+  { label: 'ln',  act: 'ln' },
+  { label: 'x!', act: 'fact' },
+  { label: '1/x', act: 'recip' },
+  { label: '|x|', act: 'abs' },
+  { label: 'π',  act: 'pi' },
+  { label: 'e',  act: 'e' }
 ]
 
 function k(label, type, extra) {
   return { label, type, cls: `calc__k--${type}`, ...extra }
 }
 
+// 按键布局：C/⌫/%/÷ → 7/8/9/× → 4/5/6/- → 1/2/3/+ → ±/0/./
+// = 在右下角（第4列第5行）
 const keys = [
   [k('C',  'fn', { act: 'clear' }), k('⌫', 'fn', { act: 'bs' }), k('%', 'op', { val: '%' }), k('÷', 'op', { val: '/' })],
   [k('7', 'n', { val: '7' }), k('8', 'n', { val: '8' }), k('9', 'n', { val: '9' }), k('×', 'op', { val: '*' })],
@@ -122,9 +125,6 @@ function endsWithOp(s) { return /[+\-*/%×÷]$/.test(s.trimEnd()) }
 /** 去掉末尾运算符 */
 function trimOp(s) { return s.trimEnd().replace(/[+\-*/%×÷]+$/, '').trimEnd() }
 
-/** 表达式是否以数字或 ) 结尾（可追加运算符） */
-function endsWithNumOrParen(s) { return /[\d)]$/.test(s.trimEnd()) }
-
 /** 当前显示值 */
 function displayNum() { return parseFloat(cur || result.value || '0') }
 
@@ -157,7 +157,6 @@ function onKey(k) {
 function digit(d) {
   if (gotRes) { expr.value = ''; cur = ''; lastVal = null; gotRes = false }
   if (d === '.' && cur.includes('.')) return
-  // 前导零：当前"0"且按数字 → 替换
   if (d !== '.' && cur === '0') {
     cur = d; expr.value = expr.value.slice(0, -1) + d; result.value = d
     return
@@ -176,7 +175,6 @@ function op(val) {
     const v = fmt(lastVal)
     expr.value = v; cur = v; gotRes = false
   }
-  // 末尾已有运算符 → 替换
   if (cur === '' && expr.value && endsWithOp(expr.value)) {
     expr.value = trimOp(expr.value) + ` ${val} `
     return
@@ -219,14 +217,16 @@ function doFn(act) {
 }
 
 // ==================================================================
-//  科学函数 — 立即计算，表达式显示函数调用
+//  科学函数
 // ==================================================================
 
 function handleSci(btn) {
   isErr.value = false
 
-  // --- 括号 ---
   if (btn.act === '(') {
+    if (gotRes && lastVal !== null) {
+      expr.value = fmt(lastVal); cur = fmt(lastVal); gotRes = false
+    }
     if (expr.value && /[\d)]$/.test(expr.value.trimEnd())) expr.value += ' × '
     expr.value += '('; parens++; cur = ''; result.value = '('
     return
@@ -237,23 +237,19 @@ function handleSci(btn) {
     return
   }
 
-  // --- 常数 ---
   if (btn.act === 'pi') { insertConst(Math.PI, 'π'); return }
   if (btn.act === 'e')  { insertConst(Math.E, 'e');  return }
 
-  // --- 若有上次结果且没有当前输入，用结果作为输入 ---
   if (gotRes && lastVal !== null) {
-    cur = fmt(lastVal)
-    gotRes = false
+    const v = fmt(lastVal)
+    expr.value = v; cur = v; gotRes = false
   }
 
-  // --- 幂运算符（右结合，需要继续输入指数）---
   if (btn.act === 'pow') {
     expr.value += '^'; cur = ''; result.value = fmt(displayNum())
     return
   }
 
-  // --- 一元函数计算 ---
   const n = displayNum()
   let val
 
@@ -274,15 +270,12 @@ function handleSci(btn) {
 
   if (val === undefined) return
 
-  // 构造函数显示文本：sin(30)
   const display = btn.act === 'sq' ? `(${n})²`
     : btn.act === 'cb' ? `(${n})³`
     : `${btn.label}(${n})`
 
-  // 替换末尾数字为函数调用显示
   replaceLastToken(display)
 
-  // 求值完整表达式（例如 5 + sin(30) → 5.5），而非仅函数值
   const full = safeEval(expr.value)
   const finalVal = isFinite(full) ? full : val
   const f = isFinite(finalVal) ? fmt(finalVal) : (isNaN(finalVal) ? '错误' : '∞')
@@ -307,7 +300,7 @@ function insertConst(v, label) {
 function factorial(n) {
   if (n < 0 || n > 170) return NaN
   if (n === 0 || n === 1) return 1
-  if (!Number.isInteger(n)) return NaN  // 非整数阶乘无定义
+  if (!Number.isInteger(n)) return NaN
   let r = 1
   for (let i = 2; i <= n; i++) r *= i
   return r
@@ -326,20 +319,15 @@ function handleMem(m) {
 }
 
 // ==================================================================
-//  安全求值 — 支持函数名、运算符、常数
+//  安全求值
 // ==================================================================
 
-/**
- * 将显示表达式转换为可执行的 JavaScript 表达式字符串
- * 处理：函数名→Math.*、度数→弧度、常数替换、安全过滤
- */
 function toEvalStr(s) {
   return s
     .replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**')
     .replace(/--/g, '+')
     .replace(/π/g, `(${Math.PI})`)
     .replace(/\be\b/g, `(${Math.E})`)
-    // 函数调用 → Math.*（度数→弧度）
     .replace(/sin\(([^)]+)\)/g, 'Math.sin(($1)*Math.PI/180)')
     .replace(/cos\(([^)]+)\)/g, 'Math.cos(($1)*Math.PI/180)')
     .replace(/tan\(([^)]+)\)/g, 'Math.tan(($1)*Math.PI/180)')
@@ -351,10 +339,8 @@ function toEvalStr(s) {
     .replace(/\((-?[\d.]+)\)³/g, 'Math.pow($1,3)')
 }
 
-/** 安全过滤：只保留数字、运算符、Math 对象相关字符 */
 const SAFE_RE = /[^0-9+\-*/.()%\s,Math.sinclotagqrbefhpwPI]/g
 
-/** 求值完整表达式，返回数值或 NaN */
 function safeEval(s) {
   const e = toEvalStr(s)
   const safe = e.replace(SAFE_RE, '')
@@ -394,66 +380,83 @@ function calc() {
 <style lang="scss" scoped>
 .calc {
   display: flex; flex-direction: column; height: 100vh;
-  background: $card-bg; user-select: none;
+  background: #1C1C1E; user-select: none;
 
-  // ====== 显示 ======
+  // ====== 显示区（深色背景，白色文字）=======
   &__display {
-    padding: 24rpx 28rpx 12rpx; border-bottom: 1rpx solid $border-color;
-    flex-shrink: 0; position: relative;
+    background: #1C1C1E; flex-shrink: 0;
+    padding: 0 20rpx;
   }
-  &__history { font-size: 22rpx; color: $text-light; min-height: 30rpx; font-family: monospace; }
+  &__display-inner {
+    padding: 32rpx 0 20rpx;
+    border-bottom: 1rpx solid rgba(255,255,255,0.08);
+  }
+  &__history {
+    font-size: 22rpx; color: rgba(255,255,255,0.35);
+    min-height: 30rpx; font-family: monospace; text-align: right;
+  }
   &__expr {
-    white-space: nowrap; min-height: 40rpx; margin: 6rpx 0;
-    &-text { font-size: 30rpx; color: $text-secondary; font-family: monospace; }
+    white-space: nowrap; min-height: 44rpx; margin: 4rpx 0;
+    text-align: right;
+    &-text {
+      font-size: 32rpx; color: rgba(255,255,255,0.5);
+      font-family: monospace; display: inline-block;
+    }
   }
   &__result {
-    text-align: right; font-size: 60rpx; font-weight: 300; color: $text-primary;
-    font-family: monospace; line-height: 1.1;
-    &--err { color: $danger; font-size: 44rpx; }
-  }
-  &__mem-indicator {
-    position: absolute; right: 28rpx; bottom: 12rpx; font-size: 20rpx;
-    color: $primary-color; font-weight: 700;
+    text-align: right; font-size: 72rpx; font-weight: 300;
+    color: #fff; font-family: monospace; line-height: 1.1; min-height: 80rpx;
+    &--err { color: #FF453A; font-size: 52rpx; }
   }
 
   // ====== 记忆行 ======
   &__mem {
-    display: flex; padding: 4rpx 12rpx; background: $primary-bg; gap: 4rpx; flex-shrink: 0;
+    display: flex; padding: 4rpx 12rpx; background: #2C2C2E; gap: 2rpx; flex-shrink: 0;
   }
   &__mem-btn {
-    flex: 1; text-align: center; font-size: 20rpx; color: $text-secondary;
-    padding: 6rpx 0; border-radius: 6rpx;
-    &:active { background: $border-color; }
-    &--active { color: $primary-color; font-weight: 600; }
+    flex: 1; text-align: center; font-size: 22rpx; color: rgba(255,255,255,0.5);
+    padding: 8rpx 0; border-radius: 6rpx;
+    &:active { background: rgba(255,255,255,0.1); }
+    &--on { color: #fff; }
   }
 
-  // ====== 科学行 ======
+  // ====== 科学函数行 ======
   &__sci {
-    white-space: nowrap; padding: 6rpx 12rpx; background: $primary-bg;
-    border-bottom: 1rpx solid $border-color; flex-shrink: 0;
+    white-space: nowrap; padding: 6rpx 10rpx; background: #2C2C2E;
+    flex-shrink: 0;
   }
   &__sci-btn {
     display: inline-flex; align-items: center; justify-content: center;
-    height: 50rpx; min-width: 66rpx; padding: 0 10rpx; margin-right: 6rpx;
-    background: $card-bg; border-radius: 8rpx; box-shadow: $shadow-sm;
-    text { font-size: 20rpx; color: $text-primary; white-space: nowrap; }
-    &:active { opacity: 0.65; }
+    height: 56rpx; min-width: 72rpx; padding: 0 14rpx; margin-right: 6rpx;
+    background: #3A3A3C; border-radius: 10rpx;
+    text { font-size: 22rpx; color: rgba(255,255,255,0.85); white-space: nowrap; }
+    &:active { background: #4A4A4C; }
   }
 
-  // ====== 主键盘 ======
+  // ====== 主键盘（深色背景，浅色按键）======
   &__keys {
     flex: 1; display: flex; flex-direction: column;
-    padding: 6rpx 8rpx 16rpx; gap: 6rpx;
+    padding: 6rpx 8rpx env(safe-area-inset-bottom, 12rpx) 8rpx; gap: 6rpx;
+    background: #1C1C1E;
   }
   &__row { display: flex; gap: 6rpx; flex: 1; }
   &__key {
     flex: 1; display: flex; align-items: center; justify-content: center;
-    border-radius: 14rpx; font-size: 36rpx;
-    &:active { opacity: 0.55; }
-    &--n  { background: $primary-bg; font-size: 40rpx; color: $text-primary; }
-    &--op { background: $primary-bg; font-size: 36rpx; color: $primary-color; }
-    &--eq { background: $primary-color; color: #fff; font-size: 40rpx; }
-    &--fn { background: #E8E8ED; font-size: 32rpx; color: $text-primary; }
+    border-radius: 16rpx; font-size: 40rpx; font-weight: 400;
+    transition: background 0.1s;
+    &:active { opacity: 0.6; }
+
+    // 数字键（浅灰）
+    &--n  { background: #505052; color: #fff; font-size: 44rpx; }
+
+    // 运算符/百分比（稍浅灰）
+    &--op { background: #3A3A3C; color: #fff; font-size: 40rpx; }
+
+    // = 号（主题色）
+    &--eq { background: $primary-color; color: #fff; font-size: 44rpx; }
+
+    // 功能键 C/⌫/±（深灰）
+    &--fn { background: #2C2C2E; color: rgba(255,255,255,0.85); font-size: 36rpx; }
   }
 }
 </style>
