@@ -1,47 +1,36 @@
 /**
  * LED弹幕
- * 输入文字在LED屏幕上滚动展示，支持调速、变色、方向切换
+ * 全屏显示滚动文字，支持调速、变色、字号调节
  */
 <template>
   <view class="led">
-    <!-- ====== LED 显示区 ====== -->
-    <view
-      class="led__screen"
-      :class="{ 'led__screen--fullscreen': fullscreen }"
-      :style="{ background: bgColor }"
-      @tap="fullscreen && exitFullscreen()"
-    >
+    <!-- ====== 全屏模式：纯LED无界面 ====== -->
+    <view v-if="fullscreen" class="led__fullscreen" :style="{ background: bgColor }" @tap="exitFullscreen">
       <view
         class="led__marquee"
-        :class="{ 'led__marquee--running': isRunning, 'led__marquee--paused': isPaused }"
+        :class="{ 'led__marquee--running': isRunning }"
         :style="marqueeStyle"
       >
-        <text class="led__text" :style="textStyle">{{ displayText || '请输入文字' }}</text>
+        <text class="led__text" :style="{ color: textColor, fontSize: fontSize + 'rpx', fontWeight: 'bold', whiteSpace: 'nowrap', textShadow: `0 0 ${fontSize*0.3}rpx currentColor, 0 0 ${fontSize*0.6}rpx currentColor` }">
+          {{ displayText }}
+        </text>
       </view>
-      <!-- 装饰边框灯 -->
-      <view class="led__border led__border--top"></view>
-      <view class="led__border led__border--bottom"></view>
-
-      <!-- 全屏按钮（非全屏时显示） -->
-      <view v-if="!fullscreen" class="led__fullscreen-btn" @tap.stop="enterFullscreen">
-        <text>⛶</text>
-      </view>
-
-      <!-- 全屏模式：顶部提示条 -->
-      <view v-if="fullscreen" class="led__fullscreen-bar">
-        <text class="led__fullscreen-hint">点击屏幕退出全屏</text>
-      </view>
-
-      <!-- 全屏模式：旋转提示 -->
-      <view v-if="fullscreen" class="led__rotate-hint">
-        <text>↻</text>
-        <text>横屏体验更佳</text>
-      </view>
+      <text class="led__exit-hint">点击退出全屏</text>
     </view>
 
-    <!-- ====== 输入区（全屏时隐藏）===== -->
-    <view v-show="!fullscreen" class="led__input-area">
-      <view class="led__input-row">
+    <!-- ====== 普通模式 ====== -->
+    <template v-else>
+      <!-- LED 预览 -->
+      <view class="led__preview" :style="{ background: bgColor }">
+        <view class="led__marquee led__marquee--running" :style="marqueeStyle">
+          <text class="led__text" :style="{ color: textColor, fontSize: Math.min(fontSize, 64) + 'rpx', fontWeight: 'bold', whiteSpace: 'nowrap', textShadow: `0 0 10rpx currentColor, 0 0 20rpx currentColor` }">
+            {{ displayText || '输入文字预览' }}
+          </text>
+        </view>
+      </view>
+
+      <!-- 输入区 -->
+      <view class="led__input-area">
         <input
           class="led__input"
           v-model="inputText"
@@ -50,211 +39,129 @@
           confirm-type="done"
           @confirm="handleShow"
         />
-        <view class="led__btn led__btn--primary" @tap="handleShow">显示</view>
       </view>
-    </view>
 
-    <!-- ====== 预设文本（全屏时隐藏）===== -->
-    <scroll-view v-show="!fullscreen" class="led__presets" scroll-x show-scrollbar="false">
-      <view v-for="(t, i) in presets" :key="i" class="led__preset-tag" @tap="selectPreset(t)">
-        <text>{{ t }}</text>
-      </view>
-    </scroll-view>
-
-    <!-- ====== 控制面板（全屏时隐藏）===== -->
-    <view v-show="!fullscreen" class="led__controls">
-      <!-- 控制按钮 -->
-      <view class="led__ctrl-row">
-        <view class="led__ctrl-btn led__ctrl-btn--play" @tap="togglePlay">
-          <text>{{ isRunning && !isPaused ? '⏸' : '▶' }}</text>
-          <text class="led__ctrl-label">{{ isRunning && !isPaused ? '暂停' : '开始' }}</text>
+      <!-- 预设标签 -->
+      <scroll-view class="led__presets" scroll-x show-scrollbar="false">
+        <view v-for="(t, i) in presets" :key="i" class="led__preset-tag" @tap="selectPreset(t)">
+          <text>{{ t }}</text>
         </view>
-        <view class="led__ctrl-btn" @tap="stop">
-          <text>⏹</text>
-          <text class="led__ctrl-label">停止</text>
-        </view>
-        <view class="led__ctrl-btn" @tap="toggleDirection">
-          <text>{{ direction === 'left' ? '←' : '→' }}</text>
-          <text class="led__ctrl-label">{{ direction === 'left' ? '左移' : '右移' }}</text>
-        </view>
-      </view>
+      </scroll-view>
 
-      <!-- 速度滑块 -->
-      <view class="led__slider-row">
-        <text class="led__slider-label">慢</text>
-        <slider class="led__slider" :value="speed" min="1" max="10" step="1" @change="onSpeedChange" activeColor="#1D1D1F" backgroundColor="#E5E5EA" block-size="16" />
-        <text class="led__slider-label">快</text>
-        <text class="led__speed-val">{{ speedText }}</text>
-      </view>
+      <!-- 控制面板 -->
+      <view class="led__controls">
+        <!-- 方向 + 速度 -->
+        <view class="led__ctrl-row">
+          <view class="led__ctrl-btn" :class="{ 'led__ctrl-btn--on': direction === 'left' }" @tap="direction = 'left'">
+            <text>←</text><text class="led__ctrl-lbl">左移</text>
+          </view>
+          <view class="led__ctrl-btn" :class="{ 'led__ctrl-btn--on': direction === 'right' }" @tap="direction = 'right'">
+            <text>→</text><text class="led__ctrl-lbl">右移</text>
+          </view>
+          <view class="led__ctrl-slider">
+            <text class="led__ctrl-label">慢</text>
+            <slider :value="speed" min="1" max="10" step="1" @change="onSpeedChange" activeColor="#1D1D1F" backgroundColor="#E5E5EA" block-size="14" />
+            <text class="led__ctrl-label">快</text>
+          </view>
+        </view>
 
-      <!-- 颜色选择 -->
-      <view class="led__color-row">
-        <view
-          v-for="c in colors"
-          :key="c.key"
-          class="led__color-dot"
-          :class="{ 'led__color-dot--active': colorKey === c.key }"
-          :style="{ background: c.color }"
-          @tap="selectColor(c)"
-        >
+        <!-- 颜色 -->
+        <view class="led__color-row">
+          <view v-for="c in colors" :key="c.key"
+            class="led__color-dot"
+            :class="{ 'led__color-dot--active': colorKey === c.key }"
+            :style="{ background: c.color }"
+            @tap="selectColor(c)">
+          </view>
+        </view>
+
+        <!-- 字号滑块 -->
+        <view class="led__size-row">
+          <text class="led__size-label">字号</text>
+          <slider class="led__size-slider" :value="fontSize" min="24" max="160" step="4" @change="onFontChange" activeColor="#1D1D1F" backgroundColor="#E5E5EA" block-size="14" />
+          <text class="led__size-val">{{ fontSize }}</text>
         </view>
       </view>
 
-      <!-- 字号 -->
-      <view class="led__size-row">
-        <text v-for="s in sizes" :key="s.key"
-          class="led__size-btn"
-          :class="{ 'led__size-btn--active': sizeKey === s.key }"
-          @tap="sizeKey = s.key"
-        >{{ s.label }}</text>
+      <!-- 底部开启按钮 -->
+      <view class="led__bottom" @tap="enterFullscreen">
+        <text class="led__bottom-icon">🚀</text>
+        <text class="led__bottom-text">开启弹幕</text>
       </view>
-    </view>
+    </template>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 
-// ========== 预设文本 ==========
 const presets = [
-  '🎉 新年快乐！',
-  '❤️ 我喜欢你 💕',
-  '生日快乐 🎂',
-  '恭喜发财 🧧',
-  '加油！💪',
-  '你好世界 🌍',
-  '欢迎光临 👋',
-  '520 ❤️',
-  '🎵 音乐响起 🎵',
-  '圣诞快乐 🎄'
+  '🎉 新年快乐！', '❤️ 我喜欢你 💕', '生日快乐 🎂',
+  '恭喜发财 🧧', '加油！💪', '你好世界 🌍',
+  '欢迎光临 👋', '520 ❤️', '🎵 音乐响起 🎵', '圣诞快乐 🎄'
 ]
 
-// ========== 颜色方案 ==========
 const colors = [
-  { key: 'green',  color: '#39FF14', bg: '#0A0A0A', label: '霓虹绿' },
-  { key: 'red',    color: '#FF1744', bg: '#0A0A0A', label: '热情红' },
-  { key: 'blue',   color: '#00B0FF', bg: '#0A0A0A', label: '科技蓝' },
-  { key: 'yellow', color: '#FFEA00', bg: '#0A0A0A', label: '亮黄' },
-  { key: 'white',  color: '#FFFFFF', bg: '#0A0A0A', label: '经典白' },
-  { key: 'purple', color: '#D500F9', bg: '#0A0A0A', label: '炫紫' },
-  { key: 'cyan',   color: '#00E5FF', bg: '#0A0A0A', label: '青色' },
-  { key: 'pink',   color: '#FF4081', bg: '#0A0A0A', label: '粉色' },
-  { key: 'orange', color: '#FF9100', bg: '#0A0A0A', label: '橙色' },
-  { key: 'rainbow',color: '#fff',    bg: '#0A0A0A', label: '彩' }
+  { key: 'green',  color: '#39FF14', bg: '#0A0A0A' },
+  { key: 'red',    color: '#FF1744', bg: '#0A0A0A' },
+  { key: 'blue',   color: '#00B0FF', bg: '#0A0A0A' },
+  { key: 'yellow', color: '#FFEA00', bg: '#0A0A0A' },
+  { key: 'white',  color: '#FFFFFF', bg: '#0A0A0A' },
+  { key: 'purple', color: '#D500F9', bg: '#0A0A0A' },
+  { key: 'cyan',   color: '#00E5FF', bg: '#0A0A0A' },
+  { key: 'pink',   color: '#FF4081', bg: '#0A0A0A' },
+  { key: 'orange', color: '#FF9100', bg: '#0A0A0A' },
+  { key: 'rainbow',color: '#fff',    bg: '#0A0A0A' }
 ]
 
-// ========== 字号 ==========
-const sizes = [
-  { key: 'sm', label: '小', size: '36rpx' },
-  { key: 'md', label: '中', size: '52rpx' },
-  { key: 'lg', label: '大', size: '72rpx' }
-]
-
-// ========== 状态 ==========
 const inputText = ref('')
-const displayText = ref('')
-const isRunning = ref(false)
-const isPaused = ref(false)
+const displayText = ref('你好世界 🌍')
 const fullscreen = ref(false)
+const isRunning = ref(true)
 const speed = ref(5)
 const direction = ref('left')
 const colorKey = ref('green')
-const bgColor = ref('#0A0A0A')
 const textColor = ref('#39FF14')
-const sizeKey = ref('md')
+const bgColor = ref('#0A0A0A')
+const fontSize = ref(80)  // rpx, 全屏字号
 
-// 动画持续时间映射（速度值 1-10 → 秒数 20-3）
 const speedMap = [20, 16, 13, 10, 8, 6.5, 5.5, 4.5, 3.5, 3]
-const speedText = computed(() => speedMap[speed.value - 1].toFixed(1) + 's')
-
-const textStyle = computed(() => ({
-  color: colorKey.value === 'rainbow' ? '#fff' : textColor.value,
-  fontSize: sizes.find(s => s.key === sizeKey.value).size,
-  fontWeight: 'bold',
-  whiteSpace: 'nowrap'
-}))
 
 const marqueeStyle = computed(() => {
   const dur = speedMap[speed.value - 1]
-  const from = direction.value === 'left' ? '100%' : '-100%'
-  const to = direction.value === 'left' ? '-100%' : '100%'
   return {
     animationDuration: `${dur}s`,
-    '--from': from,
-    '--to': to
+    '--from': direction.value === 'left' ? '100%' : '-100%',
+    '--to': direction.value === 'left' ? '-100%' : '100%'
   }
 })
 
-/** 选预设文本 */
 function selectPreset(t) {
   inputText.value = t
   displayText.value = t
-  startMarquee()
 }
 
-/** 点击显示 */
 function handleShow() {
-  if (!inputText.value.trim()) return
-  displayText.value = inputText.value
-  startMarquee()
+  if (inputText.value.trim()) displayText.value = inputText.value
 }
 
-/** 开始滚动 */
-function startMarquee() {
-  isRunning.value = true
-  isPaused.value = false
-}
+function onSpeedChange(e) { speed.value = e.detail.value }
+function onFontChange(e) { fontSize.value = e.detail.value }
+function selectColor(c) { colorKey.value = c.key; textColor.value = c.color; bgColor.value = c.bg }
 
-/** 切换播放/暂停 */
-function togglePlay() {
-  if (!displayText.value) return
-  if (!isRunning.value) {
-    startMarquee()
-  } else {
-    isPaused.value = !isPaused.value
-  }
-}
-
-/** 停止 */
-function stop() {
-  isRunning.value = false
-  isPaused.value = false
-}
-
-/** 切换方向 */
-function toggleDirection() {
-  direction.value = direction.value === 'left' ? 'right' : 'left'
-  // 重新触发动画
-  if (isRunning.value) {
-    isRunning.value = false
-    setTimeout(() => { isRunning.value = true }, 50)
-  }
-}
-
-/** 进入全屏 */
 function enterFullscreen() {
   if (!displayText.value) return
   fullscreen.value = true
-  if (!isRunning.value) startMarquee()
+  isRunning.value = true
+  // 隐藏导航栏
   uni.hideTabBar({ fail: () => {} })
+  // 强制横屏提示
+  // 注意：pageOrientation 已在 pages.json 配置 auto
 }
 
-/** 退出全屏 */
 function exitFullscreen() {
   fullscreen.value = false
   uni.showTabBar({ fail: () => {} })
-}
-
-/** 速度改变 */
-function onSpeedChange(e) {
-  speed.value = e.detail.value
-}
-
-/** 选颜色 */
-function selectColor(c) {
-  colorKey.value = c.key
-  textColor.value = c.color
-  bgColor.value = c.bg
 }
 </script>
 
@@ -262,155 +169,58 @@ function selectColor(c) {
 .led {
   min-height: 100vh;
   background: #F5F5F7;
-  padding-bottom: 40rpx;
-
-  // ====== LED 屏幕 ======
-  &__screen {
-    position: relative;
-    margin: 24rpx;
-    height: 240rpx;
-    border-radius: 24rpx;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    box-shadow: 0 0 40rpx rgba(57, 255, 20, 0.15), inset 0 0 60rpx rgba(0,0,0,0.3);
-    border: 4rpx solid rgba(255,255,255,0.06);
-  }
-
-  &__marquee {
-    width: 100%;
-    overflow: hidden;
-    padding: 0 20rpx;
-
-    &--running {
-      animation: marqueeScroll var(--duration, 8s) linear infinite;
-      animation-duration: var(--duration);
-    }
-    &--paused {
-      animation-play-state: paused;
-    }
-    &:not(&--running) {
-      .led__text {
-        transform: translateX(0);
-      }
-    }
-  }
-
-  &__text {
-    display: inline-block;
-    text-shadow: 0 0 20rpx currentColor, 0 0 40rpx currentColor;
-    letter-spacing: 8rpx;
-    line-height: 1.4;
-  }
-
-  // 装饰边框灯
-  &__border {
-    position: absolute; left: 0; right: 0; height: 6rpx;
-    background: repeating-linear-gradient(
-      90deg,
-      rgba(255,255,255,0.03) 0rpx,
-      rgba(255,255,255,0.03) 10rpx,
-      transparent 10rpx,
-      transparent 20rpx
-    );
-    &--top { top: 0; }
-    &--bottom { bottom: 0; }
-  }
+  display: flex;
+  flex-direction: column;
 
   // ====== 全屏模式 ======
-  &__screen--fullscreen {
-    position: fixed;
-    inset: 0;
-    z-index: 999;
-    height: auto;
-    margin: 0;
-    border-radius: 0;
-    border: none;
-    box-shadow: none;
-    flex-direction: column;
-    justify-content: center;
+  &__fullscreen {
+    position: fixed; inset: 0;
+    z-index: 9999;
+    display: flex; align-items: center;
+    overflow: hidden;
 
     .led__marquee {
-      padding: 0 40rpx;
+      width: 100%; overflow: hidden;
+      &--running { animation: ledScroll var(--duration, 8s) linear infinite; animation-duration: var(--duration); }
+    }
+    .led__text { display: inline-block; letter-spacing: 12rpx; padding: 0 40rpx; }
+    .led__exit-hint {
+      position: absolute; bottom: 80rpx; left: 0; right: 0;
+      text-align: center; font-size: 24rpx; color: rgba(255,255,255,0.15);
     }
   }
 
-  // 全屏按钮
-  &__fullscreen-btn {
-    position: absolute; top: 16rpx; right: 16rpx;
-    width: 56rpx; height: 56rpx;
-    background: rgba(255,255,255,0.1);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    text { font-size: 32rpx; color: rgba(255,255,255,0.5); }
-    &:active { background: rgba(255,255,255,0.2); }
-  }
+  // ====== LED 预览 ======
+  &__preview {
+    margin: 24rpx; height: 240rpx; border-radius: 24rpx;
+    display: flex; align-items: center; overflow: hidden;
+    box-shadow: 0 0 40rpx rgba(57,255,20,0.15), inset 0 0 60rpx rgba(0,0,0,0.3);
+    border: 4rpx solid rgba(255,255,255,0.06);
 
-  // 全屏顶栏
-  &__fullscreen-bar {
-    position: absolute; top: 0; left: 0; right: 0;
-    padding: 20rpx; text-align: center;
-    background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
-  }
-  &__fullscreen-hint {
-    font-size: 22rpx; color: rgba(255,255,255,0.4);
-  }
-
-  // 横屏提示
-  &__rotate-hint {
-    position: absolute; bottom: 60rpx; left: 0; right: 0;
-    display: flex; align-items: center; justify-content: center; gap: 12rpx;
-    text { font-size: 24rpx; color: rgba(255,255,255,0.2); }
+    .led__marquee {
+      width: 100%; overflow: hidden;
+      &--running { animation: ledScroll var(--duration, 8s) linear infinite; animation-duration: var(--duration); }
+    }
+    .led__text { display: inline-block; letter-spacing: 6rpx; padding: 0 20rpx; }
   }
 
   // ====== 输入区 ======
   &__input-area {
-    margin: 0 24rpx 16rpx;
-  }
-  &__input-row {
-    display: flex;
-    gap: 16rpx;
-  }
-  &__input {
-    flex: 1;
-    height: 80rpx;
-    background: #fff;
-    border-radius: 16rpx;
-    padding: 0 24rpx;
-    font-size: 28rpx;
-    color: #1D1D1F;
-    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
-  }
-  &__btn {
-    height: 80rpx;
-    padding: 0 40rpx;
-    border-radius: 16rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28rpx;
-    font-weight: 600;
-    flex-shrink: 0;
-
-    &--primary {
-      background: #1D1D1F;
-      color: #fff;
+    margin: 0 24rpx 12rpx;
+    .led__input {
+      width: 100%; height: 72rpx; background: #fff; border-radius: 16rpx;
+      padding: 0 24rpx; font-size: 28rpx; color: #1D1D1F;
+      box-sizing: border-box; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
     }
-    &:active { opacity: 0.7; }
   }
 
-  // ====== 预设标签 ======
+  // ====== 预设 ======
   &__presets {
-    white-space: nowrap;
-    padding: 0 24rpx;
-    margin-bottom: 20rpx;
+    white-space: nowrap; padding: 0 24rpx; margin-bottom: 16rpx;
   }
   &__preset-tag {
-    display: inline-flex;
-    padding: 12rpx 28rpx;
-    margin-right: 12rpx;
-    background: #fff;
-    border-radius: 30rpx;
+    display: inline-flex; padding: 10rpx 24rpx; margin-right: 10rpx;
+    background: #fff; border-radius: 30rpx;
     box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
     text { font-size: 24rpx; color: #3A3A3C; }
     &:active { background: #E5E5EA; }
@@ -418,117 +228,64 @@ function selectColor(c) {
 
   // ====== 控制面板 ======
   &__controls {
-    margin: 0 24rpx;
-    background: #fff;
-    border-radius: 20rpx;
-    padding: 24rpx;
-    box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
+    margin: 0 24rpx; background: #fff; border-radius: 20rpx;
+    padding: 20rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
+    flex: 1;
   }
 
-  // 控制按钮行
   &__ctrl-row {
-    display: flex;
-    gap: 16rpx;
-    margin-bottom: 24rpx;
+    display: flex; align-items: center; gap: 12rpx; margin-bottom: 20rpx;
   }
   &__ctrl-btn {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100rpx;
-    background: #F5F5F7;
-    border-radius: 16rpx;
-    gap: 8rpx;
-
-    text:first-child { font-size: 40rpx; }
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 90rpx; height: 80rpx; background: #F5F5F7; border-radius: 14rpx; gap: 4rpx;
+    text:first-child { font-size: 36rpx; }
     &:active { background: #E5E5EA; }
+    &--on { background: #1D1D1F; text { color: #fff; } .led__ctrl-lbl { color: rgba(255,255,255,0.7); } }
+  }
+  &__ctrl-lbl { font-size: 18rpx; color: #3A3A3C; }
+  &__ctrl-slider {
+    flex: 1; display: flex; align-items: center; gap: 10rpx;
+    padding: 0 8rpx;
+  }
+  &__ctrl-label { font-size: 22rpx; color: #8E8E93; min-width: 28rpx; }
 
-    &--play {
-      background: #1D1D1F;
-      text:first-child { color: #fff; }
-      .led__ctrl-label { color: #fff; }
-    }
-  }
-  &__ctrl-label {
-    font-size: 20rpx;
-    color: #3A3A3C;
-  }
-
-  // 速度滑块
-  &__slider-row {
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-    margin-bottom: 24rpx;
-  }
-  &__slider-label {
-    font-size: 24rpx; color: #8E8E93; min-width: 32rpx;
-  }
-  &__slider {
-    flex: 1;
-  }
-  &__speed-val {
-    font-size: 22rpx; color: #1D1D1F; min-width: 56rpx; text-align: right;
-    font-family: monospace;
-  }
-
-  // 颜色选择
+  // 颜色
   &__color-row {
-    display: flex;
-    gap: 16rpx;
-    margin-bottom: 24rpx;
-    flex-wrap: wrap;
+    display: flex; gap: 12rpx; margin-bottom: 20rpx; flex-wrap: wrap;
   }
   &__color-dot {
-    width: 56rpx; height: 56rpx;
-    border-radius: 50%;
+    width: 48rpx; height: 48rpx; border-radius: 50%;
     box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.15);
-    position: relative;
-
-    &--active {
-      &::after {
-        content: '✓';
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 28rpx;
-        color: #fff;
-        text-shadow: 0 0 4rpx rgba(0,0,0,0.5);
-      }
+    &--active::after {
+      content: '✓'; display: flex; align-items: center; justify-content: center;
+      height: 100%; font-size: 24rpx; color: #fff;
+      text-shadow: 0 0 4rpx rgba(0,0,0,0.5);
     }
     &:active { transform: scale(0.9); }
   }
 
-  // 字号选择
+  // 字号
   &__size-row {
-    display: flex;
-    gap: 16rpx;
+    display: flex; align-items: center; gap: 12rpx;
   }
-  &__size-btn {
-    flex: 1;
-    height: 64rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #F5F5F7;
-    border-radius: 12rpx;
-    font-size: 24rpx;
-    color: #3A3A3C;
+  &__size-label { font-size: 24rpx; color: #8E8E93; min-width: 48rpx; }
+  &__size-slider { flex: 1; }
+  &__size-val { font-size: 22rpx; color: #1D1D1F; min-width: 48rpx; text-align: right; font-family: monospace; }
 
-    &--active {
-      background: #1D1D1F;
-      color: #fff;
-    }
-    &:active { opacity: 0.7; }
+  // ====== 底部开启按钮 ======
+  &__bottom {
+    display: flex; align-items: center; justify-content: center;
+    gap: 12rpx; margin: 16rpx 24rpx; padding: 28rpx;
+    background: #1D1D1F; border-radius: 20rpx;
+    &:active { opacity: 0.85; }
   }
+  &__bottom-icon { font-size: 40rpx; }
+  &__bottom-text { font-size: 32rpx; font-weight: 600; color: #fff; }
 }
 
-// ====== 全局滚动动画 ======
-@keyframes marqueeScroll {
+// ====== 滚动动画 ======
+@keyframes ledScroll {
   0%   { transform: translateX(var(--from, 100%)); }
   100% { transform: translateX(var(--to, -100%)); }
 }
