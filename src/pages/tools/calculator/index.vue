@@ -355,67 +355,73 @@ function calc() {
 <style lang="scss" scoped>
 .calc {
   display: flex; flex-direction: column; height: 100vh;
-  background: $card-bg; user-select: none;
+  background: #F5F5F7; user-select: none;
 
-  // ====== 显示 ======
+  // ====== 显示区 ======
   &__display {
-    padding: 24rpx 28rpx 12rpx; border-bottom: 1rpx solid $border-color;
-    flex-shrink: 0; position: relative;
+    background: #fff; flex-shrink: 0;
+    padding: 20rpx 28rpx 16rpx;
+    border-bottom: 1rpx solid #E5E5EA;
   }
-  &__history { font-size: 22rpx; color: $text-light; min-height: 30rpx; font-family: monospace; }
+  &__history { font-size: 22rpx; color: #C7C7CC; min-height: 30rpx; font-family: monospace; text-align: right; }
   &__expr {
-    white-space: nowrap; min-height: 40rpx; margin: 6rpx 0;
-    &-text { font-size: 30rpx; color: $text-secondary; font-family: monospace; }
+    white-space: nowrap; min-height: 42rpx; margin: 4rpx 0;
+    text-align: right;
+    &-text { font-size: 30rpx; color: #8E8E93; font-family: monospace; }
   }
   &__result {
-    text-align: right; font-size: 60rpx; font-weight: 300; color: $text-primary;
-    font-family: monospace; line-height: 1.1;
-    &--err { color: $danger; font-size: 44rpx; }
-  }
-  &__mem-indicator {
-    position: absolute; right: 28rpx; bottom: 12rpx; font-size: 20rpx;
-    color: $primary-color; font-weight: 700;
+    text-align: right; font-size: 68rpx; font-weight: 300;
+    color: #1D1D1F; font-family: monospace; line-height: 1.1;
+    &--err { color: #FF3B30; font-size: 48rpx; }
   }
 
   // ====== 记忆行 ======
   &__mem {
-    display: flex; padding: 4rpx 12rpx; background: $primary-bg; gap: 4rpx; flex-shrink: 0;
+    display: flex; padding: 4rpx 12rpx; background: #E5E5EA; gap: 2rpx; flex-shrink: 0;
   }
   &__mem-btn {
-    flex: 1; text-align: center; font-size: 20rpx; color: $text-secondary;
-    padding: 6rpx 0; border-radius: 6rpx;
-    &:active { background: $border-color; }
-    &--active { color: $primary-color; font-weight: 600; }
+    flex: 1; text-align: center; font-size: 22rpx; color: #8E8E93;
+    padding: 8rpx 0; border-radius: 6rpx;
+    &:active { background: #D1D1D6; }
+    &--active { color: #1D1D1F; font-weight: 600; }
   }
 
   // ====== 科学行 ======
   &__sci {
-    white-space: nowrap; padding: 6rpx 12rpx; background: $primary-bg;
-    border-bottom: 1rpx solid $border-color; flex-shrink: 0;
+    white-space: nowrap; padding: 6rpx 10rpx; background: #E5E5EA;
+    flex-shrink: 0;
   }
   &__sci-btn {
     display: inline-flex; align-items: center; justify-content: center;
-    height: 50rpx; min-width: 66rpx; padding: 0 10rpx; margin-right: 6rpx;
-    background: $card-bg; border-radius: 8rpx; box-shadow: $shadow-sm;
-    text { font-size: 20rpx; color: $text-primary; white-space: nowrap; }
-    &:active { opacity: 0.65; }
+    height: 54rpx; min-width: 68rpx; padding: 0 12rpx; margin-right: 6rpx;
+    background: #fff; border-radius: 27rpx;
+    text { font-size: 22rpx; color: #3A3A3C; white-space: nowrap; }
+    &:active { background: #D1D1D6; }
   }
 
   // ====== 主键盘 ======
   &__keys {
     flex: 1; display: flex; flex-direction: column;
-    padding: 6rpx 8rpx 16rpx; gap: 6rpx;
+    padding: 6rpx 8rpx env(safe-area-inset-bottom, 12rpx) 8rpx; gap: 6rpx;
+    background: #F5F5F7;
   }
   &__row { display: flex; gap: 6rpx; flex: 1; }
   &__key {
     flex: 1; display: flex; align-items: center; justify-content: center;
-    border-radius: 14rpx; font-size: 36rpx;
-    &:active { opacity: 0.55; }
-    &--n  { background: $primary-bg; font-size: 40rpx; color: $text-primary; }
-    &--op { background: $primary-bg; font-size: 36rpx; color: $primary-color; }
-    &--eq { background: $primary-color; color: #fff; font-size: 40rpx; }
-    &--fn { background: #E8E8ED; font-size: 32rpx; color: $text-primary; }
+    border-radius: 16rpx; font-size: 40rpx;
+    &:active { opacity: 0.6; }
+
+    // 数字键（白色浮起）
+    &--n  { background: #fff; color: #1D1D1F; font-size: 44rpx; box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04); }
+
+    // 运算符（浅灰）
+    &--op { background: #F5F5F7; color: #1D1D1F; font-size: 40rpx; }
+
+    // = 号（深色）
+    &--eq { background: #1D1D1F; color: #fff; font-size: 44rpx; }
+
+    // 功能键 C/⌫/±（浅灰 + 橙色文字）
+    &--fn { background: #F5F5F7; color: #FF9500; font-size: 36rpx; }
   }
 }
 </style>
-
