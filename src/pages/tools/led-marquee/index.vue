@@ -5,7 +5,12 @@
 <template>
   <view class="led">
     <!-- ====== LED 显示区 ====== -->
-    <view class="led__screen" :style="{ background: bgColor }">
+    <view
+      class="led__screen"
+      :class="{ 'led__screen--fullscreen': fullscreen }"
+      :style="{ background: bgColor }"
+      @tap="fullscreen && exitFullscreen()"
+    >
       <view
         class="led__marquee"
         :class="{ 'led__marquee--running': isRunning, 'led__marquee--paused': isPaused }"
@@ -16,10 +21,26 @@
       <!-- 装饰边框灯 -->
       <view class="led__border led__border--top"></view>
       <view class="led__border led__border--bottom"></view>
+
+      <!-- 全屏按钮（非全屏时显示） -->
+      <view v-if="!fullscreen" class="led__fullscreen-btn" @tap.stop="enterFullscreen">
+        <text>⛶</text>
+      </view>
+
+      <!-- 全屏模式：顶部提示条 -->
+      <view v-if="fullscreen" class="led__fullscreen-bar">
+        <text class="led__fullscreen-hint">点击屏幕退出全屏</text>
+      </view>
+
+      <!-- 全屏模式：旋转提示 -->
+      <view v-if="fullscreen" class="led__rotate-hint">
+        <text>↻</text>
+        <text>横屏体验更佳</text>
+      </view>
     </view>
 
-    <!-- ====== 输入区 ====== -->
-    <view class="led__input-area">
+    <!-- ====== 输入区（全屏时隐藏）===== -->
+    <view v-show="!fullscreen" class="led__input-area">
       <view class="led__input-row">
         <input
           class="led__input"
@@ -33,15 +54,15 @@
       </view>
     </view>
 
-    <!-- ====== 预设文本 ====== -->
-    <scroll-view class="led__presets" scroll-x show-scrollbar="false">
+    <!-- ====== 预设文本（全屏时隐藏）===== -->
+    <scroll-view v-show="!fullscreen" class="led__presets" scroll-x show-scrollbar="false">
       <view v-for="(t, i) in presets" :key="i" class="led__preset-tag" @tap="selectPreset(t)">
         <text>{{ t }}</text>
       </view>
     </scroll-view>
 
-    <!-- ====== 控制面板 ====== -->
-    <view class="led__controls">
+    <!-- ====== 控制面板（全屏时隐藏）===== -->
+    <view v-show="!fullscreen" class="led__controls">
       <!-- 控制按钮 -->
       <view class="led__ctrl-row">
         <view class="led__ctrl-btn led__ctrl-btn--play" @tap="togglePlay">
@@ -134,6 +155,7 @@ const inputText = ref('')
 const displayText = ref('')
 const isRunning = ref(false)
 const isPaused = ref(false)
+const fullscreen = ref(false)
 const speed = ref(5)
 const direction = ref('left')
 const colorKey = ref('green')
@@ -209,6 +231,20 @@ function toggleDirection() {
   }
 }
 
+/** 进入全屏 */
+function enterFullscreen() {
+  if (!displayText.value) return
+  fullscreen.value = true
+  if (!isRunning.value) startMarquee()
+  uni.hideTabBar({ fail: () => {} })
+}
+
+/** 退出全屏 */
+function exitFullscreen() {
+  fullscreen.value = false
+  uni.showTabBar({ fail: () => {} })
+}
+
 /** 速度改变 */
 function onSpeedChange(e) {
   speed.value = e.detail.value
@@ -279,6 +315,52 @@ function selectColor(c) {
     );
     &--top { top: 0; }
     &--bottom { bottom: 0; }
+  }
+
+  // ====== 全屏模式 ======
+  &__screen--fullscreen {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    height: auto;
+    margin: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    flex-direction: column;
+    justify-content: center;
+
+    .led__marquee {
+      padding: 0 40rpx;
+    }
+  }
+
+  // 全屏按钮
+  &__fullscreen-btn {
+    position: absolute; top: 16rpx; right: 16rpx;
+    width: 56rpx; height: 56rpx;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    text { font-size: 32rpx; color: rgba(255,255,255,0.5); }
+    &:active { background: rgba(255,255,255,0.2); }
+  }
+
+  // 全屏顶栏
+  &__fullscreen-bar {
+    position: absolute; top: 0; left: 0; right: 0;
+    padding: 20rpx; text-align: center;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+  }
+  &__fullscreen-hint {
+    font-size: 22rpx; color: rgba(255,255,255,0.4);
+  }
+
+  // 横屏提示
+  &__rotate-hint {
+    position: absolute; bottom: 60rpx; left: 0; right: 0;
+    display: flex; align-items: center; justify-content: center; gap: 12rpx;
+    text { font-size: 24rpx; color: rgba(255,255,255,0.2); }
   }
 
   // ====== 输入区 ======

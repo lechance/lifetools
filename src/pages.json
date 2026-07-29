@@ -71,7 +71,8 @@
     {
       "path": "pages/tools/led-marquee/index",
       "style": {
-        "navigationBarTitleText": "LED弹幕"
+        "navigationBarTitleText": "LED弹幕",
+        "pageOrientation": "auto"
       }
     },
     {
