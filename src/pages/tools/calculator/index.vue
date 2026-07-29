@@ -324,9 +324,9 @@ function calc() {
       .replace(OP, '**')
       .replace(/--/g, '+')
       .replace(/π/g, `(${Math.PI})`)
-      // e 常数：前面非字母时才替换
-      .replace(/(?<![a-zA-Z.])e(?![a-zA-Z(])/g, `(${Math.E})`)
-      // 百分比：5% → 5/100，5+3% → 5+3/100
+      // e 常数：使用 \b 单词边界（不用 lookbehind，微信引擎不支持）
+      .replace(/\be\b/g, `(${Math.E})`)
+      // 百分比：5% → 5/100
       .replace(/(\d+)%/g, '($1/100)')
 
     // 白名单（只允许数字、运算符、括号、Math 对象）
