@@ -27,7 +27,9 @@
     {
       "path": "pages/tools/calculator/index",
       "style": {
-        "navigationBarTitleText": "科学计算器"
+        "navigationBarTitleText": "科学计算器",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
       }
     },
     {
