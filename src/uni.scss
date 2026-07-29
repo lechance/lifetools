@@ -1,0 +1,142 @@
+/* 全局 SCSS 变量 - 简洁中性色系 */
+/* 采用 Apple 设计风格，以灰色为主调，干净简洁 */
+
+// 主色 - 极简中性色，无强烈品牌色
+$primary-color: #1D1D1F;      // Apple 暗色文字
+$primary-light: #515154;
+$primary-dark: #000000;
+$primary-bg: #F5F5F7;
+
+// 中性色
+$text-primary: #1D1D1F;
+$text-secondary: #86868B;     // Apple 副标题灰
+$text-light: #C7C7CC;         // iOS 三级文字
+$bg-color: #F5F5F7;           // Apple 浅灰背景
+$card-bg: #FFFFFF;
+$border-color: #E5E5EA;       // iOS 分割线
+
+// 功能色
+$success: #34C759;            // iOS 绿色
+$warning: #FF9500;            // iOS 橙色
+$danger: #FF3B30;             // iOS 红色
+$info: #007AFF;               // iOS 蓝色（仅用于信息提示）
+
+$font-size-xs: 20rpx;
+$font-size-sm: 24rpx;
+$font-size-base: 28rpx;
+$font-size-md: 32rpx;
+$font-size-lg: 36rpx;
+$font-size-xl: 44rpx;
+
+$spacing-xs: 8rpx;
+$spacing-sm: 16rpx;
+$spacing-base: 24rpx;
+$spacing-md: 32rpx;
+$spacing-lg: 40rpx;
+$spacing-xl: 48rpx;
+
+$radius-sm: 8rpx;
+$radius-base: 12rpx;
+$radius-md: 16rpx;
+$radius-lg: 24rpx;
+$radius-round: 50%;
+
+$shadow-sm: 0 1rpx 3rpx rgba(0, 0, 0, 0.04);
+$shadow-base: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 4rpx 16rpx rgba(0, 0, 0, 0.10);
+
+/* CSS 自定义属性 - 全局可用 */
+:root, page {
+  --primary-color: #1D1D1F;
+  --primary-light: #515154;
+  --primary-dark: #000000;
+  --primary-bg: #F5F5F7;
+  --text-primary: #1D1D1F;
+  --text-secondary: #86868B;
+  --text-light: #C7C7CC;
+  --bg-color: #F5F5F7;
+  --card-bg: #FFFFFF;
+  --border-color: #E5E5EA;
+  --success: #34C759;
+  --warning: #FF9500;
+  --danger: #FF3B30;
+  --info: #007AFF;
+  --shadow-sm: 0 1rpx 3rpx rgba(0, 0, 0, 0.04);
+  --shadow-base: 0 2rpx 8rpx rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4rpx 16rpx rgba(0, 0, 0, 0.10);
+}
+
+/* 全局样式 */
+page {
+  background-color: $bg-color;
+  color: $text-primary;
+  font-size: $font-size-base;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+/* 通用卡片样式 */
+.card {
+  background: $card-bg;
+  border-radius: $radius-md;
+  padding: $spacing-base;
+  box-shadow: $shadow-base;
+  margin-bottom: $spacing-base;
+}
+
+/* 通用按钮 */
+.btn-primary {
+  background: $primary-color;
+  color: #fff;
+  border: none;
+  border-radius: $radius-base;
+  padding: 20rpx 40rpx;
+  font-size: $font-size-base;
+  text-align: center;
+}
+
+.btn-primary:active {
+  opacity: 0.8;
+}
+
+/* 工具页面通用容器 */
+.tool-container {
+  padding: $spacing-base;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+/* 工具占位页面样式 */
+.tool-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: $spacing-lg;
+
+  .tool-icon {
+    font-size: 120rpx;
+    margin-bottom: $spacing-base;
+  }
+  .tool-title {
+    font-size: $font-size-xl;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: $spacing-sm;
+  }
+  .tool-desc {
+    font-size: $font-size-sm;
+    color: $text-light;
+    margin-bottom: $spacing-lg;
+  }
+  .tool-badge {
+    font-size: $font-size-sm;
+    color: $text-secondary;
+    background: $primary-bg;
+    padding: 12rpx 32rpx;
+    border-radius: 40rpx;
+  }
+}

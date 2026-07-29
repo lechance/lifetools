@@ -1,0 +1,323 @@
+{
+  "pages": [
+    {
+      "path": "pages/index/index",
+      "style": {
+        "navigationBarTitleText": "万能工具盒",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/coupons/index",
+      "style": {
+        "navigationBarTitleText": "卡券优惠",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/profile/index",
+      "style": {
+        "navigationBarTitleText": "我的",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/tools/calculator/index",
+      "style": {
+        "navigationBarTitleText": "科学计算器"
+      }
+    },
+    {
+      "path": "pages/tools/flashlight/index",
+      "style": {
+        "navigationBarTitleText": "SOS手电筒"
+      }
+    },
+    {
+      "path": "pages/tools/countdown/index",
+      "style": {
+        "navigationBarTitleText": "节日倒计时"
+      }
+    },
+    {
+      "path": "pages/tools/today-in-history/index",
+      "style": {
+        "navigationBarTitleText": "历史上的今天"
+      }
+    },
+    {
+      "path": "pages/tools/safe-period/index",
+      "style": {
+        "navigationBarTitleText": "安全期计算"
+      }
+    },
+    {
+      "path": "pages/tools/shelf-life/index",
+      "style": {
+        "navigationBarTitleText": "保质期计算"
+      }
+    },
+    {
+      "path": "pages/tools/pomodoro/index",
+      "style": {
+        "navigationBarTitleText": "番茄专注"
+      }
+    },
+    {
+      "path": "pages/tools/led-marquee/index",
+      "style": {
+        "navigationBarTitleText": "LED弹幕"
+      }
+    },
+    {
+      "path": "pages/tools/date-calc/index",
+      "style": {
+        "navigationBarTitleText": "日期计算器"
+      }
+    },
+    {
+      "path": "pages/tools/random/index",
+      "style": {
+        "navigationBarTitleText": "随机数生成"
+      }
+    },
+    {
+      "path": "pages/tools/unit-convert/index",
+      "style": {
+        "navigationBarTitleText": "单位换算"
+      }
+    },
+    {
+      "path": "pages/tools/weather/index",
+      "style": {
+        "navigationBarTitleText": "天气查询"
+      }
+    },
+    {
+      "path": "pages/tools/calendar/index",
+      "style": {
+        "navigationBarTitleText": "日历日程"
+      }
+    },
+    {
+      "path": "pages/tools/exchange-rate/index",
+      "style": {
+        "navigationBarTitleText": "汇率换算"
+      }
+    },
+    {
+      "path": "pages/tools/size-chart/index",
+      "style": {
+        "navigationBarTitleText": "尺码对照"
+      }
+    },
+    {
+      "path": "pages/tools/period-tracker/index",
+      "style": {
+        "navigationBarTitleText": "生理期记录"
+      }
+    },
+    {
+      "path": "pages/tools/garbage-classify/index",
+      "style": {
+        "navigationBarTitleText": "垃圾分类查询"
+      }
+    },
+    {
+      "path": "pages/tools/dice/index",
+      "style": {
+        "navigationBarTitleText": "掷骰子"
+      }
+    },
+    {
+      "path": "pages/tools/lottery/index",
+      "style": {
+        "navigationBarTitleText": "抽签摇号"
+      }
+    },
+    {
+      "path": "pages/tools/sudoku/index",
+      "style": {
+        "navigationBarTitleText": "数独游戏"
+      }
+    },
+    {
+      "path": "pages/tools/idiom-chain/index",
+      "style": {
+        "navigationBarTitleText": "成语接龙"
+      }
+    },
+    {
+      "path": "pages/tools/guess-number/index",
+      "style": {
+        "navigationBarTitleText": "猜数字"
+      }
+    },
+    {
+      "path": "pages/tools/rock-scissors/index",
+      "style": {
+        "navigationBarTitleText": "石头剪刀布"
+      }
+    },
+    {
+      "path": "pages/tools/image-compress/index",
+      "style": {
+        "navigationBarTitleText": "图片压缩"
+      }
+    },
+    {
+      "path": "pages/tools/image-crop/index",
+      "style": {
+        "navigationBarTitleText": "图片裁剪"
+      }
+    },
+    {
+      "path": "pages/tools/image-filter/index",
+      "style": {
+        "navigationBarTitleText": "图片滤镜"
+      }
+    },
+    {
+      "path": "pages/tools/image-stitch/index",
+      "style": {
+        "navigationBarTitleText": "图片拼接"
+      }
+    },
+    {
+      "path": "pages/tools/color-picker/index",
+      "style": {
+        "navigationBarTitleText": "颜色提取器"
+      }
+    },
+    {
+      "path": "pages/tools/meme-maker/index",
+      "style": {
+        "navigationBarTitleText": "表情包制作"
+      }
+    },
+    {
+      "path": "pages/tools/id-photo/index",
+      "style": {
+        "navigationBarTitleText": "证件照制作"
+      }
+    },
+    {
+      "path": "pages/tools/watermark/index",
+      "style": {
+        "navigationBarTitleText": "图片水印"
+      }
+    },
+    {
+      "path": "pages/tools/avatar-deco/index",
+      "style": {
+        "navigationBarTitleText": "头像加装饰"
+      }
+    },
+    {
+      "path": "pages/tools/loan-calc/index",
+      "style": {
+        "navigationBarTitleText": "房贷计算器"
+      }
+    },
+    {
+      "path": "pages/tools/tax-calc/index",
+      "style": {
+        "navigationBarTitleText": "个税计算器"
+      }
+    },
+    {
+      "path": "pages/tools/bmi-calc/index",
+      "style": {
+        "navigationBarTitleText": "BMI计算器"
+      }
+    },
+    {
+      "path": "pages/tools/age-calc/index",
+      "style": {
+        "navigationBarTitleText": "年龄计算器"
+      }
+    },
+    {
+      "path": "pages/tools/base-convert/index",
+      "style": {
+        "navigationBarTitleText": "进制转换"
+      }
+    },
+    {
+      "path": "pages/tools/amount-upper/index",
+      "style": {
+        "navigationBarTitleText": "金额转大写"
+      }
+    },
+    {
+      "path": "pages/tools/todo-list/index",
+      "style": {
+        "navigationBarTitleText": "待办清单"
+      }
+    },
+    {
+      "path": "pages/tools/memo/index",
+      "style": {
+        "navigationBarTitleText": "备忘录"
+      }
+    },
+    {
+      "path": "pages/tools/timer/index",
+      "style": {
+        "navigationBarTitleText": "计时器"
+      }
+    },
+    {
+      "path": "pages/tools/pedometer/index",
+      "style": {
+        "navigationBarTitleText": "计步器"
+      }
+    },
+    {
+      "path": "pages/tools/ruler/index",
+      "style": {
+        "navigationBarTitleText": "尺子测量"
+      }
+    },
+    {
+      "path": "pages/tools/decibel/index",
+      "style": {
+        "navigationBarTitleText": "分贝测试"
+      }
+    },
+    {
+      "path": "pages/tools/plate-lookup/index",
+      "style": {
+        "navigationBarTitleText": "车牌归属地"
+      }
+    },
+    {
+      "path": "pages/tools/id-card/index",
+      "style": {
+        "navigationBarTitleText": "身份证解析"
+      }
+    },
+    {
+      "path": "pages/tools/password-gen/index",
+      "style": {
+        "navigationBarTitleText": "随机密码生成"
+      }
+    },
+    {
+      "path": "pages/tools/qr-code/index",
+      "style": {
+        "navigationBarTitleText": "二维码工具"
+      }
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "万能工具盒",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F5F5F7",
+    "usingComponents": true
+  },
+}

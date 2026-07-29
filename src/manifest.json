@@ -1,0 +1,42 @@
+{
+  "name": "万能工具盒",
+  "appid": "__UNI__TOOLBOX__",
+  "description": "集合日常生活常用工具的微信小程序",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "app-plus": {
+    "usingComponents": true,
+    "nvueStyleCompiler": "uni-app",
+    "compilerVersion": 3,
+    "splashscreen": {
+      "alwaysShowBeforeRender": true,
+      "waiting": true,
+      "autoclose": true,
+      "delay": 0
+    }
+  },
+  "h5": {
+    "title": "万能工具盒",
+    "router": {
+      "mode": "history"
+    }
+  },
+  "quickapp": {},
+  "mp-weixin": {
+    "appid": "wx0000000000000000",
+    "setting": {
+      "urlCheck": true,
+      "es6": true,
+      "postcss": true,
+      "minified": true
+    },
+    "usingComponents": true,
+    "permission": {},
+    "requiredPrivateInfos": []
+  },
+  "uniStatistics": {
+    "enable": false
+  },
+  "vueVersion": "3"
+}
