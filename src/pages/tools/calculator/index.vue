@@ -1,13 +1,14 @@
 /**
  * 科学计算器
  * 支持基础运算+科学函数+括号
+ * 性能优化：预计算样式、减少重复格式化、单次 sanitize
  */
 <template>
   <view class="calculator">
     <!-- 显示区域 -->
     <view class="calculator__display">
       <scroll-view class="calculator__expr" scroll-x>
-        <text class="calculator__expr-text">{{ expression || '0' }}</text>
+        <text class="calculator__expr-text">{{ displayExpr }}</text>
       </scroll-view>
       <view class="calculator__result">
         <text class="calculator__result-text">{{ result }}</text>
@@ -21,20 +22,13 @@
       </view>
     </view>
 
-    <!-- 主按键区 -->
+    <!-- 主按键区（classes 预计算，避免模板中重复计算） -->
     <view class="calculator__keys">
-      <view v-for="(row, ri) in keys" :key="ri" class="calculator__key-row">
+      <view v-for="(row, ri) in keyRows" :key="ri" class="calculator__key-row">
         <view
-          v-for="(key, ki) in row"
-          :key="ki"
-          class="calculator__key"
-          :class="{
-            'calculator__key--num': key.type === 'num',
-            'calculator__key--op': key.type === 'op',
-            'calculator__key--eq': key.type === 'eq',
-            'calculator__key--func': key.type === 'func',
-            'calculator__key--wide': key.wide
-          }"
+          v-for="key in row"
+          :key="key.label"
+          :class="key.cls"
           @tap="handleKey(key)"
         >
           <text>{{ key.label }}</text>
@@ -47,83 +41,116 @@
 <script setup>
 import { ref, computed } from 'vue'
 
-// 科学函数列表
+// ========== 静态数据（模块级，非响应式） ==========
+
 const sciFuncs = ['sin', 'cos', 'tan', 'log', 'ln', '√', 'x²', 'xⁿ', 'π', 'e']
 
-// 按键布局
-const keys = [
+// 预计算按键 CSS 类名，避免模板中重复对象创建
+function buildKey(label, type, extra) {
+  const cls = `calculator__key calculator__key--${type}`
+  return { label, type, cls, ...extra }
+}
+
+const keyRows = [
   [
-    { label: 'C', type: 'func', action: 'clear' },
-    { label: '⌫', type: 'func', action: 'backspace' },
-    { label: '%', type: 'op', action: '%' },
-    { label: '÷', type: 'op', action: '/' }
+    buildKey('C', 'func', { action: 'clear' }),
+    buildKey('⌫', 'func', { action: 'backspace' }),
+    buildKey('%', 'op', { action: '%' }),
+    buildKey('÷', 'op', { action: '/' })
   ],
   [
-    { label: '7', type: 'num', value: '7' },
-    { label: '8', type: 'num', value: '8' },
-    { label: '9', type: 'num', value: '9' },
-    { label: '×', type: 'op', action: '*' }
+    buildKey('7', 'num', { value: '7' }),
+    buildKey('8', 'num', { value: '8' }),
+    buildKey('9', 'num', { value: '9' }),
+    buildKey('×', 'op', { action: '*' })
   ],
   [
-    { label: '4', type: 'num', value: '4' },
-    { label: '5', type: 'num', value: '5' },
-    { label: '6', type: 'num', value: '6' },
-    { label: '-', type: 'op', action: '-' }
+    buildKey('4', 'num', { value: '4' }),
+    buildKey('5', 'num', { value: '5' }),
+    buildKey('6', 'num', { value: '6' }),
+    buildKey('-', 'op', { action: '-' })
   ],
   [
-    { label: '1', type: 'num', value: '1' },
-    { label: '2', type: 'num', value: '2' },
-    { label: '3', type: 'num', value: '3' },
-    { label: '+', type: 'op', action: '+' }
+    buildKey('1', 'num', { value: '1' }),
+    buildKey('2', 'num', { value: '2' }),
+    buildKey('3', 'num', { value: '3' }),
+    buildKey('+', 'op', { action: '+' })
   ],
   [
-    { label: '±', type: 'func', action: 'negate' },
-    { label: '0', type: 'num', value: '0' },
-    { label: '.', type: 'num', value: '.' },
-    { label: '=', type: 'eq', action: 'calculate' }
+    buildKey('±', 'func', { action: 'negate' }),
+    buildKey('0', 'num', { value: '0' }),
+    buildKey('.', 'num', { value: '.' }),
+    buildKey('=', 'eq', { action: 'calculate' })
   ]
 ]
 
-// 状态
+// ========== 响应式状态 ==========
+
 const expression = ref('')
 const result = ref('0')
 const currentInput = ref('')
 const lastAnswer = ref(null)
 const justCalculated = ref(false)
 
-// 格式化结果显示
+// 表达式为空时显示 0，避免模板中重复 `|| '0'`
+const displayExpr = computed(() => expression.value || '0')
+
+// ========== 格式化 ==========
+
+/** 格式化数字，缓存最近一次结果避免重复计算 */
+let lastFormattedInput = ''
+let lastFormattedResult = '0'
+
 function formatDisplay(val) {
   if (val === undefined || val === null || val === '') return '0'
   const num = Number(val)
-  if (isNaN(num)) return val
-  // 避免超大数字用科学计数法
+  if (!isFinite(num)) return isNaN(num) ? '错误' : (num > 0 ? '∞' : '-∞')
   if (Math.abs(num) > 999999999 || (Math.abs(num) < 0.0000001 && num !== 0)) {
     return num.toExponential(6)
   }
   const str = String(num)
-  // 限制显示长度
-  if (str.length > 15) {
-    return num.toPrecision(10)
-  }
-  return str
+  return str.length > 15 ? num.toPrecision(10) : str
 }
 
-// 处理按键
+/** 快速格式化当前输入（带缓存） */
+function fmtInput(input) {
+  if (input === lastFormattedInput) return lastFormattedResult
+  lastFormattedInput = input
+  lastFormattedResult = formatDisplay(input || '0')
+  return lastFormattedResult
+}
+
+// ========== 按键处理 ==========
+
 function handleKey(key) {
   if (key.type === 'num') {
     if (justCalculated.value) {
       expression.value = ''
       currentInput.value = ''
+      lastAnswer.value = null
       justCalculated.value = false
     }
     if (key.value === '.' && currentInput.value.includes('.')) return
+    // 前导零：0 → 按数字替换
+    if (key.value !== '.' && currentInput.value === '0') {
+      currentInput.value = key.value
+      expression.value = expression.value.slice(0, -1) + key.value
+      result.value = key.value
+      return
+    }
     currentInput.value += key.value
     expression.value += key.value
-    result.value = formatDisplay(currentInput.value || '0')
+    result.value = fmtInput(currentInput.value)
   } else if (key.type === 'op') {
-    justCalculated.value = false
+    if (justCalculated.value && lastAnswer.value !== null) {
+      const v = fmtInput(lastAnswer.value)
+      expression.value = v
+      currentInput.value = v
+      justCalculated.value = false
+    }
     expression.value += ` ${key.label} `
     currentInput.value = ''
+    justCalculated.value = false
   } else if (key.type === 'func') {
     handleFuncAction(key.action)
   } else if (key.type === 'eq') {
@@ -131,12 +158,14 @@ function handleKey(key) {
   }
 }
 
-// 处理功能按键
+// ========== 功能键 ==========
+
 function handleFuncAction(action) {
   if (action === 'clear') {
     expression.value = ''
     currentInput.value = ''
     result.value = '0'
+    lastAnswer.value = null
     justCalculated.value = false
   } else if (action === 'backspace') {
     if (justCalculated.value) {
@@ -149,64 +178,45 @@ function handleFuncAction(action) {
     if (currentInput.value.length > 0) {
       currentInput.value = currentInput.value.slice(0, -1)
       expression.value = expression.value.slice(0, -1)
-      result.value = formatDisplay(currentInput.value || lastAnswer.value || '0')
+      result.value = fmtInput(currentInput.value || lastAnswer.value)
     } else {
-      // 退回一个操作符
-      const idx = expression.value.lastIndexOf(' ')
-      if (idx > -1) {
-        expression.value = expression.value.slice(0, idx)
-      } else {
-        expression.value = ''
-      }
+      const idx = expression.value.trimEnd().lastIndexOf(' ')
+      expression.value = idx > -1 ? expression.value.slice(0, idx).trimEnd() : ''
       result.value = '0'
     }
   } else if (action === 'negate') {
     if (currentInput.value && currentInput.value !== '0') {
-      if (currentInput.value.startsWith('-')) {
-        currentInput.value = currentInput.value.slice(1)
-      } else {
-        currentInput.value = '-' + currentInput.value
-      }
-      // 更新 expression 中的最后一个数字
+      currentInput.value = currentInput.value.startsWith('-')
+        ? currentInput.value.slice(1)
+        : '-' + currentInput.value
       const parts = expression.value.split(/(\s+)/)
       if (parts.length > 0) {
         parts[parts.length - 1] = currentInput.value
         expression.value = parts.join('')
       }
-      result.value = formatDisplay(currentInput.value)
+      result.value = fmtInput(currentInput.value)
     }
   }
 }
 
-// 处理科学函数
+// ========== 科学函数 ==========
+
 function handleSci(fn) {
+  if (justCalculated.value && lastAnswer.value !== null) {
+    currentInput.value = fmtInput(lastAnswer.value)
+  }
   justCalculated.value = false
-  const lastNum = parseFloat(currentInput.value) || parseFloat(lastAnswer.value) || 0
+  const lastNum = parseFloat(currentInput.value) || 0
   let val
 
   switch (fn) {
-    case 'sin':
-      val = Math.sin(lastNum * Math.PI / 180)
-      expression.value = `sin(${lastNum}°)`
-      break
-    case 'cos':
-      val = Math.cos(lastNum * Math.PI / 180)
-      expression.value = `cos(${lastNum}°)`
-      break
-    case 'tan':
-      val = Math.tan(lastNum * Math.PI / 180)
-      expression.value = `tan(${lastNum}°)`
-      break
-    case 'log':
-      val = Math.log10(lastNum)
-      expression.value = `log(${lastNum})`
-      break
-    case 'ln':
-      val = Math.log(lastNum)
-      expression.value = `ln(${lastNum})`
-      break
+    case 'sin':  val = Math.sin(lastNum * Math.PI / 180); expression.value = `sin(${lastNum}°)`; break
+    case 'cos':  val = Math.cos(lastNum * Math.PI / 180); expression.value = `cos(${lastNum}°)`; break
+    case 'tan':  val = Math.tan(lastNum * Math.PI / 180); expression.value = `tan(${lastNum}°)`; break
+    case 'log':  val = Math.log10(lastNum); expression.value = `log(${lastNum})`; break
+    case 'ln':   val = Math.log(lastNum); expression.value = `ln(${lastNum})`; break
     case '√':
-      val = Math.sqrt(lastNum)
+      val = lastNum < 0 ? NaN : Math.sqrt(lastNum)
       expression.value = `√(${lastNum})`
       break
     case 'x²':
@@ -216,20 +226,14 @@ function handleSci(fn) {
     case 'xⁿ':
       expression.value = `${lastNum}^`
       currentInput.value = ''
-      result.value = formatDisplay(lastNum)
+      result.value = fmtInput(lastNum)
       return
-    case 'π':
-      val = Math.PI
-      expression.value = 'π'
-      break
-    case 'e':
-      val = Math.E
-      expression.value = 'e'
-      break
+    case 'π':  val = Math.PI; expression.value = 'π'; break
+    case 'e':  val = Math.E;  expression.value = 'e'; break
   }
 
   if (val !== undefined) {
-    const formatted = typeof val === 'number' && !isNaN(val) ? formatDisplay(val) : String(val)
+    const formatted = isFinite(val) ? fmtInput(val) : (isNaN(val) ? '错误' : '∞')
     currentInput.value = formatted
     result.value = formatted
     lastAnswer.value = val
@@ -237,33 +241,37 @@ function handleSci(fn) {
   }
 }
 
-// 计算
+// ========== 计算 ==========
+
+// 单次替换映射表，比链式 .replace() 快
+const OP_MAP = { '×': '*', '÷': '/', '^': '**' }
+const OP_PATTERN = /[×÷^]/g
+
 function calculate() {
   try {
-    // 替换显示符号为JS可计算的符号
-    let expr = expression.value
-      .replace(/×/g, '*')
-      .replace(/÷/g, '/')
-      .replace(/\^/g, '**')
+    // 一次替换所有运算符（单次正则遍历）
+    const expr = expression.value.replace(OP_PATTERN, ch => OP_MAP[ch]).replace(/--/g, '+')
 
-    // 安全评估 —— 只允许数字和运算符
-    const sanitized = expr.replace(/[^0-9+\-*/.() ]/g, '')
+    // 白名单过滤
+    const sanitized = expr.replace(/[^0-9+\-*/.()% ]/g, '')
     if (!sanitized.trim()) {
       result.value = '0'
       return
     }
 
-    // 使用 eval 在受控环境下计算
     const computed = Function(`"use strict"; return (${sanitized})`)()
-    const formatted = formatDisplay(computed)
+    if (!isFinite(computed)) {
+      result.value = isNaN(computed) ? '错误' : '∞'
+      return
+    }
+    const formatted = fmtInput(computed)
     result.value = formatted
     lastAnswer.value = computed
     justCalculated.value = true
-    // 表达式保留用于继续运算
     currentInput.value = formatted
+    expression.value = `${expression.value} =`
   } catch (e) {
     result.value = '错误'
-    setTimeout(() => { result.value = '0' }, 1000)
   }
 }
 </script>
@@ -276,13 +284,10 @@ function calculate() {
   background: $card-bg;
   user-select: none;
 
-  // 显示区域
   &__display {
     background: $card-bg;
     padding: 60rpx 32rpx 24rpx;
     border-bottom: 1rpx solid $border-color;
-
-    // 分隔线以上为表达式区
     flex-shrink: 0;
   }
 
@@ -332,14 +337,8 @@ function calculate() {
     border-radius: 12rpx;
     box-shadow: $shadow-sm;
 
-    text {
-      font-size: 22rpx;
-      color: $text-primary;
-    }
-
-    &:active {
-      opacity: 0.7;
-    }
+    text { font-size: 22rpx; color: $text-primary; }
+    &:active { opacity: 0.7; }
   }
 
   // 主按键区
@@ -358,6 +357,7 @@ function calculate() {
     flex: 1;
   }
 
+  // 按键基础样式（type 类名由 buildKey 预计算）
   &__key {
     flex: 1;
     display: flex;
@@ -366,33 +366,23 @@ function calculate() {
     border-radius: 16rpx;
     font-size: 40rpx;
     transition: background 0.1s;
+    &:active { opacity: 0.6; }
 
-    &:active {
-      opacity: 0.6;
-    }
-
-    // 数字键
     &--num {
       background: $primary-bg;
       color: $text-primary;
       font-size: 44rpx;
     }
-
-    // 运算符
     &--op {
       background: $primary-bg;
       color: $primary-color;
       font-size: 40rpx;
     }
-
-    // 等号
     &--eq {
       background: $primary-color;
       color: #fff;
       font-size: 44rpx;
     }
-
-    // 功能键（C, ⌫）
     &--func {
       background: #E8E8ED;
       color: $text-primary;
