@@ -1,37 +1,40 @@
 /**
- * 科学计算器
- * 支持基础运算+科学函数+括号
- * 健壮性优化：防连续运算符、保护表达式状态
+ * 专业科学计算器
+ * 行业标准：函数即时计算、运算符优先级、括号、记忆功能
+ * 表达式仅含数字/运算符/括号，函数立即作用于当前值
  */
 <template>
-  <view class="calculator">
-    <!-- 显示区域 -->
-    <view class="calculator__display">
-      <scroll-view class="calculator__expr" scroll-x>
-        <text class="calculator__expr-text">{{ displayExpr }}</text>
+  <view class="calc">
+    <!-- ====== 显示区 ====== -->
+    <view class="calc__display">
+      <text class="calc__history">{{ history }}</text>
+      <scroll-view class="calc__expr" scroll-x show-scrollbar="false">
+        <text class="calc__expr-text">{{ expr || '0' }}</text>
       </scroll-view>
-      <view class="calculator__result">
-        <text class="calculator__result-text">{{ result }}</text>
-      </view>
+      <text class="calc__result" :class="{ 'calc__result--err': isErr }">{{ result }}</text>
+      <text v-if="memory !== 0" class="calc__mem-indicator">M</text>
     </view>
 
-    <!-- 科学函数行 -->
-    <view class="calculator__sci-row">
-      <view v-for="fn in sciFuncs" :key="fn" class="calculator__sci-btn" @tap="handleSci(fn)">
-        <text>{{ fn }}</text>
-      </view>
+    <!-- ====== 记忆行 ====== -->
+    <view class="calc__mem">
+      <text v-for="m in memBtns" :key="m.label" class="calc__mem-btn"
+        :class="{ 'calc__mem-btn--active': m.action === 'mr' && memory !== 0 }"
+        @tap="handleMem(m)">{{ m.label }}</text>
     </view>
 
-    <!-- 主按键区 -->
-    <view class="calculator__keys">
-      <view v-for="(row, ri) in keyRows" :key="ri" class="calculator__key-row">
-        <view
-          v-for="key in row"
-          :key="key.label"
-          :class="key.cls"
-          @tap="handleKey(key)"
-        >
-          <text>{{ key.label }}</text>
+    <!-- ====== 科学函数行 ====== -->
+    <scroll-view class="calc__sci" scroll-x show-scrollbar="false">
+      <view v-for="b in sciBtns" :key="b.label" class="calc__sci-btn" @tap="handleSci(b)">
+        <text>{{ b.label }}</text>
+      </view>
+    </scroll-view>
+
+    <!-- ====== 主按键区 ====== -->
+    <view class="calc__keys">
+      <view v-for="(row, ri) in keys" :key="ri" class="calc__row">
+        <view v-for="k in row" :key="k.label"
+          :class="['calc__key', k.cls]" @tap="onKey(k)">
+          <text>{{ k.label }}</text>
         </view>
       </view>
     </view>
@@ -39,335 +42,379 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
-// ========== 静态数据 ==========
+// ==================================================================
+//  按键数据
+// ==================================================================
 
-const sciFuncs = ['sin', 'cos', 'tan', 'log', 'ln', '√', 'x²', 'xⁿ', 'π', 'e']
-
-function buildKey(label, type, extra) {
-  return { label, type, cls: `calculator__key calculator__key--${type}`, ...extra }
-}
-
-const keyRows = [
-  [
-    buildKey('C', 'func', { action: 'clear' }),
-    buildKey('⌫', 'func', { action: 'backspace' }),
-    buildKey('%', 'op', { action: '%' }),
-    buildKey('÷', 'op', { action: '/' })
-  ],
-  [
-    buildKey('7', 'num', { value: '7' }),
-    buildKey('8', 'num', { value: '8' }),
-    buildKey('9', 'num', { value: '9' }),
-    buildKey('×', 'op', { action: '*' })
-  ],
-  [
-    buildKey('4', 'num', { value: '4' }),
-    buildKey('5', 'num', { value: '5' }),
-    buildKey('6', 'num', { value: '6' }),
-    buildKey('-', 'op', { action: '-' })
-  ],
-  [
-    buildKey('1', 'num', { value: '1' }),
-    buildKey('2', 'num', { value: '2' }),
-    buildKey('3', 'num', { value: '3' }),
-    buildKey('+', 'op', { action: '+' })
-  ],
-  [
-    buildKey('±', 'func', { action: 'negate' }),
-    buildKey('0', 'num', { value: '0' }),
-    buildKey('.', 'num', { value: '.' }),
-    buildKey('=', 'eq', { action: 'calculate' })
-  ]
+const memBtns = [
+  { label: 'MC', act: 'mc' },
+  { label: 'MR', act: 'mr' },
+  { label: 'M+', act: 'mAdd' },
+  { label: 'M-', act: 'mSub' }
 ]
 
-// ========== 状态 ==========
+const sciBtns = [
+  { label: '(',  act: '(' },
+  { label: ')',  act: ')' },
+  { label: 'x²', act: 'sq' },
+  { label: 'x³', act: 'cb' },
+  { label: 'xⁿ', act: 'pow' },
+  { label: '√',  act: 'sqrt' },
+  { label: '∛',  act: 'cbrt' },
+  { label: 'x!', act: 'fact' },
+  { label: '1/x', act: 'recip' },
+  { label: '|x|', act: 'abs' },
+  { label: 'π',  act: 'pi' },
+  { label: 'e',  act: 'e' },
+  { label: 'sin', act: 'sin' },
+  { label: 'cos', act: 'cos' },
+  { label: 'tan', act: 'tan' },
+  { label: 'log', act: 'log' },
+  { label: 'ln',  act: 'ln' }
+]
 
-const expression = ref('')      // 算式文本
-const result = ref('0')         // 结果显示
-const currentInput = ref('')    // 当前输入的数字
-const lastAnswer = ref(null)    // 上次计算结果
-const justGotResult = ref(false) // 刚获得结果标记
+function k(label, type, extra) {
+  return { label, type, cls: `calc__k--${type}`, ...extra }
+}
 
-const displayExpr = computed(() => expression.value || '0')
+const keys = [
+  [k('C',  'fn', { act: 'clear' }), k('⌫', 'fn', { act: 'bs' }), k('%', 'op', { val: '%' }), k('÷', 'op', { val: '/' })],
+  [k('7', 'n', { val: '7' }), k('8', 'n', { val: '8' }), k('9', 'n', { val: '9' }), k('×', 'op', { val: '*' })],
+  [k('4', 'n', { val: '4' }), k('5', 'n', { val: '5' }), k('6', 'n', { val: '6' }), k('-', 'op', { val: '-' })],
+  [k('1', 'n', { val: '1' }), k('2', 'n', { val: '2' }), k('3', 'n', { val: '3' }), k('+', 'op', { val: '+' })],
+  [k('±', 'fn', { act: 'neg' }), k('0', 'n', { val: '0' }), k('.', 'n', { val: '.' }), k('=', 'eq', { act: 'calc' })]
+]
 
-// 格式化
-function formatDisplay(val) {
-  if (val === undefined || val === null || val === '') return '0'
-  const num = Number(val)
+// ==================================================================
+//  状态
+// ==================================================================
+
+const expr = ref('')       // 算式
+const result = ref('0')    // 当前结果
+const history = ref('')    // 上一步结果文本
+const isErr = ref(false)
+const memory = ref(0)
+
+let cur = ''          // 当前输入数字串
+let lastVal = null    // 上次计算结果
+let gotRes = false    // 刚得到结果
+let parens = 0        // 括号深度
+
+// ==================================================================
+//  工具函数
+// ==================================================================
+
+function fmt(n) {
+  if (n === '' || n === null || n === undefined) return '0'
+  const num = typeof n === 'number' ? n : Number(n)
   if (!isFinite(num)) return isNaN(num) ? '错误' : (num > 0 ? '∞' : '-∞')
-  if (Math.abs(num) > 999999999 || (Math.abs(num) < 0.0000001 && num !== 0)) {
-    return num.toExponential(6)
+  if (Math.abs(num) > 1e15 || (Math.abs(num) < 1e-12 && num !== 0)) return num.toExponential(8)
+  const s = String(num)
+  return s.length > 16 ? num.toPrecision(12) : s
+}
+
+function endsWithOp(s) { return /[+\-*/%]$/.test(s.trimEnd()) }
+function trimOp(s) { return s.trimEnd().replace(/[+\-*/%]+$/, '').trimEnd() }
+function isInputEmpty() { return cur === '' }
+
+/** 当前屏幕显示的数字 */
+function displayNum() { return parseFloat(cur || result.value || '0') }
+
+/** 把计算结果插入表达式（替换当前数字） */
+function insertVal(v) {
+  const f = isFinite(v) ? fmt(v) : (isNaN(v) ? '错误' : '∞')
+  // 替换表达式末尾的数字
+  const m = expr.value.match(/^(.*?)([\d.]+)$/)
+  if (m) {
+    expr.value = m[1] + f
+  } else if (expr.value.endsWith(')')) {
+    // 表达式以 ) 结尾，追加 × 再插入
+    expr.value += ' × ' + f
+  } else {
+    expr.value = f
   }
-  const str = String(num)
-  return str.length > 15 ? num.toPrecision(10) : str
+  cur = f
+  result.value = f
+  if (isFinite(v)) lastVal = v
+  gotRes = true
 }
 
-// ========== 按键处理 ==========
+// ==================================================================
+//  主按键处理器
+// ==================================================================
 
-/** 判断表达式末尾是否以运算符结尾 */
-function endsWithOp(expr) {
-  return /[\s+\-/*÷×%]+\s*$/.test(expr)
+function onKey(k) {
+  isErr.value = false
+  if (k.type === 'n')    digit(k.val)
+  else if (k.type === 'op')   op(k.val)
+  else if (k.type === 'eq')   calc()
+  else if (k.type === 'fn')   doFn(k.act)
 }
 
-/** 去掉末尾运算符 */
-function trimTrailingOp(expr) {
-  return expr.replace(/[\s+\-/*÷×%]+$/g, '').trimEnd()
+// ==================================================================
+//  数字
+// ==================================================================
+
+function digit(d) {
+  if (gotRes) { expr.value = ''; cur = ''; lastVal = null; gotRes = false }
+  if (d === '.' && cur.includes('.')) return
+  if (d !== '.' && cur === '0') { cur = d; expr.value = expr.value.slice(0, -1) + d; result.value = d; return }
+  cur += d
+  expr.value += d
+  result.value = cur
 }
 
-function handleKey(key) {
-  if (key.type === 'num') {
-    handleDigit(key.value)
-  } else if (key.type === 'op') {
-    handleOperator(key)
-  } else if (key.type === 'func') {
-    handleFuncAction(key.action)
-  } else if (key.type === 'eq') {
-    calculate()
+// ==================================================================
+//  运算符
+// ==================================================================
+
+function op(val) {
+  if (gotRes && lastVal !== null) {
+    const v = fmt(lastVal)
+    expr.value = v; cur = v; gotRes = false
   }
-}
-
-/** 输入数字 */
-function handleDigit(value) {
-  // 刚算完结果 → 清空重新开始
-  if (justGotResult.value) {
-    expression.value = ''
-    currentInput.value = ''
-    lastAnswer.value = null
-    justGotResult.value = false
-  }
-
-  // 小数点去重
-  if (value === '.' && currentInput.value.includes('.')) return
-
-  // 前导零：当前是 "0" 且按的是数字 → 替换，按小数点 → 保留
-  if (value !== '.' && currentInput.value === '0') {
-    currentInput.value = value
-    expression.value = expression.value.slice(0, -1) + value
-    result.value = value
+  // 末尾已有运算符 → 替换
+  if (isInputEmpty() && expr.value) {
+    expr.value = trimOp(expr.value) + ` ${val} `
     return
   }
-
-  currentInput.value += value
-  expression.value += value
-  result.value = formatDisplay(currentInput.value)
+  expr.value += ` ${val} `
+  cur = ''
 }
 
-/** 输入运算符 */
-function handleOperator(key) {
-  // 刚算完结果 → 用结果继续运算
-  if (justGotResult.value && lastAnswer.value !== null) {
-    const v = formatDisplay(lastAnswer.value)
-    expression.value = v
-    currentInput.value = v
-    justGotResult.value = false
-  }
+// ==================================================================
+//  功能键
+// ==================================================================
 
-  // 当前没有输入数字 → 替换末尾运算符
-  if (!currentInput.value && expression.value) {
-    expression.value = trimTrailingOp(expression.value) + ` ${key.label} `
+function doFn(act) {
+  isErr.value = false
+  if (act === 'clear') {
+    expr.value = ''; cur = ''; result.value = '0'
+    lastVal = null; gotRes = false; history.value = ''; parens = 0
     return
   }
-
-  expression.value += ` ${key.label} `
-  currentInput.value = ''
-  justGotResult.value = false
-}
-
-/** 功能键：C / ⌫ / ± */
-function handleFuncAction(action) {
-  if (action === 'clear') {
-    expression.value = ''
-    currentInput.value = ''
-    result.value = '0'
-    lastAnswer.value = null
-    justGotResult.value = false
-    return
-  }
-
-  if (action === 'backspace') {
-    if (justGotResult.value) {
-      expression.value = ''
-      currentInput.value = ''
-      result.value = '0'
-      justGotResult.value = false
-      return
-    }
-    if (currentInput.value.length > 0) {
-      currentInput.value = currentInput.value.slice(0, -1)
-      expression.value = expression.value.slice(0, -1)
-      result.value = formatDisplay(currentInput.value || lastAnswer.value || '0')
+  if (act === 'bs') {
+    if (gotRes) { expr.value = ''; cur = ''; result.value = '0'; gotRes = false; return }
+    if (cur.length > 0) {
+      cur = cur.slice(0, -1)
+      expr.value = expr.value.slice(0, -1)
+      result.value = fmt(cur || lastVal || '0')
     } else {
-      // 退回一个运算符
-      expression.value = trimTrailingOp(expression.value)
+      expr.value = trimOp(expr.value)
       result.value = '0'
     }
     return
   }
-
-  if (action === 'negate') {
-    if (currentInput.value && currentInput.value !== '0') {
-      currentInput.value = currentInput.value.startsWith('-')
-        ? currentInput.value.slice(1)
-        : '-' + currentInput.value
-      const parts = expression.value.split(/(\s+)/)
-      if (parts.length > 0) {
-        parts[parts.length - 1] = currentInput.value
-        expression.value = parts.join('')
-      }
-      result.value = formatDisplay(currentInput.value)
+  if (act === 'neg') {
+    if (cur && cur !== '0') {
+      cur = cur.startsWith('-') ? cur.slice(1) : '-' + cur
+      const parts = expr.value.split(/(\s+)/)
+      if (parts.length) { parts[parts.length - 1] = cur; expr.value = parts.join('') }
+      result.value = fmt(cur)
     }
+    return
   }
 }
 
-// ========== 科学函数 ==========
+// ==================================================================
+//  科学函数 — 立即计算，结果插入表达式
+// ==================================================================
 
-function handleSci(fn) {
-  if (justGotResult.value && lastAnswer.value !== null) {
-    currentInput.value = formatDisplay(lastAnswer.value)
+function handleSci(btn) {
+  isErr.value = false
+  if (btn.act === '(') {
+    if (expr.value && /[\d)\]]$/.test(expr.value.trimEnd())) expr.value += ' × '
+    expr.value += '('
+    parens++
+    cur = ''
+    result.value = '('
+    return
   }
-  justGotResult.value = false
-  const lastNum = parseFloat(currentInput.value) || 0
+  if (btn.act === ')') {
+    if (parens <= 0) return
+    expr.value += ')'
+    parens--
+    cur = ''
+    result.value = ')'
+    return
+  }
+
+  // 常数：直接插入值
+  if (btn.act === 'pi') { insertConst(Math.PI, 'π'); return }
+  if (btn.act === 'e')  { insertConst(Math.E, 'e');  return }
+
+  // 幂运算符
+  if (btn.act === 'pow') {
+    expr.value += '^'; cur = ''; result.value = fmt(displayNum()); return
+  }
+
+  // 一元函数
+  const n = displayNum()
   let val
 
-  switch (fn) {
-    case 'sin':  val = Math.sin(lastNum * Math.PI / 180); break
-    case 'cos':  val = Math.cos(lastNum * Math.PI / 180); break
-    case 'tan':  val = Math.tan(lastNum * Math.PI / 180); break
-    case 'log':  val = Math.log10(lastNum); break
-    case 'ln':   val = Math.log(lastNum); break
-    case '√':    val = lastNum < 0 ? NaN : Math.sqrt(lastNum); break
-    case 'x²':   val = lastNum * lastNum; break
-    case 'xⁿ':
-      expression.value = `${lastNum}^`
-      currentInput.value = ''
-      result.value = formatDisplay(lastNum)
-      return
-    case 'π':  val = Math.PI; break
-    case 'e':  val = Math.E; break
+  switch (btn.act) {
+    case 'sq':    val = n * n;          break
+    case 'cb':    val = n * n * n;      break
+    case 'sqrt':  val = Math.sqrt(n);   break
+    case 'cbrt':  val = Math.cbrt(n);   break
+    case 'fact':  val = factorial(n);   break
+    case 'recip': val = n === 0 ? NaN : 1 / n; break
+    case 'abs':   val = Math.abs(n);    break
+    case 'sin':   val = Math.sin(n * Math.PI / 180); break
+    case 'cos':   val = Math.cos(n * Math.PI / 180); break
+    case 'tan':   val = Math.tan(n * Math.PI / 180); break
+    case 'log':   val = Math.log10(n);  break
+    case 'ln':    val = Math.log(n);    break
   }
 
   if (val !== undefined) {
-    const formatted = isFinite(val) ? formatDisplay(val) : (isNaN(val) ? '错误' : '∞')
-    expression.value = `${fn}(${lastNum})`
-    currentInput.value = formatted
-    result.value = formatted
-    lastAnswer.value = val
-    justGotResult.value = true
+    // 函数名显示在表达式末尾，但实际计算结果插入
+    expr.value += `${btn.label}`
+    insertVal(val)
   }
 }
 
-// ========== 计算 ==========
+function insertConst(v, label) {
+  if (gotRes) { expr.value = ''; cur = ''; gotRes = false }
+  if (expr.value && /[\d)\]]$/.test(expr.value.trimEnd())) expr.value += ' × '
+  expr.value += label
+  cur = fmt(v)
+  result.value = cur
+  lastVal = v
+  gotRes = true
+}
 
-const OP_MAP = { '×': '*', '÷': '/', '^': '**' }
-const OP_PATTERN = /[×÷^]/g
+function factorial(n) {
+  if (n < 0 || n > 170) return NaN
+  if (n === 0 || n === 1) return 1
+  if (!Number.isInteger(n)) return Math.sqrt(2 * Math.PI * n) * Math.pow(n / Math.E, n)
+  let r = 1
+  for (let i = 2; i <= n; i++) r *= i
+  return r
+}
 
-function calculate() {
-  // 表达式为空或只含运算符 → 不计算
-  const raw = expression.value.trim()
-  if (!raw) return
-  if (endsWithOp(raw)) return
+// ==================================================================
+//  记忆
+// ==================================================================
+
+function handleMem(m) {
+  const v = displayNum()
+  if (m.act === 'mc')    { memory.value = 0; return }
+  if (m.act === 'mr')    { insertConst(memory.value, fmt(memory.value)); return }
+  if (m.act === 'mAdd')  { memory.value += v; return }
+  if (m.act === 'mSub')  { memory.value -= v; return }
+}
+
+// ==================================================================
+//  计算 — 仅处理 数字+运算符+括号+%
+// ==================================================================
+
+const OP = /\^/g
+
+function calc() {
+  isErr.value = false
+  const raw = expr.value.trim()
+  if (!raw || endsWithOp(raw)) return
 
   try {
-    const expr = raw.replace(OP_PATTERN, ch => OP_MAP[ch]).replace(/--/g, '+')
-    const sanitized = expr.replace(/[^0-9+\-*/.()% ]/g, '')
-    if (!sanitized.trim()) return
+    let e = raw
+      .replace(/×/g, '*').replace(/÷/g, '/')
+      .replace(OP, '**')
+      .replace(/--/g, '+')
+      .replace(/π/g, `(${Math.PI})`)
+      // e 常数：前面非字母时才替换
+      .replace(/(?<![a-zA-Z.])e(?![a-zA-Z(])/g, `(${Math.E})`)
+      // 百分比：5% → 5/100，5+3% → 5+3/100
+      .replace(/(\d+)%/g, '($1/100)')
 
-    const computed = Function(`"use strict"; return (${sanitized})`)()
-    if (!isFinite(computed)) {
-      result.value = isNaN(computed) ? '错误' : '∞'
+    // 白名单（只允许数字、运算符、括号、Math 对象）
+    const safe = e.replace(/[^0-9+\-*/.()%\s,Math.Esincotaglqrbehfp10]/g, '')
+    if (!safe.trim()) return
+
+    const val = Function(`"use strict"; return (${safe})`)()
+    if (!isFinite(val)) {
+      result.value = isNaN(val) ? '错误' : '∞'
+      isErr.value = true
       return
     }
-    const formatted = formatDisplay(computed)
-    result.value = formatted
-    lastAnswer.value = computed
-    justGotResult.value = true
-    currentInput.value = formatted
-    // 注意：不修改 expression，下次输入时由 justGotResult 触发清空
+    history.value = `${expr.value} =`
+    const f = fmt(val)
+    result.value = f
+    lastVal = val
+    gotRes = true
+    cur = f
   } catch (e) {
     result.value = '错误'
+    isErr.value = true
   }
 }
 </script>
 
 <style lang="scss" scoped>
-.calculator {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: $card-bg;
-  user-select: none;
+.calc {
+  display: flex; flex-direction: column; height: 100vh;
+  background: $card-bg; user-select: none;
 
+  // ====== 显示 ======
   &__display {
-    background: $card-bg;
-    padding: 60rpx 32rpx 24rpx;
-    border-bottom: 1rpx solid $border-color;
-    flex-shrink: 0;
+    padding: 24rpx 28rpx 12rpx; border-bottom: 1rpx solid $border-color;
+    flex-shrink: 0; position: relative;
   }
-
+  &__history { font-size: 22rpx; color: $text-light; min-height: 30rpx; font-family: monospace; }
   &__expr {
-    white-space: nowrap;
-    margin-bottom: 16rpx;
-    min-height: 48rpx;
-    &-text {
-      font-size: 32rpx;
-      color: $text-secondary;
-      font-family: 'Menlo', 'Monaco', monospace;
-    }
+    white-space: nowrap; min-height: 40rpx; margin: 6rpx 0;
+    &-text { font-size: 30rpx; color: $text-secondary; font-family: monospace; }
+  }
+  &__result {
+    text-align: right; font-size: 60rpx; font-weight: 300; color: $text-primary;
+    font-family: monospace; line-height: 1.1;
+    &--err { color: $danger; font-size: 44rpx; }
+  }
+  &__mem-indicator {
+    position: absolute; right: 28rpx; bottom: 12rpx; font-size: 20rpx;
+    color: $primary-color; font-weight: 700;
   }
 
-  &__result { text-align: right; }
-  &__result-text {
-    font-size: 72rpx;
-    font-weight: 300;
-    color: $text-primary;
-    font-family: 'Menlo', 'Monaco', monospace;
-    line-height: 1.1;
-    word-break: break-all;
+  // ====== 记忆行 ======
+  &__mem {
+    display: flex; padding: 4rpx 12rpx; background: $primary-bg; gap: 4rpx; flex-shrink: 0;
+  }
+  &__mem-btn {
+    flex: 1; text-align: center; font-size: 20rpx; color: $text-secondary;
+    padding: 6rpx 0; border-radius: 6rpx;
+    &:active { background: $border-color; }
+    &--active { color: $primary-color; font-weight: 600; }
   }
 
-  // 科学函数行
-  &__sci-row {
-    display: flex;
-    flex-wrap: wrap;
-    padding: 12rpx 16rpx;
-    background: $primary-bg;
-    gap: 10rpx;
-    flex-shrink: 0;
+  // ====== 科学行 ======
+  &__sci {
+    white-space: nowrap; padding: 6rpx 12rpx; background: $primary-bg;
+    border-bottom: 1rpx solid $border-color; flex-shrink: 0;
   }
   &__sci-btn {
-    flex: 0 0 auto;
-    min-width: 88rpx;
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: $card-bg;
-    border-radius: 12rpx;
-    box-shadow: $shadow-sm;
-    text { font-size: 22rpx; color: $text-primary; }
-    &:active { opacity: 0.7; }
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 50rpx; min-width: 66rpx; padding: 0 10rpx; margin-right: 6rpx;
+    background: $card-bg; border-radius: 8rpx; box-shadow: $shadow-sm;
+    text { font-size: 20rpx; color: $text-primary; white-space: nowrap; }
+    &:active { opacity: 0.65; }
   }
 
-  // 主按键区
+  // ====== 主键盘 ======
   &__keys {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: 12rpx 12px 24rpx;
-    gap: 8rpx;
-    background: $card-bg;
+    flex: 1; display: flex; flex-direction: column;
+    padding: 6rpx 8rpx 16rpx; gap: 6rpx;
   }
-  &__key-row { display: flex; gap: 8rpx; flex: 1; }
+  &__row { display: flex; gap: 6rpx; flex: 1; }
   &__key {
     flex: 1; display: flex; align-items: center; justify-content: center;
-    border-radius: 16rpx; font-size: 40rpx;
-    &:active { opacity: 0.6; }
-    &--num  { background: $primary-bg; color: $text-primary; font-size: 44rpx; }
-    &--op   { background: $primary-bg; color: $primary-color; font-size: 40rpx; }
-    &--eq   { background: $primary-color; color: #fff; font-size: 44rpx; }
-    &--func { background: #E8E8ED; color: $text-primary; font-size: 36rpx; }
+    border-radius: 14rpx; font-size: 36rpx;
+    &:active { opacity: 0.55; }
+    &--n  { background: $primary-bg; font-size: 40rpx; color: $text-primary; }
+    &--op { background: $primary-bg; font-size: 36rpx; color: $primary-color; }
+    &--eq { background: $primary-color; color: #fff; font-size: 40rpx; }
+    &--fn { background: #E8E8ED; font-size: 32rpx; color: $text-primary; }
   }
 }
 </style>
