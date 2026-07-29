@@ -1,7 +1,7 @@
 /**
  * 专业科学计算器
  * 行业标准：函数即时计算、运算符优先级、括号、记忆功能
- * 表达式仅含数字/运算符/括号，函数立即作用于当前值
+ * 表达式仅含数字/运算符/括号，函数调用显示为 sin(30) 并立即计算
  */
 <template>
   <view class="calc">
@@ -18,7 +18,7 @@
     <!-- ====== 记忆行 ====== -->
     <view class="calc__mem">
       <text v-for="m in memBtns" :key="m.label" class="calc__mem-btn"
-        :class="{ 'calc__mem-btn--active': m.action === 'mr' && memory !== 0 }"
+        :class="{ 'calc__mem-btn--active': m.act === 'mr' && memory !== 0 }"
         @tap="handleMem(m)">{{ m.label }}</text>
     </view>
 
@@ -106,39 +106,36 @@ let parens = 0        // 括号深度
 //  工具函数
 // ==================================================================
 
+/** 格式化数字 */
 function fmt(n) {
   if (n === '' || n === null || n === undefined) return '0'
   const num = typeof n === 'number' ? n : Number(n)
   if (!isFinite(num)) return isNaN(num) ? '错误' : (num > 0 ? '∞' : '-∞')
-  if (Math.abs(num) > 1e15 || (Math.abs(num) < 1e-12 && num !== 0)) return num.toExponential(8)
+  if (Math.abs(num) > 1e12 || (Math.abs(num) < 1e-9 && num !== 0)) return num.toExponential(8)
   const s = String(num)
   return s.length > 16 ? num.toPrecision(12) : s
 }
 
+/** 末尾是否运算符 */
 function endsWithOp(s) { return /[+\-*/%]$/.test(s.trimEnd()) }
-function trimOp(s) { return s.trimEnd().replace(/[+\-*/%]+$/, '').trimEnd() }
-function isInputEmpty() { return cur === '' }
 
-/** 当前屏幕显示的数字 */
+/** 去掉末尾运算符 */
+function trimOp(s) { return s.trimEnd().replace(/[+\-*/%]+$/, '').trimEnd() }
+
+/** 表达式是否以数字或 ) 结尾（可追加运算符） */
+function endsWithNumOrParen(s) { return /[\d)]$/.test(s.trimEnd()) }
+
+/** 当前显示值 */
 function displayNum() { return parseFloat(cur || result.value || '0') }
 
-/** 把计算结果插入表达式（替换当前数字） */
-function insertVal(v) {
-  const f = isFinite(v) ? fmt(v) : (isNaN(v) ? '错误' : '∞')
-  // 替换表达式末尾的数字
-  const m = expr.value.match(/^(.*?)([\d.]+)$/)
+/** 替换表达式末尾的数字为指定文本 */
+function replaceLastToken(replacement) {
+  const m = expr.value.match(/^(.*?)(-?[\d.]+)$/)
   if (m) {
-    expr.value = m[1] + f
-  } else if (expr.value.endsWith(')')) {
-    // 表达式以 ) 结尾，追加 × 再插入
-    expr.value += ' × ' + f
+    expr.value = m[1] + replacement
   } else {
-    expr.value = f
+    expr.value += replacement
   }
-  cur = f
-  result.value = f
-  if (isFinite(v)) lastVal = v
-  gotRes = true
 }
 
 // ==================================================================
@@ -147,20 +144,24 @@ function insertVal(v) {
 
 function onKey(k) {
   isErr.value = false
-  if (k.type === 'n')    digit(k.val)
-  else if (k.type === 'op')   op(k.val)
-  else if (k.type === 'eq')   calc()
-  else if (k.type === 'fn')   doFn(k.act)
+  if (k.type === 'n')      digit(k.val)
+  else if (k.type === 'op')  op(k.val)
+  else if (k.type === 'eq')  calc()
+  else if (k.type === 'fn')  doFn(k.act)
 }
 
 // ==================================================================
-//  数字
+//  数字输入
 // ==================================================================
 
 function digit(d) {
   if (gotRes) { expr.value = ''; cur = ''; lastVal = null; gotRes = false }
   if (d === '.' && cur.includes('.')) return
-  if (d !== '.' && cur === '0') { cur = d; expr.value = expr.value.slice(0, -1) + d; result.value = d; return }
+  // 前导零：当前"0"且按数字 → 替换
+  if (d !== '.' && cur === '0') {
+    cur = d; expr.value = expr.value.slice(0, -1) + d; result.value = d
+    return
+  }
   cur += d
   expr.value += d
   result.value = cur
@@ -176,7 +177,7 @@ function op(val) {
     expr.value = v; cur = v; gotRes = false
   }
   // 末尾已有运算符 → 替换
-  if (isInputEmpty() && expr.value) {
+  if (cur === '' && expr.value && endsWithOp(expr.value)) {
     expr.value = trimOp(expr.value) + ` ${val} `
     return
   }
@@ -214,43 +215,45 @@ function doFn(act) {
       if (parts.length) { parts[parts.length - 1] = cur; expr.value = parts.join('') }
       result.value = fmt(cur)
     }
-    return
   }
 }
 
 // ==================================================================
-//  科学函数 — 立即计算，结果插入表达式
+//  科学函数 — 立即计算，表达式显示函数调用
 // ==================================================================
 
 function handleSci(btn) {
   isErr.value = false
+
+  // --- 括号 ---
   if (btn.act === '(') {
-    if (expr.value && /[\d)\]]$/.test(expr.value.trimEnd())) expr.value += ' × '
-    expr.value += '('
-    parens++
-    cur = ''
-    result.value = '('
+    if (expr.value && /[\d)]$/.test(expr.value.trimEnd())) expr.value += ' × '
+    expr.value += '('; parens++; cur = ''; result.value = '('
     return
   }
   if (btn.act === ')') {
     if (parens <= 0) return
-    expr.value += ')'
-    parens--
-    cur = ''
-    result.value = ')'
+    expr.value += ')'; parens--; cur = ''; result.value = ')'
     return
   }
 
-  // 常数：直接插入值
+  // --- 常数 ---
   if (btn.act === 'pi') { insertConst(Math.PI, 'π'); return }
   if (btn.act === 'e')  { insertConst(Math.E, 'e');  return }
 
-  // 幂运算符
-  if (btn.act === 'pow') {
-    expr.value += '^'; cur = ''; result.value = fmt(displayNum()); return
+  // --- 若有上次结果且没有当前输入，用结果作为输入 ---
+  if (gotRes && lastVal !== null) {
+    cur = fmt(lastVal)
+    gotRes = false
   }
 
-  // 一元函数
+  // --- 幂运算符（右结合，需要继续输入指数）---
+  if (btn.act === 'pow') {
+    expr.value += '^'; cur = ''; result.value = fmt(displayNum())
+    return
+  }
+
+  // --- 一元函数计算 ---
   const n = displayNum()
   let val
 
@@ -269,16 +272,28 @@ function handleSci(btn) {
     case 'ln':    val = Math.log(n);    break
   }
 
-  if (val !== undefined) {
-    // 函数名显示在表达式末尾，但实际计算结果插入
-    expr.value += `${btn.label}`
-    insertVal(val)
-  }
+  if (val === undefined) return
+
+  // 构造函数显示文本：sin(30)
+  const display = btn.act === 'sq' ? `(${n})²`
+    : btn.act === 'cb' ? `(${n})³`
+    : `${btn.label}(${n})`
+
+  // 替换末尾数字为函数调用显示
+  replaceLastToken(display)
+
+  // 更新结果
+  const f = isFinite(val) ? fmt(val) : (isNaN(val) ? '错误' : '∞')
+  cur = f
+  result.value = f
+  lastVal = val
+  gotRes = true
 }
 
+/** 插入常数（π/e/记忆值） */
 function insertConst(v, label) {
   if (gotRes) { expr.value = ''; cur = ''; gotRes = false }
-  if (expr.value && /[\d)\]]$/.test(expr.value.trimEnd())) expr.value += ' × '
+  if (expr.value && /[\d)]$/.test(expr.value.trimEnd())) expr.value += ' × '
   expr.value += label
   cur = fmt(v)
   result.value = cur
@@ -286,10 +301,11 @@ function insertConst(v, label) {
   gotRes = true
 }
 
+/** 阶乘 */
 function factorial(n) {
   if (n < 0 || n > 170) return NaN
   if (n === 0 || n === 1) return 1
-  if (!Number.isInteger(n)) return Math.sqrt(2 * Math.PI * n) * Math.pow(n / Math.E, n)
+  if (!Number.isInteger(n)) return NaN  // 非整数阶乘无定义
   let r = 1
   for (let i = 2; i <= n; i++) r *= i
   return r
@@ -308,7 +324,7 @@ function handleMem(m) {
 }
 
 // ==================================================================
-//  计算 — 仅处理 数字+运算符+括号+%
+//  计算
 // ==================================================================
 
 const OP = /\^/g
@@ -318,19 +334,27 @@ function calc() {
   const raw = expr.value.trim()
   if (!raw || endsWithOp(raw)) return
 
+  // 若表达式含函数名（字母），说明刚执行完科学函数且还没清空
+  // 此时直接用已有的计算结果，不再重复计算
+  if (/[a-zA-Z]/.test(raw)) {
+    // 已有结果则保留，否则尝试提取数字
+    if (cur) {
+      result.value = fmt(cur)
+      gotRes = true
+    }
+    return
+  }
+
   try {
     let e = raw
       .replace(/×/g, '*').replace(/÷/g, '/')
       .replace(OP, '**')
       .replace(/--/g, '+')
       .replace(/π/g, `(${Math.PI})`)
-      // e 常数：使用 \b 单词边界（不用 lookbehind，微信引擎不支持）
       .replace(/\be\b/g, `(${Math.E})`)
-      // 百分比：5% → 5/100
-      .replace(/(\d+)%/g, '($1/100)')
 
-    // 白名单（只允许数字、运算符、括号、Math 对象）
-    const safe = e.replace(/[^0-9+\-*/.()%\s,Math.Esincotaglqrbehfp10]/g, '')
+    // 白名单过滤
+    const safe = e.replace(/[^0-9+\-*/.()%\s]/g, '')
     if (!safe.trim()) return
 
     const val = Function(`"use strict"; return (${safe})`)()
@@ -345,7 +369,7 @@ function calc() {
     lastVal = val
     gotRes = true
     cur = f
-  } catch (e) {
+  } catch {
     result.value = '错误'
     isErr.value = true
   }

@@ -13,7 +13,7 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        // 注入全局 SCSS 变量
+        silenceDeprecations: ['import', 'legacy-js-api'],
         additionalData: `@import "${path.resolve(__dirname, 'src/uni.scss').replace(/\\/g, '/')}";\n`
       }
     }
