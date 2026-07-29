@@ -131,7 +131,7 @@ function handleTabChange(key) {
 
   // 底部占位
   &__bottom-placeholder {
-    height: 120rpx;
+    height: 140rpx;
   }
 }
 </style>

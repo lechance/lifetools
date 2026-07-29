@@ -1,5 +1,5 @@
 {
-  "name": "万能工具盒",
+  "name": "万能工具派",
   "appid": "__UNI__TOOLBOX__",
   "description": "集合日常生活常用工具的微信小程序",
   "versionName": "1.0.0",
@@ -17,7 +17,7 @@
     }
   },
   "h5": {
-    "title": "万能工具盒",
+    "title": "万能工具派",
     "router": {
       "mode": "history"
     }

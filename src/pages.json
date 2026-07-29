@@ -3,7 +3,7 @@
     {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "万能工具盒",
+        "navigationBarTitleText": "万能工具派",
         "navigationBarBackgroundColor": "#FFFFFF",
         "navigationBarTextStyle": "black"
       }
@@ -315,7 +315,7 @@
   ],
   "globalStyle": {
     "navigationBarTextStyle": "black",
-    "navigationBarTitleText": "万能工具盒",
+    "navigationBarTitleText": "万能工具派",
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#F5F5F7",
     "usingComponents": true

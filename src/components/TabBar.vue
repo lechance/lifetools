@@ -1,6 +1,6 @@
 /**
  * 底部菜单栏组件 - TabBar
- * 自定义底部导航栏（替代原生 tabBar）
+ * 自定义底部导航栏（替代原生 tabBar），带活跃指示点
  * 使用：<TabBar :current="currentTab" @change="onTabChange" />
  */
 <template>
@@ -13,6 +13,8 @@
         :class="{ 'tab-bar__item--active': current === tab.key }"
         @tap="handleChange(tab.key)"
       >
+        <!-- 活跃指示点 -->
+        <view v-if="current === tab.key" class="tab-bar__dot"></view>
         <text class="tab-bar__icon">{{ tab.icon }}</text>
         <text class="tab-bar__label">{{ tab.name }}</text>
       </view>
@@ -58,8 +60,9 @@ function handleChange(key) {
     display: flex;
     align-items: center;
     justify-content: space-around;
-    padding: 8rpx 0 0;
-    height: 100rpx;
+    height: 110rpx;
+    padding: 0 0 0;
+    position: relative;
   }
 
   &__item {
@@ -69,21 +72,39 @@ function handleChange(key) {
     justify-content: center;
     flex: 1;
     height: 100%;
-    padding: 4rpx 0;
-    transition: all 0.2s;
+    padding: 0;
+    position: relative;
+    -webkit-tap-highlight-color: transparent;
+
+    &:active {
+      opacity: 0.7;
+    }
 
     &--active {
+      .tab-bar__icon {
+        transform: scale(1.15);
+      }
       .tab-bar__label {
-        color: $primary-color;
+        color: $text-primary;
         font-weight: 600;
       }
     }
   }
 
+  // 活跃指示点
+  &__dot {
+    position: absolute;
+    top: 8rpx;
+    width: 12rpx;
+    height: 12rpx;
+    border-radius: 50%;
+    background: $text-primary;
+  }
+
   &__icon {
-    font-size: 44rpx;
+    font-size: 48rpx;
     margin-bottom: 4rpx;
-    transition: transform 0.2s;
+    transition: transform 0.2s ease;
   }
 
   &__label {

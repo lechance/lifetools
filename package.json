@@ -1,7 +1,7 @@
 {
   "name": "lifetool",
   "version": "1.0.0",
-  "description": "万能工具盒 - 集合日常生活常用工具的微信小程序",
+  "description": "万能工具派 - 集合日常生活常用工具的微信小程序",
   "private": true,
   "scripts": {
     "dev:mp-weixin": "uni -p mp-weixin",
