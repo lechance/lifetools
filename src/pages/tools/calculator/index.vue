@@ -116,11 +116,11 @@ function fmt(n) {
   return s.length > 16 ? num.toPrecision(12) : s
 }
 
-/** 末尾是否运算符 */
-function endsWithOp(s) { return /[+\-*/%]$/.test(s.trimEnd()) }
+/** 末尾是否运算符（含显示符号 ×÷） */
+function endsWithOp(s) { return /[+\-*/%×÷]$/.test(s.trimEnd()) }
 
 /** 去掉末尾运算符 */
-function trimOp(s) { return s.trimEnd().replace(/[+\-*/%]+$/, '').trimEnd() }
+function trimOp(s) { return s.trimEnd().replace(/[+\-*/%×÷]+$/, '').trimEnd() }
 
 /** 表达式是否以数字或 ) 结尾（可追加运算符） */
 function endsWithNumOrParen(s) { return /[\d)]$/.test(s.trimEnd()) }
@@ -145,7 +145,7 @@ function replaceLastToken(replacement) {
 function onKey(k) {
   isErr.value = false
   if (k.type === 'n')      digit(k.val)
-  else if (k.type === 'op')  op(k.val)
+  else if (k.type === 'op')  op(k.label)
   else if (k.type === 'eq')  calc()
   else if (k.type === 'fn')  doFn(k.act)
 }
@@ -282,11 +282,13 @@ function handleSci(btn) {
   // 替换末尾数字为函数调用显示
   replaceLastToken(display)
 
-  // 更新结果
-  const f = isFinite(val) ? fmt(val) : (isNaN(val) ? '错误' : '∞')
+  // 求值完整表达式（例如 5 + sin(30) → 5.5），而非仅函数值
+  const full = safeEval(expr.value)
+  const finalVal = isFinite(full) ? full : val
+  const f = isFinite(finalVal) ? fmt(finalVal) : (isNaN(finalVal) ? '错误' : '∞')
   cur = f
   result.value = f
-  lastVal = val
+  lastVal = finalVal
   gotRes = true
 }
 
@@ -324,40 +326,53 @@ function handleMem(m) {
 }
 
 // ==================================================================
-//  计算
+//  安全求值 — 支持函数名、运算符、常数
 // ==================================================================
 
-const OP = /\^/g
+/**
+ * 将显示表达式转换为可执行的 JavaScript 表达式字符串
+ * 处理：函数名→Math.*、度数→弧度、常数替换、安全过滤
+ */
+function toEvalStr(s) {
+  return s
+    .replace(/×/g, '*').replace(/÷/g, '/').replace(/\^/g, '**')
+    .replace(/--/g, '+')
+    .replace(/π/g, `(${Math.PI})`)
+    .replace(/\be\b/g, `(${Math.E})`)
+    // 函数调用 → Math.*（度数→弧度）
+    .replace(/sin\(([^)]+)\)/g, 'Math.sin(($1)*Math.PI/180)')
+    .replace(/cos\(([^)]+)\)/g, 'Math.cos(($1)*Math.PI/180)')
+    .replace(/tan\(([^)]+)\)/g, 'Math.tan(($1)*Math.PI/180)')
+    .replace(/log\(([^)]+)\)/g, 'Math.log10($1)')
+    .replace(/ln\(([^)]+)\)/g, 'Math.log($1)')
+    .replace(/√\(([^)]+)\)/g, 'Math.sqrt($1)')
+    .replace(/∛\(([^)]+)\)/g, 'Math.cbrt($1)')
+    .replace(/\((-?[\d.]+)\)²/g, 'Math.pow($1,2)')
+    .replace(/\((-?[\d.]+)\)³/g, 'Math.pow($1,3)')
+}
+
+/** 安全过滤：只保留数字、运算符、Math 对象相关字符 */
+const SAFE_RE = /[^0-9+\-*/.()%\s,Math.sinclotagqrbefhpwPI]/g
+
+/** 求值完整表达式，返回数值或 NaN */
+function safeEval(s) {
+  const e = toEvalStr(s)
+  const safe = e.replace(SAFE_RE, '')
+  if (!safe.trim()) return NaN
+  return Function('"use strict"; return (' + safe + ')')()
+}
+
+// ==================================================================
+//  计算
+// ==================================================================
 
 function calc() {
   isErr.value = false
   const raw = expr.value.trim()
   if (!raw || endsWithOp(raw)) return
 
-  // 若表达式含函数名（字母），说明刚执行完科学函数且还没清空
-  // 此时直接用已有的计算结果，不再重复计算
-  if (/[a-zA-Z]/.test(raw)) {
-    // 已有结果则保留，否则尝试提取数字
-    if (cur) {
-      result.value = fmt(cur)
-      gotRes = true
-    }
-    return
-  }
-
   try {
-    let e = raw
-      .replace(/×/g, '*').replace(/÷/g, '/')
-      .replace(OP, '**')
-      .replace(/--/g, '+')
-      .replace(/π/g, `(${Math.PI})`)
-      .replace(/\be\b/g, `(${Math.E})`)
-
-    // 白名单过滤
-    const safe = e.replace(/[^0-9+\-*/.()%\s]/g, '')
-    if (!safe.trim()) return
-
-    const val = Function(`"use strict"; return (${safe})`)()
+    const val = safeEval(raw)
     if (!isFinite(val)) {
       result.value = isNaN(val) ? '错误' : '∞'
       isErr.value = true
