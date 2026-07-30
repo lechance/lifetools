@@ -5,7 +5,7 @@
 <template>
   <view class="led">
     <!-- ====== LED 显示区 ====== -->
-    <view class="led__screen" :style="{ background: bgColor }">
+    <view class="led__screen" :class="{ 'led__screen--fullscreen': isFullscreen }" :style="{ background: bgColor }">
       <view
         class="led__marquee"
         :class="{ 'led__marquee--running': isRunning, 'led__marquee--paused': isPaused }"
@@ -18,8 +18,13 @@
       <view class="led__border led__border--bottom"></view>
     </view>
 
+    <!-- ====== 全屏退出按钮（全屏时显示） ====== -->
+    <view v-if="isFullscreen" class="led__exit-btn" @tap="toggleFullscreen">
+      <text>✕ 退出全屏</text>
+    </view>
+
     <!-- ====== 输入区 ====== -->
-    <view class="led__input-area">
+    <view class="led__input-area" :class="{ 'led__input-area--hidden': isFullscreen }">
       <view class="led__input-row">
         <input
           class="led__input"
@@ -34,14 +39,14 @@
     </view>
 
     <!-- ====== 预设文本 ====== -->
-    <scroll-view class="led__presets" scroll-x show-scrollbar="false">
+    <scroll-view v-show="!isFullscreen" class="led__presets" scroll-x show-scrollbar="false">
       <view v-for="(t, i) in presets" :key="i" class="led__preset-tag" @tap="selectPreset(t)">
         <text>{{ t }}</text>
       </view>
     </scroll-view>
 
     <!-- ====== 控制面板 ====== -->
-    <view class="led__controls">
+    <view class="led__controls" :class="{ 'led__controls--hidden': isFullscreen }">
       <!-- 控制按钮 -->
       <view class="led__ctrl-row">
         <view class="led__ctrl-btn led__ctrl-btn--play" @tap="togglePlay">
@@ -55,6 +60,10 @@
         <view class="led__ctrl-btn" @tap="toggleDirection">
           <text>{{ direction === 'left' ? '←' : '→' }}</text>
           <text class="led__ctrl-label">{{ direction === 'left' ? '左移' : '右移' }}</text>
+        </view>
+        <view class="led__ctrl-btn led__ctrl-btn--fullscreen" @tap="toggleFullscreen">
+          <text>⛶</text>
+          <text class="led__ctrl-label">全屏</text>
         </view>
       </view>
 
@@ -131,6 +140,7 @@ const sizes = [
 
 // ========== 状态 ==========
 const inputText = ref('')
+const isFullscreen = ref(false)
 const displayText = ref('')
 const isRunning = ref(false)
 const isPaused = ref(false)
@@ -206,6 +216,15 @@ function toggleDirection() {
   if (isRunning.value) {
     isRunning.value = false
     setTimeout(() => { isRunning.value = true }, 50)
+  }
+}
+
+/** 切换全屏横屏模式 */
+function toggleFullscreen() {
+  isFullscreen.value = !isFullscreen.value
+  // 进入全屏时如果未开始，自动开始
+  if (isFullscreen.value && displayText.value && !isRunning.value) {
+    startMarquee()
   }
 }
 
@@ -449,5 +468,45 @@ function selectColor(c) {
 @keyframes marqueeScroll {
   0%   { transform: translateX(var(--from, 100%)); }
   100% { transform: translateX(var(--to, -100%)); }
+}
+
+// ====== 全屏横屏模式 ======
+.led__screen--fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  border-radius: 0;
+  z-index: 998;
+  border: none;
+  box-shadow: none;
+  .led__marquee {
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+}
+
+.led__input-area--hidden,
+.led__controls--hidden {
+  display: none;
+}
+
+.led__exit-btn {
+  position: fixed;
+  top: 24rpx;
+  right: 24rpx;
+  z-index: 999;
+  padding: 12rpx 24rpx;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 30rpx;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 24rpx;
+  backdrop-filter: blur(10rpx);
+  line-height: 1;
+  &:active {
+    background: rgba(0, 0, 0, 0.7);
+  }
 }
 </style>
