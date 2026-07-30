@@ -321,6 +321,6 @@
     "navigationBarTitleText": "万能工具派",
     "navigationBarBackgroundColor": "#FFFFFF",
     "backgroundColor": "#F5F5F7",
-    "usingComponents": true
+    "usingComponents": {}
   },
 }

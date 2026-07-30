@@ -6,7 +6,7 @@
   "versionCode": "100",
   "transformPx": false,
   "app-plus": {
-    "usingComponents": true,
+    "usingComponents": {},
     "nvueStyleCompiler": "uni-app",
     "compilerVersion": 3,
     "splashscreen": {
@@ -31,7 +31,7 @@
       "postcss": true,
       "minified": true
     },
-    "usingComponents": true,
+    "usingComponents": {},
     "permission": {},
     "requiredPrivateInfos": []
   },
