@@ -31,7 +31,7 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import QRCode from 'qrcode'
+import qrcode from 'qrcode-generator'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 
 const content = ref('')
@@ -62,8 +62,10 @@ function generate() {
 
 function drawQr(text) {
   try {
-    const qr = QRCode.create(text, { errorCorrectionLevel: level.value })
-    const size = qr.modules.size
+    const qr = qrcode(0, level.value)  // typeNumber 0 = 自动版本
+    qr.addData(text)
+    qr.make()
+    const size = qr.getModuleCount()
     const ctx = uni.createCanvasContext('qrCanvas')
     const quiet = 4  // 留白格数
     const cell = CANVAS_SIZE / (size + quiet * 2)
@@ -75,7 +77,7 @@ function drawQr(text) {
 
     for (let r = 0; r < size; r++) {
       for (let c = 0; c < size; c++) {
-        if (qr.modules.isDark(r, c)) {
+        if (qr.isDark(r, c)) {
           ctx.fillRect(margin + c * cell, margin + r * cell, cell + 0.5, cell + 0.5)
         }
       }
