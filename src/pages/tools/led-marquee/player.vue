@@ -72,9 +72,20 @@ const trackStyle = computed(() => {
   }
 })
 
-/** 返回上一页 */
+/** 返回上一页（带兜底：横屏下页面栈异常时 navigateBack 会静默失效，改用 reLaunch 强制返回） */
 function goBack() {
-  uni.navigateBack()
+  const pages = getCurrentPages()
+  if (pages.length > 1) {
+    uni.navigateBack({ delta: 1 })
+  }
+  // 兜底：若 navigateBack 未生效（仍在当前页），强制回 LED 弹幕主页面
+  setTimeout(() => {
+    const after = getCurrentPages()
+    const last = after[after.length - 1]
+    if (last && last.route && last.route.indexOf('led-marquee/player') !== -1) {
+      uni.reLaunch({ url: '/pages/tools/led-marquee/index' })
+    }
+  }, 300)
 }
 </script>
 
