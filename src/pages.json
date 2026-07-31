@@ -71,13 +71,7 @@
     {
       "path": "pages/tools/led-marquee/index",
       "style": {
-        "navigationBarTitleText": "LED弹幕",
-        "pageOrientation": "auto",    // 强制横屏 landscape横屏 / portrait竖屏 / auto自动旋转
-        "navigationStyle": "custom",       // 隐藏小程序默认顶部导航栏
-        "navigationBarTransparent": true,  // 导航栏完全透明
-        "backgroundColor": "#000000",     // 背景黑色，适配全屏黑色场景
-        "disableScroll": true              // 禁止页面滚动，防止溢出
-
+        "navigationBarTitleText": "LED弹幕"
       }
     },
     {

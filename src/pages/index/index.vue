@@ -130,6 +130,10 @@ function switchCategory(key) {
 
 /** 点击工具 */
 function handleToolTap(tool) {
+  if (!tool || !tool.path) {
+    showToast('工具数据异常，请重试')
+    return
+  }
   // 记录使用
   store.dispatch('recordUsage', {
     toolId: tool.id,
