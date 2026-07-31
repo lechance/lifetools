@@ -6,12 +6,14 @@
   <view class="led">
     <!-- ====== LED 显示区 ====== -->
     <view class="led__screen" :style="{ background: bgColor }">
-      <view
-        class="led__marquee"
-        :class="{ 'led__marquee--running': isRunning, 'led__marquee--paused': isPaused }"
-        :style="marqueeStyle"
-      >
-        <text class="led__text" :style="textStyle">{{ displayText }}</text>
+      <view class="led__marquee">
+        <view
+          class="led__track"
+          :class="{ 'led__track--running': isRunning, 'led__track--paused': isPaused }"
+          :style="trackStyle"
+        >
+          <text class="led__text" :style="textStyle">{{ displayText }}</text>
+        </view>
       </view>
       <!-- 装饰边框灯 -->
       <view class="led__border led__border--top"></view>
@@ -113,7 +115,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, nextTick, getCurrentInstance } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { showToast } from '@/utils/helpers'
 
 // ========== 预设文本 ==========
@@ -180,35 +182,12 @@ const displayText = computed(() => inputText.value.trim() ? inputText.value : pr
 
 // 页面加载时自动开始滚动（默认显示第一条预设）
 onMounted(() => {
-  measureMarquee()
   startMarquee()
 })
 
 // 动画持续时间映射（速度值 1-10 → 秒数 20-3）
 const speedMap = [20, 16, 13, 10, 8, 6.5, 5.5, 4.5, 3.5, 3]
 const speedText = computed(() => speedMap[speed.value - 1].toFixed(1) + 's')
-
-// 文字与容器实际宽度（px），用于精确滚动位移，保证长文字完整显示
-const textWidth = ref(0)
-const containerWidth = ref(0)
-const instance = getCurrentInstance()
-
-function measureMarquee() {
-  nextTick(() => {
-    const query = uni.createSelectorQuery().in(instance)
-    query.select('.led__text').boundingClientRect()
-    query.select('.led__marquee').boundingClientRect()
-    query.exec((res) => {
-      if (res && res[0]) textWidth.value = res[0].width || 0
-      if (res && res[1]) containerWidth.value = res[1].width || 0
-    })
-  })
-}
-
-// 文字内容或字号变化时重新测量
-watch([displayText, fontSize], () => {
-  measureMarquee()
-})
 
 const textStyle = computed(() => ({
   color: colorKey.value === 'rainbow' ? '#fff' : textColor.value,
@@ -217,12 +196,12 @@ const textStyle = computed(() => ({
   whiteSpace: 'nowrap'
 }))
 
-const marqueeStyle = computed(() => {
+// 滚动动画：位移百分比基于文字轨道自身宽度（= 文字宽度），任意长度文字均能完整滚动
+const trackStyle = computed(() => {
   const dur = speedMap[speed.value - 1]
-  // 起点：文字完全在容器一侧之外；终点：文字完全滚出另一侧
-  // left：右入（+容器宽）→ 左出（-文字宽）；right：相反
-  const from = direction.value === 'left' ? `${containerWidth.value}px` : `-${textWidth.value}px`
-  const to = direction.value === 'left' ? `-${textWidth.value}px` : `${containerWidth.value}px`
+  // left：从右外侧（+100%）滚到左外侧（-100%）；right：反向
+  const from = direction.value === 'left' ? '100%' : '-100%'
+  const to = direction.value === 'left' ? '-100%' : '100%'
   return {
     animationDuration: `${dur}s`,
     '--from': from,
@@ -350,6 +329,14 @@ function selectBgColor(b) {
     width: 100%;
     overflow: hidden;
     padding: 0 20rpx;
+  }
+
+  // 文字轨道：宽度即文字宽度（min-width:100% 兜底），动画施加于此
+  // translateX 百分比基于轨道自身宽度 → 任意长度文字都能完整滚出
+  &__track {
+    display: inline-block;
+    white-space: nowrap;
+    min-width: 100%;
 
     &--running {
       animation: marqueeScroll var(--duration, 8s) linear infinite;
@@ -359,9 +346,7 @@ function selectBgColor(b) {
       animation-play-state: paused;
     }
     &:not(&--running) {
-      .led__text {
-        transform: translateX(0);
-      }
+      transform: translateX(0);
     }
   }
 
