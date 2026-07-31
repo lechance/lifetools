@@ -5,7 +5,7 @@
 <template>
   <view class="led">
     <!-- ====== LED 显示区 ====== -->
-    <view class="led__screen" :class="{ 'led__screen--fullscreen': isFullscreen }" :style="{ background: bgColor }">
+    <view class="led__screen" :style="{ background: bgColor }">
       <view
         class="led__marquee"
         :class="{ 'led__marquee--running': isRunning, 'led__marquee--paused': isPaused }"
@@ -18,13 +18,8 @@
       <view class="led__border led__border--bottom"></view>
     </view>
 
-    <!-- ====== 全屏退出按钮（全屏时显示） ====== -->
-    <view v-if="isFullscreen" class="led__exit-btn" @tap="toggleFullscreen">
-      <text>✕ 退出全屏</text>
-    </view>
-
     <!-- ====== 输入区 ====== -->
-    <view class="led__input-area" :class="{ 'led__input-area--hidden': isFullscreen }">
+    <view class="led__input-area">
       <view class="led__input-row">
         <input
           class="led__input"
@@ -39,14 +34,14 @@
     </view>
 
     <!-- ====== 预设文本 ====== -->
-    <scroll-view v-show="!isFullscreen" class="led__presets" scroll-x show-scrollbar="false">
+    <scroll-view class="led__presets" scroll-x show-scrollbar="false">
       <view v-for="(t, i) in presets" :key="i" class="led__preset-tag" @tap="selectPreset(t)">
         <text>{{ t }}</text>
       </view>
     </scroll-view>
 
     <!-- ====== 控制面板 ====== -->
-    <view class="led__controls" :class="{ 'led__controls--hidden': isFullscreen }">
+    <view class="led__controls">
       <!-- 控制按钮 -->
       <view class="led__ctrl-row">
         <view class="led__ctrl-btn led__ctrl-btn--play" @tap="togglePlay">
@@ -61,10 +56,6 @@
           <text>{{ direction === 'left' ? '←' : '→' }}</text>
           <text class="led__ctrl-label">{{ direction === 'left' ? '左移' : '右移' }}</text>
         </view>
-        <view class="led__ctrl-btn led__ctrl-btn--fullscreen" @tap="toggleFullscreen">
-          <text>⛶</text>
-          <text class="led__ctrl-label">全屏</text>
-        </view>
       </view>
 
       <!-- 速度滑块 -->
@@ -75,7 +66,7 @@
         <text class="led__speed-val">{{ speedText }}</text>
       </view>
 
-      <!-- 颜色选择 -->
+      <!-- 文字颜色选择 -->
       <view class="led__color-row">
         <view
           v-for="c in colors"
@@ -84,6 +75,19 @@
           :class="{ 'led__color-dot--active': colorKey === c.key }"
           :style="{ background: c.color }"
           @tap="selectColor(c)"
+        >
+        </view>
+      </view>
+
+      <!-- 背景色选择 -->
+      <view class="led__bg-row">
+        <view
+          v-for="b in bgColors"
+          :key="b.key"
+          class="led__bg-dot"
+          :class="{ 'led__bg-dot--active': bgColor === b.color }"
+          :style="{ background: b.color }"
+          @tap="selectBgColor(b)"
         >
         </view>
       </view>
@@ -99,7 +103,7 @@
     </view>
 
     <!-- ====== 横播字幕入口 ====== -->
-    <view v-show="!isFullscreen" class="led__landscape-btn" @tap="goToPlayer">
+    <view class="led__landscape-btn" @tap="goToPlayer">
       <text class="led__landscape-icon">📺</text>
       <text class="led__landscape-label">横播字幕</text>
     </view>
@@ -124,18 +128,32 @@ const presets = [
   '圣诞快乐 🎄'
 ]
 
-// ========== 颜色方案 ==========
+// ========== 文字颜色方案 ==========
 const colors = [
-  { key: 'green',  color: '#39FF14', bg: '#0A0A0A', label: '霓虹绿' },
-  { key: 'red',    color: '#FF1744', bg: '#0A0A0A', label: '热情红' },
-  { key: 'blue',   color: '#00B0FF', bg: '#0A0A0A', label: '科技蓝' },
-  { key: 'yellow', color: '#FFEA00', bg: '#0A0A0A', label: '亮黄' },
-  { key: 'white',  color: '#FFFFFF', bg: '#0A0A0A', label: '经典白' },
-  { key: 'purple', color: '#D500F9', bg: '#0A0A0A', label: '炫紫' },
-  { key: 'cyan',   color: '#00E5FF', bg: '#0A0A0A', label: '青色' },
-  { key: 'pink',   color: '#FF4081', bg: '#0A0A0A', label: '粉色' },
-  { key: 'orange', color: '#FF9100', bg: '#0A0A0A', label: '橙色' },
-  { key: 'rainbow',color: '#fff',    bg: '#0A0A0A', label: '彩' }
+  { key: 'green',  color: '#39FF14', label: '霓虹绿' },
+  { key: 'red',    color: '#FF1744', label: '热情红' },
+  { key: 'blue',   color: '#00B0FF', label: '科技蓝' },
+  { key: 'yellow', color: '#FFEA00', label: '亮黄' },
+  { key: 'white',  color: '#FFFFFF', label: '经典白' },
+  { key: 'purple', color: '#D500F9', label: '炫紫' },
+  { key: 'cyan',   color: '#00E5FF', label: '青色' },
+  { key: 'pink',   color: '#FF4081', label: '粉色' },
+  { key: 'orange', color: '#FF9100', label: '橙色' },
+  { key: 'rainbow',color: '#fff',    label: '彩' }
+]
+
+// ========== LED 屏幕背景色方案 ==========
+const bgColors = [
+  { key: 'black',   color: '#0A0A0A', label: '纯黑' },
+  { key: 'navy',    color: '#14213D', label: '深蓝' },
+  { key: 'green',   color: '#0D2B18', label: '深绿' },
+  { key: 'maroon',  color: '#2B0D0D', label: '深红' },
+  { key: 'purple',  color: '#1A0D2B', label: '深紫' },
+  { key: 'blue',    color: '#2979FF', label: '亮蓝' },
+  { key: 'pink',    color: '#FF4081', label: '亮粉' },
+  { key: 'orange',  color: '#FF6D00', label: '亮橙' },
+  { key: 'gray',    color: '#8E8E93', label: '浅灰' },
+  { key: 'white',   color: '#FFFFFF', label: '白色' }
 ]
 
 // ========== 字号 ==========
@@ -147,7 +165,6 @@ const sizes = [
 
 // ========== 状态 ==========
 const inputText = ref('')
-const isFullscreen = ref(false)
 const displayText = ref('')
 const isRunning = ref(false)
 const isPaused = ref(false)
@@ -226,15 +243,6 @@ function toggleDirection() {
   }
 }
 
-/** 切换全屏横屏模式 */
-function toggleFullscreen() {
-  isFullscreen.value = !isFullscreen.value
-  // 进入全屏时如果未开始，自动开始
-  if (isFullscreen.value && displayText.value && !isRunning.value) {
-    startMarquee()
-  }
-}
-
 /** 跳转横屏播放页（横播字幕） */
 function goToPlayer() {
   if (!displayText.value.trim()) {
@@ -258,11 +266,15 @@ function onSpeedChange(e) {
   speed.value = e.detail.value
 }
 
-/** 选颜色 */
+/** 选文字颜色 */
 function selectColor(c) {
   colorKey.value = c.key
   textColor.value = c.color
-  bgColor.value = c.bg
+}
+
+/** 选 LED 屏幕背景色 */
+function selectBgColor(b) {
+  bgColor.value = b.color
 }
 </script>
 
@@ -281,8 +293,8 @@ function selectColor(c) {
     overflow: hidden;
     display: flex;
     align-items: center;
-    box-shadow: 0 0 40rpx rgba(57, 255, 20, 0.15), inset 0 0 60rpx rgba(0,0,0,0.3);
-    border: 4rpx solid rgba(255,255,255,0.06);
+    box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.12);
+    border: 4rpx solid rgba(0,0,0,0.08);
   }
 
   &__marquee {
@@ -436,7 +448,7 @@ function selectColor(c) {
     font-family: monospace;
   }
 
-  // 颜色选择
+  // 文字颜色选择
   &__color-row {
     display: flex;
     gap: 16rpx;
@@ -460,6 +472,38 @@ function selectColor(c) {
         font-size: 28rpx;
         color: #fff;
         text-shadow: 0 0 4rpx rgba(0,0,0,0.5);
+      }
+    }
+    &:active { transform: scale(0.9); }
+  }
+
+  // 背景色选择
+  &__bg-row {
+    display: flex;
+    gap: 16rpx;
+    margin-bottom: 24rpx;
+    flex-wrap: wrap;
+  }
+  &__bg-dot {
+    width: 56rpx; height: 56rpx;
+    border-radius: 12rpx;
+    box-shadow: 0 2rpx 6rpx rgba(0,0,0,0.15);
+    position: relative;
+
+    &--active {
+      border: 4rpx solid #007AFF;
+      box-sizing: border-box;
+
+      &::after {
+        content: '✓';
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 26rpx;
+        color: #fff;
+        text-shadow: 0 0 4rpx rgba(0,0,0,0.8);
       }
     }
     &:active { transform: scale(0.9); }
@@ -530,43 +574,4 @@ function selectColor(c) {
   100% { transform: translateX(var(--to, -100%)); }
 }
 
-// ====== 全屏横屏模式 ======
-.led__screen--fullscreen {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  border-radius: 0;
-  z-index: 998;
-  border: none;
-  box-shadow: none;
-  .led__marquee {
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-}
-
-.led__input-area--hidden,
-.led__controls--hidden {
-  display: none;
-}
-
-.led__exit-btn {
-  position: fixed;
-  top: 24rpx;
-  right: 24rpx;
-  z-index: 999;
-  padding: 12rpx 24rpx;
-  background: rgba(0, 0, 0, 0.5);
-  border-radius: 30rpx;
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 24rpx;
-  backdrop-filter: blur(10rpx);
-  line-height: 1;
-  &:active {
-    background: rgba(0, 0, 0, 0.7);
-  }
-}
 </style>
