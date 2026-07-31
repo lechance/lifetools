@@ -2,8 +2,10 @@
   <!-- 点击屏幕任意位置返回 -->
   <view class="player" @tap="goBack">
     <!-- ====== 横屏弹幕显示区 ====== -->
-    <view class="player__marquee" :style="marqueeStyle">
-      <text class="player__text" :style="textStyle">{{ text || '请输入文字' }}</text>
+    <view class="player__marquee">
+      <view class="player__track" :style="trackStyle">
+        <text class="player__text" :style="textStyle">{{ text || '请输入文字' }}</text>
+      </view>
     </view>
 
     <!-- ====== 底部轻点提示（非交互，点击会冒泡到根节点） ====== -->
@@ -58,7 +60,8 @@ const textStyle = computed(() => {
   }
 })
 
-const marqueeStyle = computed(() => {
+// 滚动动画：位移百分比基于文字轨道自身宽度（= 文字宽度），长文字也能完整滚动
+const trackStyle = computed(() => {
   const dur = speedMap[speed.value - 1] || 6.5
   const from = direction.value === 'left' ? '100%' : '-100%'
   const to = direction.value === 'left' ? '-100%' : '100%'
@@ -90,6 +93,13 @@ function goBack() {
     width: 100%;
     overflow: hidden;
     padding: 0 24rpx;
+  }
+
+  // 文字轨道：宽度即文字宽度，translateX 百分比基于自身宽度，长文字完整滚动
+  &__track {
+    display: inline-block;
+    white-space: nowrap;
+    min-width: 100%;
     animation: marqueeScroll var(--duration, 8s) linear infinite;
     animation-duration: var(--duration);
   }
