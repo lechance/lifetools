@@ -97,11 +97,18 @@
         >{{ s.label }}</text>
       </view>
     </view>
+
+    <!-- ====== 横播字幕入口 ====== -->
+    <view v-show="!isFullscreen" class="led__landscape-btn" @tap="goToPlayer">
+      <text class="led__landscape-icon">📺</text>
+      <text class="led__landscape-label">横播字幕</text>
+    </view>
   </view>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
+import { showToast } from '@/utils/helpers'
 
 // ========== 预设文本 ==========
 const presets = [
@@ -226,6 +233,24 @@ function toggleFullscreen() {
   if (isFullscreen.value && displayText.value && !isRunning.value) {
     startMarquee()
   }
+}
+
+/** 跳转横屏播放页（横播字幕） */
+function goToPlayer() {
+  if (!displayText.value.trim()) {
+    showToast('请先输入文字')
+    return
+  }
+  const query = [
+    `text=${encodeURIComponent(displayText.value)}`,
+    `color=${encodeURIComponent(colorKey.value === 'rainbow' ? '#FFFFFF' : textColor.value)}`,
+    `speed=${speed.value}`,
+    `direction=${direction.value}`,
+    `sizeKey=${sizeKey.value}`
+  ].join('&')
+  uni.navigateTo({
+    url: `/pages/tools/led-marquee/player?${query}`
+  })
 }
 
 /** 速度改变 */
@@ -461,6 +486,41 @@ function selectColor(c) {
       color: #fff;
     }
     &:active { opacity: 0.7; }
+  }
+
+  // ====== 横播字幕入口 ======
+  &__landscape-btn {
+    margin: 24rpx;
+    height: 96rpx;
+    border-radius: 20rpx;
+    background: linear-gradient(135deg, #1D1D1F 0%, #000 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12rpx;
+    box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.4s ease;
+    }
+    &:active::after {
+      transform: translateX(100%);
+    }
+  }
+  &__landscape-icon {
+    font-size: 40rpx;
+  }
+  &__landscape-label {
+    font-size: 32rpx;
+    font-weight: 600;
+    color: #fff;
   }
 }
 
