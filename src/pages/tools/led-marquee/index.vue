@@ -70,7 +70,7 @@
       <!-- 速度滑块 -->
       <view class="led__slider-row">
         <text class="led__slider-label">慢</text>
-        <slider class="led__slider" :value="speed" min="1" max="10" step="1" @change="onSpeedChange" activeColor="#007AFF" backgroundColor="#E5E5EA" block-size="16" />
+        <slider class="led__slider" :value="speed" min="1" max="10" step="1" @change="onSpeedChange" activeColor="#1D1D1F" backgroundColor="#E5E5EA" block-size="16" />
         <text class="led__slider-label">快</text>
         <text class="led__speed-val">{{ speedText }}</text>
       </view>
@@ -88,18 +88,13 @@
         </view>
       </view>
 
-      <!-- 字号调节 -->
+      <!-- 字号 -->
       <view class="led__size-row">
-        <view class="led__size-btn led__size-btn--step" @tap="decreaseFont">
-          <text>−</text>
-        </view>
-        <view class="led__size-btn led__size-btn--reset" @tap="resetFont">
-          <text>重置</text>
-        </view>
-        <view class="led__size-btn led__size-btn--step" @tap="increaseFont">
-          <text>+</text>
-        </view>
-        <text class="led__size-val">{{ fontSize }}rpx</text>
+        <text v-for="s in sizes" :key="s.key"
+          class="led__size-btn"
+          :class="{ 'led__size-btn--active': sizeKey === s.key }"
+          @tap="sizeKey = s.key"
+        >{{ s.label }}</text>
       </view>
     </view>
 
@@ -129,25 +124,26 @@ const presets = [
   '圣诞快乐 🎄'
 ]
 
-// ========== 颜色方案（浅色系） ==========
+// ========== 颜色方案 ==========
 const colors = [
-  { key: 'green',  color: '#00C853', bg: '#F0FBF2', label: '绿色' },
-  { key: 'red',    color: '#FF1744', bg: '#FFF5F7', label: '红色' },
-  { key: 'blue',   color: '#2979FF', bg: '#F0F7FF', label: '蓝色' },
-  { key: 'yellow', color: '#F9A825', bg: '#FFFDF2', label: '黄色' },
-  { key: 'dark',   color: '#1D1D1F', bg: '#F2F2F4', label: '墨色' },
-  { key: 'purple', color: '#AA00FF', bg: '#F9F0FF', label: '紫色' },
-  { key: 'cyan',   color: '#00B8D4', bg: '#F0FAFC', label: '青色' },
-  { key: 'pink',   color: '#F50057', bg: '#FFF2F6', label: '粉色' },
-  { key: 'orange', color: '#FF6D00', bg: '#FFF7F0', label: '橙色' },
-  { key: 'rainbow',color: '#FF4081', bg: 'linear-gradient(135deg, #FFF0F0, #F0F7FF, #F9F0FF)', label: '彩' }
+  { key: 'green',  color: '#39FF14', bg: '#0A0A0A', label: '霓虹绿' },
+  { key: 'red',    color: '#FF1744', bg: '#0A0A0A', label: '热情红' },
+  { key: 'blue',   color: '#00B0FF', bg: '#0A0A0A', label: '科技蓝' },
+  { key: 'yellow', color: '#FFEA00', bg: '#0A0A0A', label: '亮黄' },
+  { key: 'white',  color: '#FFFFFF', bg: '#0A0A0A', label: '经典白' },
+  { key: 'purple', color: '#D500F9', bg: '#0A0A0A', label: '炫紫' },
+  { key: 'cyan',   color: '#00E5FF', bg: '#0A0A0A', label: '青色' },
+  { key: 'pink',   color: '#FF4081', bg: '#0A0A0A', label: '粉色' },
+  { key: 'orange', color: '#FF9100', bg: '#0A0A0A', label: '橙色' },
+  { key: 'rainbow',color: '#fff',    bg: '#0A0A0A', label: '彩' }
 ]
 
-// ========== 字号（连续调节） ==========
-const FONT_MIN = 28
-const FONT_MAX = 88
-const FONT_DEFAULT = 52
-const FONT_STEP = 4
+// ========== 字号 ==========
+const sizes = [
+  { key: 'sm', label: '小', size: '36rpx' },
+  { key: 'md', label: '中', size: '52rpx' },
+  { key: 'lg', label: '大', size: '72rpx' }
+]
 
 // ========== 状态 ==========
 const inputText = ref('')
@@ -158,36 +154,20 @@ const isPaused = ref(false)
 const speed = ref(5)
 const direction = ref('left')
 const colorKey = ref('green')
-const bgColor = ref('#F0FBF2')
-const textColor = ref('#00C853')
-const fontSize = ref(FONT_DEFAULT)
+const bgColor = ref('#0A0A0A')
+const textColor = ref('#39FF14')
+const sizeKey = ref('md')
 
 // 动画持续时间映射（速度值 1-10 → 秒数 20-3）
 const speedMap = [20, 16, 13, 10, 8, 6.5, 5.5, 4.5, 3.5, 3]
 const speedText = computed(() => speedMap[speed.value - 1].toFixed(1) + 's')
 
-const textStyle = computed(() => {
-  const base = {
-    fontSize: fontSize.value + 'rpx',
-    fontWeight: 'bold',
-    whiteSpace: 'nowrap'
-  }
-  // 彩字：渐变色文字
-  if (colorKey.value === 'rainbow') {
-    return {
-      ...base,
-      background: 'linear-gradient(90deg, #FF0000, #FF8000, #FFEB3B, #00C853, #00B0FF, #AA00FF)',
-      WebkitBackgroundClip: 'text',
-      backgroundClip: 'text',
-      color: 'transparent'
-    }
-  }
-  return {
-    ...base,
-    color: textColor.value,
-    textShadow: `0 0 12rpx ${textColor.value}, 0 0 24rpx ${textColor.value}`
-  }
-})
+const textStyle = computed(() => ({
+  color: colorKey.value === 'rainbow' ? '#fff' : textColor.value,
+  fontSize: sizes.find(s => s.key === sizeKey.value).size,
+  fontWeight: 'bold',
+  whiteSpace: 'nowrap'
+}))
 
 const marqueeStyle = computed(() => {
   const dur = speedMap[speed.value - 1]
@@ -263,30 +243,14 @@ function goToPlayer() {
   }
   const query = [
     `text=${encodeURIComponent(displayText.value)}`,
-    `color=${encodeURIComponent(textColor.value)}`,
-    `colorKey=${colorKey.value}`,
+    `color=${encodeURIComponent(colorKey.value === 'rainbow' ? '#FFFFFF' : textColor.value)}`,
     `speed=${speed.value}`,
     `direction=${direction.value}`,
-    `fontSize=${fontSize.value}`
+    `sizeKey=${sizeKey.value}`
   ].join('&')
   uni.navigateTo({
     url: `/pages/tools/led-marquee/player?${query}`
   })
-}
-
-/** 减小字号 */
-function decreaseFont() {
-  fontSize.value = Math.max(FONT_MIN, fontSize.value - FONT_STEP)
-}
-
-/** 重置字号为默认（中号） */
-function resetFont() {
-  fontSize.value = FONT_DEFAULT
-}
-
-/** 增大字号 */
-function increaseFont() {
-  fontSize.value = Math.min(FONT_MAX, fontSize.value + FONT_STEP)
 }
 
 /** 速度改变 */
@@ -317,8 +281,8 @@ function selectColor(c) {
     overflow: hidden;
     display: flex;
     align-items: center;
-    box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.06), inset 0 0 40rpx rgba(0,0,0,0.03);
-    border: 2rpx solid rgba(0,0,0,0.06);
+    box-shadow: 0 0 40rpx rgba(57, 255, 20, 0.15), inset 0 0 60rpx rgba(0,0,0,0.3);
+    border: 4rpx solid rgba(255,255,255,0.06);
   }
 
   &__marquee {
@@ -352,8 +316,8 @@ function selectColor(c) {
     position: absolute; left: 0; right: 0; height: 6rpx;
     background: repeating-linear-gradient(
       90deg,
-      rgba(0,0,0,0.06) 0rpx,
-      rgba(0,0,0,0.06) 10rpx,
+      rgba(255,255,255,0.03) 0rpx,
+      rgba(255,255,255,0.03) 10rpx,
       transparent 10rpx,
       transparent 20rpx
     );
@@ -391,7 +355,7 @@ function selectColor(c) {
     flex-shrink: 0;
 
     &--primary {
-      background: #007AFF;
+      background: #1D1D1F;
       color: #fff;
     }
     &:active { opacity: 0.7; }
@@ -444,7 +408,7 @@ function selectColor(c) {
     &:active { background: #E5E5EA; }
 
     &--play {
-      background: #007AFF;
+      background: #1D1D1F;
       text:first-child { color: #fff; }
       .led__ctrl-label { color: #fff; }
     }
@@ -501,11 +465,10 @@ function selectColor(c) {
     &:active { transform: scale(0.9); }
   }
 
-  // 字号调节
+  // 字号选择
   &__size-row {
     display: flex;
     gap: 16rpx;
-    align-items: center;
   }
   &__size-btn {
     flex: 1;
@@ -515,28 +478,14 @@ function selectColor(c) {
     justify-content: center;
     background: #F5F5F7;
     border-radius: 12rpx;
-    font-size: 28rpx;
+    font-size: 24rpx;
     color: #3A3A3C;
 
-    &--step {
-      font-size: 44rpx;
-      font-weight: 600;
-      color: #007AFF;
-    }
-    &--reset {
-      background: #007AFF;
+    &--active {
+      background: #1D1D1F;
       color: #fff;
-      font-size: 26rpx;
-      font-weight: 600;
     }
     &:active { opacity: 0.7; }
-  }
-  &__size-val {
-    min-width: 88rpx;
-    font-size: 22rpx;
-    color: #8E8E93;
-    text-align: center;
-    font-family: monospace;
   }
 
   // ====== 横播字幕入口 ======
@@ -544,7 +493,7 @@ function selectColor(c) {
     margin: 24rpx;
     height: 96rpx;
     border-radius: 20rpx;
-    background: linear-gradient(135deg, #007AFF 0%, #0055CC 100%);
+    background: linear-gradient(135deg, #1D1D1F 0%, #000 100%);
     display: flex;
     align-items: center;
     justify-content: center;
