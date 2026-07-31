@@ -4,7 +4,7 @@
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 
 onLaunch(() => {
-  console.log('App Launch - 万能工具派启动')
+  console.log('App Launch - 治点工具箱启动')
 })
 
 onShow(() => {

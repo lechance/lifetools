@@ -10,7 +10,7 @@
         <text class="page-profile__avatar-text">👤</text>
       </view>
       <view class="page-profile__user-info">
-        <text class="page-profile__user-name">万能工具派用户</text>
+        <text class="page-profile__user-name">治点工具箱用户</text>
         <text class="page-profile__user-id">ID: 10000001</text>
       </view>
     </view>
@@ -88,7 +88,7 @@
       </view>
       <view class="page-profile__notice-body">
         <text class="page-profile__notice-text">
-          万能工具派是一款集合日常生活常用工具的微信小程序，目前版本为 1.0.0。我们致力于为您提供便捷、高效的工具服务。
+          治点工具箱是一款集合日常生活常用工具的微信小程序，目前版本为 1.0.0。我们致力于为您提供便捷、高效的工具服务。
         </text>
         <text class="page-profile__notice-text">
           当前为第一阶段版本，已搭建完整框架，各工具功能将在后续版本中逐步完善。如有任何建议或反馈，欢迎通过在线客服联系我们。
@@ -137,7 +137,7 @@ function handleContact() {
 
 /** 关于我们 */
 function handleAbout() {
-  showToast('万能工具派 v1.0.0')
+  showToast('治点工具箱 v1.0.0')
 }
 
 /** 鼓励我们 */

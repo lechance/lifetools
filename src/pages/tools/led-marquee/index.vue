@@ -20,17 +20,14 @@
 
     <!-- ====== 输入区 ====== -->
     <view class="led__input-area">
-      <view class="led__input-row">
-        <input
-          class="led__input"
-          v-model="inputText"
-          placeholder="输入弹幕文字..."
-          maxlength="100"
-          confirm-type="done"
-          @confirm="handleShow"
-        />
-        <view class="led__btn led__btn--primary" @tap="handleShow">显示</view>
-      </view>
+      <input
+        class="led__input"
+        v-model="inputText"
+        placeholder="输入弹幕文字，回车显示"
+        maxlength="100"
+        confirm-type="done"
+        @confirm="handleShow"
+      />
     </view>
 
     <!-- ====== 预设文本 ====== -->
@@ -92,13 +89,18 @@
         </view>
       </view>
 
-      <!-- 字号 -->
+      <!-- 字号调节 -->
       <view class="led__size-row">
-        <text v-for="s in sizes" :key="s.key"
-          class="led__size-btn"
-          :class="{ 'led__size-btn--active': sizeKey === s.key }"
-          @tap="sizeKey = s.key"
-        >{{ s.label }}</text>
+        <view class="led__size-btn led__size-btn--step" @tap="decreaseFont">
+          <text>−</text>
+        </view>
+        <view class="led__size-btn led__size-btn--reset" @tap="resetFont">
+          <text>重置</text>
+        </view>
+        <view class="led__size-btn led__size-btn--step" @tap="increaseFont">
+          <text>+</text>
+        </view>
+        <text class="led__size-val">{{ fontSize }}rpx</text>
       </view>
     </view>
 
@@ -111,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { showToast } from '@/utils/helpers'
 
 // ========== 预设文本 ==========
@@ -156,12 +158,11 @@ const bgColors = [
   { key: 'white',   color: '#FFFFFF', label: '白色' }
 ]
 
-// ========== 字号 ==========
-const sizes = [
-  { key: 'sm', label: '小', size: '36rpx' },
-  { key: 'md', label: '中', size: '52rpx' },
-  { key: 'lg', label: '大', size: '72rpx' }
-]
+// ========== 字号（连续调节） ==========
+const FONT_MIN = 28
+const FONT_MAX = 88
+const FONT_DEFAULT = 52
+const FONT_STEP = 4
 
 // ========== 状态 ==========
 const inputText = ref('')
@@ -173,7 +174,14 @@ const direction = ref('left')
 const colorKey = ref('green')
 const bgColor = ref('#0A0A0A')
 const textColor = ref('#39FF14')
-const sizeKey = ref('md')
+const fontSize = ref(FONT_DEFAULT)
+
+// 页面加载时默认显示第一条预设并开始滚动
+onMounted(() => {
+  if (!displayText.value) {
+    selectPreset(presets[0])
+  }
+})
 
 // 动画持续时间映射（速度值 1-10 → 秒数 20-3）
 const speedMap = [20, 16, 13, 10, 8, 6.5, 5.5, 4.5, 3.5, 3]
@@ -181,7 +189,7 @@ const speedText = computed(() => speedMap[speed.value - 1].toFixed(1) + 's')
 
 const textStyle = computed(() => ({
   color: colorKey.value === 'rainbow' ? '#fff' : textColor.value,
-  fontSize: sizes.find(s => s.key === sizeKey.value).size,
+  fontSize: fontSize.value + 'rpx',
   fontWeight: 'bold',
   whiteSpace: 'nowrap'
 }))
@@ -254,11 +262,26 @@ function goToPlayer() {
     `color=${encodeURIComponent(colorKey.value === 'rainbow' ? '#FFFFFF' : textColor.value)}`,
     `speed=${speed.value}`,
     `direction=${direction.value}`,
-    `sizeKey=${sizeKey.value}`
+    `fontSize=${fontSize.value}`
   ].join('&')
   uni.navigateTo({
     url: `/pages/tools/led-marquee/player?${query}`
   })
+}
+
+/** 减小字号 */
+function decreaseFont() {
+  fontSize.value = Math.max(FONT_MIN, fontSize.value - FONT_STEP)
+}
+
+/** 重置字号为默认（中号） */
+function resetFont() {
+  fontSize.value = FONT_DEFAULT
+}
+
+/** 增大字号 */
+function increaseFont() {
+  fontSize.value = Math.min(FONT_MAX, fontSize.value + FONT_STEP)
 }
 
 /** 速度改变 */
@@ -341,12 +364,9 @@ function selectBgColor(b) {
   &__input-area {
     margin: 0 24rpx 16rpx;
   }
-  &__input-row {
-    display: flex;
-    gap: 16rpx;
-  }
   &__input {
-    flex: 1;
+    display: block;
+    width: 100%;
     height: 80rpx;
     background: #fff;
     border-radius: 16rpx;
@@ -354,23 +374,6 @@ function selectBgColor(b) {
     font-size: 28rpx;
     color: #1D1D1F;
     box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
-  }
-  &__btn {
-    height: 80rpx;
-    padding: 0 40rpx;
-    border-radius: 16rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 28rpx;
-    font-weight: 600;
-    flex-shrink: 0;
-
-    &--primary {
-      background: #1D1D1F;
-      color: #fff;
-    }
-    &:active { opacity: 0.7; }
   }
 
   // ====== 预设标签 ======
@@ -509,10 +512,11 @@ function selectBgColor(b) {
     &:active { transform: scale(0.9); }
   }
 
-  // 字号选择
+  // 字号调节
   &__size-row {
     display: flex;
     gap: 16rpx;
+    align-items: center;
   }
   &__size-btn {
     flex: 1;
@@ -522,14 +526,28 @@ function selectBgColor(b) {
     justify-content: center;
     background: #F5F5F7;
     border-radius: 12rpx;
-    font-size: 24rpx;
+    font-size: 28rpx;
     color: #3A3A3C;
 
-    &--active {
+    &--step {
+      font-size: 44rpx;
+      font-weight: 600;
+      color: #1D1D1F;
+    }
+    &--reset {
       background: #1D1D1F;
       color: #fff;
+      font-size: 26rpx;
+      font-weight: 600;
     }
     &:active { opacity: 0.7; }
+  }
+  &__size-val {
+    min-width: 88rpx;
+    font-size: 22rpx;
+    color: #8E8E93;
+    text-align: center;
+    font-family: monospace;
   }
 
   // ====== 横播字幕入口 ======

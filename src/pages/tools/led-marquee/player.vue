@@ -22,17 +22,13 @@ const text = ref('')
 const color = ref('#39FF14')
 const speed = ref(5)
 const direction = ref('left')
-const sizeKey = ref('md')
+const fontSizePx = ref(96)
 
 // 动画持续时间映射（速度值 1-10 → 秒数 20-3），与主页面保持一致
 const speedMap = [20, 16, 13, 10, 8, 6.5, 5.5, 4.5, 3.5, 3]
 
-// 横屏字号映射（px）
-const sizeMap = {
-  sm: 60,
-  md: 96,
-  lg: 140
-}
+// 默认字号（rpx），与主页面一致
+const FONT_DEFAULT_RPX = 52
 
 // ========== 读取 URL 参数 ==========
 onLoad((options) => {
@@ -41,7 +37,13 @@ onLoad((options) => {
   if (options.color) color.value = decodeURIComponent(options.color)
   if (options.speed) speed.value = parseInt(options.speed, 10)
   if (options.direction) direction.value = options.direction
-  if (options.sizeKey) sizeKey.value = options.sizeKey
+  if (options.fontSize) {
+    // rpx → 横屏 px，放大显示
+    const rpx = parseInt(options.fontSize, 10) || FONT_DEFAULT_RPX
+    const sys = uni.getSystemInfoSync()
+    const pxPerRpx = sys.windowWidth / 750
+    fontSizePx.value = Math.round(rpx * pxPerRpx * 1.8)
+  }
 })
 
 // ========== 样式计算 ==========
@@ -49,7 +51,7 @@ const textStyle = computed(() => {
   const c = color.value
   return {
     color: c,
-    fontSize: (sizeMap[sizeKey.value] || sizeMap.md) + 'px',
+    fontSize: fontSizePx.value + 'px',
     fontWeight: 'bold',
     whiteSpace: 'nowrap',
     textShadow: `0 0 20px ${c}, 0 0 40px ${c}`
