@@ -49,14 +49,14 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['tap', 'favorite'])
+const emit = defineEmits(['select', 'favorite'])
 
 function isFav(toolId) {
   return props.favorites.includes(toolId)
 }
 
 function handleTap(tool) {
-  emit('tap', tool)
+  emit('select', tool)
 }
 
 function handleFavorite(tool) {

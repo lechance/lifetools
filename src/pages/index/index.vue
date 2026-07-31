@@ -43,7 +43,7 @@
     <ToolGrid
       :tools="filteredTools"
       :favorites="favorites"
-      @tap="handleToolTap"
+      @select="handleToolTap"
       @favorite="handleFavorite"
     />
 
