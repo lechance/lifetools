@@ -2,7 +2,7 @@
   <view class="page">
     <view class="card">
       <text class="label">选项（每行一个）</text>
-      <textarea class="options-input" v-model="optionsText" placeholder="每行输入一个选项&#10;例如：&#10;张三&#10;李四&#10;王五" maxlength="500" />
+      <textarea class="options-input" v-model="optionsText" placeholder="每行输入一个选项，如：张三/李四/王五" maxlength="500" />
       <view class="quick-tips">
         <text class="quick-tip" @tap="fillDemo">示例</text>
         <text class="quick-tip" @tap="optionsText = ''">清空</text>

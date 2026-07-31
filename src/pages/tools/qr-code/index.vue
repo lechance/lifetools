@@ -31,7 +31,7 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import qrcode from 'qrcode-generator'
+import qrcode from '@/utils/qrcode'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 
 const content = ref('')
