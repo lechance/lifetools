@@ -1,18 +1,14 @@
 <template>
-  <view class="player">
+  <!-- 点击屏幕任意位置返回 -->
+  <view class="player" @tap="goBack">
     <!-- ====== 横屏弹幕显示区 ====== -->
     <view class="player__marquee" :style="marqueeStyle">
       <text class="player__text" :style="textStyle">{{ text || '请输入文字' }}</text>
     </view>
 
-    <!-- ====== 返回按钮 ====== -->
-    <view class="player__back" @tap="goBack">
-      <text>✕</text>
-    </view>
-
-    <!-- ====== 底部轻点提示 ====== -->
-    <view class="player__hint" @tap="goBack">
-      <text>轻点返回</text>
+    <!-- ====== 底部轻点提示（非交互，点击会冒泡到根节点） ====== -->
+    <view class="player__hint">
+      <text>轻点屏幕返回</text>
     </view>
   </view>
 </template>
@@ -99,29 +95,6 @@ function goBack() {
     display: inline-block;
     letter-spacing: 12rpx;
     line-height: 1.3;
-  }
-
-  // ====== 返回按钮 ======
-  &__back {
-    position: fixed;
-    top: 24rpx;
-    left: 24rpx;
-    z-index: 10;
-    width: 64rpx;
-    height: 64rpx;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    text {
-      color: rgba(255, 255, 255, 0.7);
-      font-size: 32rpx;
-    }
-    &:active {
-      background: rgba(255, 255, 255, 0.2);
-    }
   }
 
   // ====== 底部提示 ======
