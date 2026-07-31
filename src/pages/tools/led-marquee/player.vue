@@ -28,7 +28,7 @@ const fontSizePx = ref(96)
 const speedMap = [20, 16, 13, 10, 8, 6.5, 5.5, 4.5, 3.5, 3]
 
 // 默认字号（rpx），与主页面一致
-const FONT_DEFAULT_RPX = 52
+const FONT_DEFAULT_RPX = 88
 
 // ========== 读取 URL 参数 ==========
 onLoad((options) => {

@@ -160,8 +160,8 @@ const bgColors = [
 
 // ========== 字号（连续调节） ==========
 const FONT_MIN = 28
-const FONT_MAX = 120
-const FONT_DEFAULT = 52
+const FONT_MAX = 200
+const FONT_DEFAULT = 88
 const FONT_STEP = 4
 
 // ========== 状态 ==========
@@ -306,7 +306,7 @@ function selectBgColor(b) {
 .led {
   min-height: 100vh;
   background: #F5F5F7;
-  padding-bottom: calc(132rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 
   // ====== LED 屏幕 ======
   &__screen {
@@ -551,43 +551,46 @@ function selectBgColor(b) {
     font-family: monospace;
   }
 
-  // ====== 横播字幕入口（固定贴底） ======
+  // ====== 横播字幕入口（悬浮底部） ======
   &__landscape-btn {
     position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
+    bottom: calc(24rpx + env(safe-area-inset-bottom));
+    left: 24rpx;
+    right: 24rpx;
     z-index: 100;
     height: 112rpx;
-    padding-bottom: env(safe-area-inset-bottom);
-    border-radius: 0;
+    border-radius: 24rpx;
     background: linear-gradient(135deg, #1D1D1F 0%, #000 100%);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12rpx;
-    box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.15);
+    gap: 14rpx;
+    box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.25);
     overflow: hidden;
 
     &::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
       transform: translateX(-100%);
       transition: transform 0.4s ease;
     }
     &:active::after {
       transform: translateX(100%);
     }
+    &:active {
+      transform: scale(0.98);
+    }
   }
   &__landscape-icon {
-    font-size: 40rpx;
+    font-size: 44rpx;
   }
   &__landscape-label {
     font-size: 32rpx;
     font-weight: 600;
     color: #fff;
+    letter-spacing: 4rpx;
   }
 }
 
