@@ -43,9 +43,6 @@ onLoad((options) => {
     const sys = uni.getSystemInfoSync()
     const pxPerRpx = sys.windowWidth / 750
     fontSizePx.value = Math.round(rpx * pxPerRpx * 1.8)
-    // 封顶：不超过横屏高度 70%，避免文字被裁剪
-    const maxPx = Math.round(sys.windowHeight * 0.7)
-    fontSizePx.value = Math.min(fontSizePx.value, maxPx)
   }
 })
 

@@ -5,7 +5,7 @@
 <template>
   <view class="led">
     <!-- ====== LED 显示区 ====== -->
-    <view class="led__screen" :style="{ background: bgColor, height: screenHeight }">
+    <view class="led__screen" :style="{ background: bgColor }">
       <view
         class="led__marquee"
         :class="{ 'led__marquee--running': isRunning, 'led__marquee--paused': isPaused }"
@@ -203,11 +203,6 @@ const marqueeStyle = computed(() => {
     '--from': from,
     '--to': to
   }
-})
-
-// LED 屏幕高度随字号自适应，避免大字被裁剪（行高 1.4 + 上下余量）
-const screenHeight = computed(() => {
-  return Math.max(240, Math.ceil(fontSize.value * 1.6)) + 'rpx'
 })
 
 /** 选预设文本（填入输入框，LED 实时同步显示） */
