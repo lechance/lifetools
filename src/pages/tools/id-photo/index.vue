@@ -1,22 +1,211 @@
-/**
- * 证件照制作 - 工具占位页面
- * 第二阶段实现具体功能
- */
 <template>
-  <view class="tool-container">
-    <view class="tool-placeholder">
-      <view class="tool-icon">📷</view>
-      <view class="tool-title">证件照制作</view>
-      <view class="tool-desc">功能开发中，敬请期待</view>
-      <view class="tool-badge">即将上线</view>
+  <view class="page">
+    <view class="toolbar">
+      <button class="btn btn--primary" @tap="chooseImage">{{ imagePath ? '重新选择' : '选择图片' }}</button>
+    </view>
+
+    <view class="empty" v-if="!imagePath">
+      <text class="empty-icon">📷</text>
+      <text class="empty-text">选择一张正面照制作证件照</text>
+    </view>
+
+    <view v-if="imagePath" class="card">
+      <view class="canvas-wrap">
+        <canvas canvas-id="idphotoCanvas" id="idphotoCanvas" class="idphoto-canvas"
+          :style="{ width: canvasW + 'px', height: canvasH + 'px' }"></canvas>
+      </view>
+
+      <view class="row">
+        <text class="row-label">尺寸</text>
+        <view class="seg">
+          <view class="seg-item" :class="{ 'seg-item--active': sizeKey === '1inch' }" @tap="selectSize('1inch')">一寸</view>
+          <view class="seg-item" :class="{ 'seg-item--active': sizeKey === '2inch' }" @tap="selectSize('2inch')">二寸</view>
+        </view>
+      </view>
+      <view class="row">
+        <text class="row-label">底色</text>
+        <view class="bg-row">
+          <view v-for="b in bgColors" :key="b.key" class="bg-dot" :class="{ 'bg-dot--active': bgColor === b.color }"
+            :style="{ background: b.color }" @tap="selectBg(b.color)"></view>
+        </view>
+      </view>
+
+      <button class="btn" @tap="saveImage">保存图片</button>
     </view>
   </view>
 </template>
 
 <script setup>
-// 证件照制作 - 待实现
+import { ref, nextTick } from 'vue'
+import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
+
+// 一寸 295x413，二寸 413x579
+const SIZES = {
+  '1inch': { w: 295, h: 413 },
+  '2inch': { w: 413, h: 579 },
+}
+const bgColors = [
+  { key: 'red', color: '#D9001B' },
+  { key: 'blue', color: '#2E5C99' },
+  { key: 'white', color: '#FFFFFF' },
+]
+
+const imagePath = ref('')
+const sizeKey = ref('1inch')
+const bgColor = ref('#D9001B')
+const canvasW = ref(240)
+const canvasH = ref(336)
+
+function chooseImage() {
+  uni.chooseImage({
+    count: 1,
+    success: (res) => {
+      imagePath.value = res.tempFilePaths[0]
+      calcCanvas()
+      nextTick(() => draw())
+    }
+  })
+}
+
+function calcCanvas() {
+  const s = SIZES[sizeKey.value]
+  const ratio = s.w / s.h
+  if (ratio >= 1) { canvasW.value = 240; canvasH.value = Math.round(240 / ratio) }
+  else { canvasH.value = 340; canvasW.value = Math.round(340 * ratio) }
+}
+
+function selectSize(key) {
+  sizeKey.value = key
+  calcCanvas()
+  nextTick(() => draw())
+}
+
+function selectBg(color) {
+  bgColor.value = color
+  draw()
+}
+
+function draw() {
+  const s = SIZES[sizeKey.value]
+  const ctx = uni.createCanvasContext('idphotoCanvas')
+  // 背景
+  ctx.setFillStyle(bgColor.value)
+  ctx.fillRect(0, 0, canvasW.value, canvasH.value)
+
+  // 图片按证件照比例居中裁剪绘制
+  const targetRatio = s.w / s.h
+  ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
+  ctx.draw(false, () => {})
+}
+
+function saveImage() {
+  showLoading('生成中...')
+  // 用原尺寸重绘
+  const s = SIZES[sizeKey.value]
+  const ctx = uni.createCanvasContext('idphotoCanvas')
+  ctx.setFillStyle(bgColor.value)
+  ctx.fillRect(0, 0, s.w, s.h)
+  ctx.drawImage(imagePath.value, 0, 0, s.w, s.h)
+  ctx.draw(false, () => {
+    uni.canvasToTempFilePath({
+      canvasId: 'idphotoCanvas',
+      success: (res) => {
+        hideLoading()
+        // #ifdef H5
+        const link = document.createElement('a')
+        link.href = res.tempFilePath
+        link.download = 'idphoto.jpg'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        showSuccess('已下载')
+        // #endif
+        // #ifdef MP-WEIXIN
+        uni.saveImageToPhotosAlbum({
+          filePath: res.tempFilePath,
+          success: () => showSuccess('已保存到相册'),
+          fail: () => showToast('保存失败')
+        })
+        // #endif
+      },
+      fail: () => { hideLoading(); showToast('生成失败') }
+    })
+  })
+}
 </script>
 
 <style lang="scss" scoped>
-// 样式已在 uni.scss 中定义
+.page {
+  min-height: 100vh;
+  background: #F5F5F7;
+  padding: 24rpx;
+}
+.toolbar { margin-bottom: 24rpx; }
+.btn {
+  width: 100%;
+  margin-top: 20rpx;
+  background: #1D1D1F;
+  color: #fff;
+  border: none;
+  border-radius: 16rpx;
+  padding: 20rpx 0;
+  font-size: 30rpx;
+  &:active { opacity: 0.8; }
+  &--primary { margin-top: 0; }
+}
+.empty {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 100rpx 40rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16rpx;
+}
+.empty-icon { font-size: 80rpx; }
+.empty-text { font-size: 28rpx; color: #8E8E93; }
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+}
+.canvas-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20rpx;
+}
+.idphoto-canvas { border-radius: 8rpx; }
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12rpx 0;
+}
+.row-label { font-size: 26rpx; color: #86868B; }
+.seg {
+  display: flex;
+  gap: 12rpx;
+}
+.seg-item {
+  padding: 10rpx 28rpx;
+  background: #F5F5F7;
+  border-radius: 10rpx;
+  font-size: 24rpx;
+  color: #3A3A3C;
+  &:active { opacity: 0.7; }
+  &--active { background: #1D1D1F; color: #fff; }
+}
+.bg-row {
+  display: flex;
+  gap: 14rpx;
+}
+.bg-dot {
+  width: 52rpx;
+  height: 52rpx;
+  border-radius: 10rpx;
+  border: 2rpx solid #E5E5EA;
+  &:active { transform: scale(0.9); }
+  &--active { border: 4rpx solid #1D1D1F; }
+}
 </style>
