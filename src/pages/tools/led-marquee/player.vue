@@ -56,7 +56,7 @@ const textStyle = computed(() => {
     fontSize: fontSizePx.value + 'px',
     fontWeight: 'bold',
     whiteSpace: 'nowrap',
-    textShadow: `0 0 20px ${c}, 0 0 40px ${c}`
+    textShadow: `0 0 16px ${c}`
   }
 })
 
@@ -96,10 +96,12 @@ function goBack() {
   }
 
   // 文字轨道：宽度即文字宽度，translateX 百分比基于自身宽度，长文字完整滚动
+  // will-change 提升合成层，滚动只做 GPU 平移，避免每帧重绘文字/阴影
   &__track {
     display: inline-block;
     white-space: nowrap;
     min-width: 100%;
+    will-change: transform;
     animation: marqueeScroll var(--duration, 8s) linear infinite;
     animation-duration: var(--duration);
   }

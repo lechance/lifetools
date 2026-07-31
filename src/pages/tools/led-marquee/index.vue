@@ -333,10 +333,12 @@ function selectBgColor(b) {
 
   // 文字轨道：宽度即文字宽度（min-width:100% 兜底），动画施加于此
   // translateX 百分比基于轨道自身宽度 → 任意长度文字都能完整滚出
+  // will-change 提升合成层，滚动只做 GPU 平移，避免每帧重绘文字/阴影
   &__track {
     display: inline-block;
     white-space: nowrap;
     min-width: 100%;
+    will-change: transform;
 
     &--running {
       animation: marqueeScroll var(--duration, 8s) linear infinite;
@@ -352,7 +354,7 @@ function selectBgColor(b) {
 
   &__text {
     display: inline-block;
-    text-shadow: 0 0 20rpx currentColor, 0 0 40rpx currentColor;
+    text-shadow: 0 0 16rpx currentColor;
     letter-spacing: 8rpx;
     line-height: 1.4;
   }
