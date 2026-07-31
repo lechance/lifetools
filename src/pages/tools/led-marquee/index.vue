@@ -11,7 +11,7 @@
         :class="{ 'led__marquee--running': isRunning, 'led__marquee--paused': isPaused }"
         :style="marqueeStyle"
       >
-        <text class="led__text" :style="textStyle">{{ displayText || '请输入文字' }}</text>
+        <text class="led__text" :style="textStyle">{{ displayText }}</text>
       </view>
       <!-- 装饰边框灯 -->
       <view class="led__border led__border--top"></view>
@@ -160,13 +160,12 @@ const bgColors = [
 
 // ========== 字号（连续调节） ==========
 const FONT_MIN = 28
-const FONT_MAX = 88
+const FONT_MAX = 120
 const FONT_DEFAULT = 52
 const FONT_STEP = 4
 
 // ========== 状态 ==========
 const inputText = ref('')
-const displayText = ref('')
 const isRunning = ref(false)
 const isPaused = ref(false)
 const speed = ref(5)
@@ -176,11 +175,12 @@ const bgColor = ref('#0A0A0A')
 const textColor = ref('#39FF14')
 const fontSize = ref(FONT_DEFAULT)
 
-// 页面加载时默认显示第一条预设并开始滚动
+// 显示内容：实时跟随输入框，为空时显示第一条预设
+const displayText = computed(() => inputText.value.trim() ? inputText.value : presets[0])
+
+// 页面加载时自动开始滚动（默认显示第一条预设）
 onMounted(() => {
-  if (!displayText.value) {
-    selectPreset(presets[0])
-  }
+  startMarquee()
 })
 
 // 动画持续时间映射（速度值 1-10 → 秒数 20-3）
@@ -205,17 +205,18 @@ const marqueeStyle = computed(() => {
   }
 })
 
-/** 选预设文本 */
+/** 选预设文本（填入输入框，LED 实时同步显示） */
 function selectPreset(t) {
   inputText.value = t
-  displayText.value = t
   startMarquee()
 }
 
-/** 点击显示 */
+/** 回车：开始滚动（显示内容已与输入框实时同步） */
 function handleShow() {
-  if (!inputText.value.trim()) return
-  displayText.value = inputText.value
+  if (!inputText.value.trim()) {
+    showToast('请输入文字')
+    return
+  }
   startMarquee()
 }
 
@@ -305,7 +306,7 @@ function selectBgColor(b) {
 .led {
   min-height: 100vh;
   background: #F5F5F7;
-  padding-bottom: 40rpx;
+  padding-bottom: calc(132rpx + env(safe-area-inset-bottom));
 
   // ====== LED 屏幕 ======
   &__screen {
@@ -550,18 +551,22 @@ function selectBgColor(b) {
     font-family: monospace;
   }
 
-  // ====== 横播字幕入口 ======
+  // ====== 横播字幕入口（固定贴底） ======
   &__landscape-btn {
-    margin: 24rpx;
-    height: 96rpx;
-    border-radius: 20rpx;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    height: 112rpx;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-radius: 0;
     background: linear-gradient(135deg, #1D1D1F 0%, #000 100%);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12rpx;
-    box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.2);
-    position: relative;
+    box-shadow: 0 -4rpx 16rpx rgba(0,0,0,0.15);
     overflow: hidden;
 
     &::after {
