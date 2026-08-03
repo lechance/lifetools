@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-"万能工具派" — 微信小程序，集合日常生活常用工具。uni-app 3.x (Vue 3 + Vite) 构建，编译到微信小程序和 H5。
+"治点工具箱" — 微信小程序，集合日常生活常用工具。uni-app 3.x (Vue 3 + Vite) 构建，编译到微信小程序和 H5。
+
+**48 个工具已全部实现**（无占位页面），覆盖：热门、生活、娱乐、图片、计算、实用六大分类。
 
 ## Commands
 
@@ -22,63 +24,59 @@ npm run build:mp-weixin
 npm run dev:mp-weixin
 ```
 
-**注意：** 构建前需在 `src/manifest.json` 中配置 `mp-weixin.appid` 为真实 AppID。
-H5 构建产物用于部署到 web 服务器；mp-weixin 产物用微信开发者工具打开。
+**注意：**
+- 构建前需在 `src/manifest.json` 配置 `mp-weixin.appid` 为真实 AppID（当前为占位 `wx0000000000000000`）
+- 微信小程序产物 `dist/build/mp-weixin/` 用微信开发者工具打开
+- 依赖极少：无外部二维码库（`src/utils/qrcode.js` 为内联源码），仅 weather/汇率两工具用外部 API
 
 ## Architecture
 
-### Page Routing (`src/pages.json`)
+### 工具实现模式
 
-- 主页面：`pages/index/index`（工具列表）、`pages/coupons/index`（卡券）、`pages/profile/index`（我的）
-- 自定义底部 TabBar（非原生 tabBar），通过 `uni.reLaunch()` 切换页面
-- 48 个工具页面：`pages/tools/{tool-id}/index`（第一阶段为占位页面）
+所有工具都是**独立页面** `src/pages/tools/{id}/index.vue`（模板 + script setup + scoped SCSS 三合一），纯前端实现。按类型分几种模式：
 
-### Directory Structure
+| 模式 | 涉及工具 | 关键实现 |
+|------|---------|---------|
+| 表单计算 | BMI/房贷/个税/进制等 | `input` + `picker` + 本地计算 |
+| 本地存储 | 待办/备忘/生理期/日历日程 | `uni.getStorageSync/setStorageSync` |
+| Canvas 图片 | 压缩/裁剪/滤镜/拼接/取色/表情包/证件照/头像 | `uni.createCanvasContext` + `canvasToTempFilePath` 导出 |
+| 传感器 | 计步/分贝/尺子 | `uni.startAccelerometer` / `uni.getRecorderManager` |
+| 外部 API | 天气/汇率 | `uni.request` 调 `wttr.in` / `open.er-api.com` |
 
-```
-src/
-├── components/        # 公共组件
-│   ├── TabBar.vue          # 底部菜单栏
-│   ├── SearchBar.vue       # 搜索框（防抖）
-│   ├── CategoryNav.vue     # 分类标签（横向滚动）
-│   ├── ToolGrid.vue        # 工具网格（3列）
-│   └── CouponCard.vue      # 卡券卡片
-├── pages/
-│   ├── index/              # 首页：搜索+分类+网格+最近使用
-│   ├── coupons/            # 卡券列表+领取
-│   ├── profile/            # 用户信息+菜单+统计
-│   └── tools/{id}/         # 各工具页面（占位）
-├── utils/
-│   ├── tools-data.js       # 工具元数据（名称、图标、分类）
-│   ├── storage.js          # 本地存储封装（收藏、记录、搜索历史）
-│   └── helpers.js          # 通用函数（防抖、节流、提示等）
-├── store/index.js          # Vuex 状态管理
-├── uni.scss                # 全局样式变量+CSS自定义属性
-├── App.vue                 # 应用入口
-└── main.js                 # 初始化
-```
+### 关键工具文件
 
-### Data Flow
+- `src/utils/tools-data.js` — 工具元数据（名称、图标、分类），`getAllTools()` / `getToolById()` / `getToolsByCategory()` / `searchTools()`
+- `src/utils/storage.js` — 收藏、使用记录、搜索历史的本地存储封装
+- `src/utils/helpers.js` — `debounce`、`showToast`、`showModal` 等通用函数
+- `src/utils/qrcode.js` — **内联的 QR 编码源码**（零依赖，勿改导出方式）
+- `src/pages.json` — 页面路由 + 全局导航栏样式
+
+### 外部 API 域名
+
+天气工具用 `wttr.in`，汇率工具用 `open.er-api.com`。**H5 直接可用**；微信小程序需在公众平台把这些域名加入 request 合法域名白名单，否则请求失败。
+
+### 二维码工具
+
+qr-code 工具用 `src/utils/qrcode.js` 生成矩阵，`uni.createCanvasContext` 绘制。**该文件是内联的第三方源码**，为 ESM 兼容在文件末尾加了 `export default qrcode`——不要把它改回 npm 依赖，否则小程序构建会因外部依赖解析失败。
+
+## Data Flow
 
 - **工具数据**：`tools-data.js` 定义所有工具元数据，导出按分类/搜索过滤的函数
-- **持久化**：`storage.js` 封装 `uni.getStorageSync/setStorageSync`，管理收藏ID列表、使用记录（最近50条）、搜索历史
-- **状态管理**：Vuex store 同步持久化数据，提供 mutations/actions/getters，页面通过 `useStore()` 访问
-- **收藏**：`getFavorites()` → 收藏ID数组 → `ToolGrid` 组件通过 props 接收 → 用户点击触发 `toggleFavorite` mutation
+- **持久化**：`storage.js` 封装 `uni.getStorageSync/setStorageSync`，管理收藏ID列表、使用记录（最近50条）、搜索历史；工具页面自用数据（待办/备忘/日历）用独立的 `lifetool_*` key
+- **状态管理**：Vuex store 同步持久化数据，页面通过 `useStore()` 访问
 
-### Adding a New Tool
+## Adding a New Tool
 
-1. 在 `src/utils/tools-data.js` 对应分类数组中添加工具条目（`{ id, name, icon, color }`）
-2. 创建 `src/pages/tools/{id}/index.vue`（可直接复制现有占位页面模板）
-3. 在 `src/pages.json` 中添加对应页面路由配置
+1. 在 `src/utils/tools-data.js` 对应分类数组添加工具条目（`{ id, name, icon, color }`）
+2. 创建 `src/pages/tools/{id}/index.vue`（复制已实现工具的页面结构）
+3. 在 `src/pages.json` 添加页面路由
 
-### Styling
+## Styling
 
-- 全局 SCSS 变量在 `uni.scss` 中定义（中性灰色调，#1D1D1F 为主色）
-- CSS 自定义属性（`var(--primary-color)` 等）全局可用
-- 所有组件使用 `<style lang="scss" scoped>`
-- 组件通过 `vite.config.js` 的 `additionalData` 自动注入 `uni.scss` 变量
-- 工具卡片为纯白简约设计，不使用背景色
+- 全局 SCSS 变量在 `uni.scss`（中性灰 `#F5F5F7` 背景、`#1D1D1F` 主色、`#007AFF` 链接色）
+- 所有页面用 `<style lang="scss" scoped>`，工具页面统一浅灰背景 + 白色圆角卡片
+- 工具页面类名前缀用工具缩写（如 `rd__`、`led__`），避免类名冲突
 
-### Tab Switching
+## Tab Switching
 
-三个主页面使用**自定义 TabBar 组件**（非原生 `tabBar`），点击触发 `@change` 事件，通过 `uni.reLaunch()` 进行页面切换以清除导航栈。各页面 `handleTabChange` 中排除当前 tab 不做操作。
+三个主页面使用**自定义 TabBar 组件**（非原生 `tabBar`），点击触发 `@change` 事件，通过 `uni.reLaunch()` 切换页面以清除导航栈。

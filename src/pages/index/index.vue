@@ -1,7 +1,7 @@
 /**
  * 首页 - 工具列表
  * 包含：搜索框、分类导航、工具网格、底部菜单栏
- * 支持搜索过滤、分类切换、收藏
+ * 支持搜索过滤、分类左右滑动切换、长按收藏
  */
 <template>
   <view class="page-index">
@@ -19,39 +19,34 @@
       @change="switchCategory"
     />
 
-    <!-- 最近使用（当 searchQuery 为空且在热门分类下时显示） -->
-    <view v-if="!searchQuery && currentCategory === 'hot' && recentList.length > 0" class="page-index__section">
-      <view class="page-index__section-header">
-        <text class="page-index__section-title">🕐 最近使用</text>
-      </view>
-      <scroll-view class="page-index__recent-scroll" scroll-x show-scrollbar="false">
-        <view
-          v-for="tool in recentList"
-          :key="tool.id"
-          class="page-index__recent-item"
-          @tap="handleToolTap(tool)"
-        >
-          <view class="page-index__recent-icon">
-            <text>{{ tool.icon }}</text>
-          </view>
-          <text class="page-index__recent-name">{{ tool.name }}</text>
-        </view>
-      </scroll-view>
-    </view>
+    <!-- 搜索模式：独立可滚动区域展示搜索结果 -->
+    <scroll-view
+      v-if="searchQuery"
+      class="page-index__panel-scroll"
+      scroll-y
+      enhanced
+      show-scrollbar="false"
+    >
+      <ToolGrid :tools="searchResults" @select="handleToolTap" @favorite="handleFavorite" />
+    </scroll-view>
 
-    <!-- 工具网格 -->
-    <ToolGrid
-      :tools="filteredTools"
-      :favorites="favorites"
-      @select="handleToolTap"
-      @favorite="handleFavorite"
-    />
+    <!-- 分类模式：swiper 左右滑动切换分类，高度固定占满剩余空间，面板内部各自滚动 -->
+    <swiper
+      v-else
+      class="page-index__swiper"
+      :current="categoryIndex"
+      :duration="250"
+      @change="onSwiperChange"
+    >
+      <swiper-item v-for="cat in panels" :key="cat.key" class="page-index__panel">
+        <scroll-view class="page-index__panel-scroll" scroll-y enhanced show-scrollbar="false">
+          <ToolGrid :tools="cat.tools" @select="handleToolTap" @favorite="handleFavorite" />
+        </scroll-view>
+      </swiper-item>
+    </swiper>
 
     <!-- 底部菜单栏 -->
     <TabBar :current="currentTab" @change="handleTabChange" />
-
-    <!-- 底部占位（防止内容被 TabBar 遮挡） -->
-    <view class="page-index__bottom-placeholder"></view>
   </view>
 </template>
 
@@ -65,10 +60,8 @@ import TabBar from '@/components/TabBar.vue'
 import {
   CATEGORIES,
   getToolsByCategory,
-  searchTools,
-  getToolById
+  searchTools
 } from '@/utils/tools-data'
-import { addRecord, getRecords } from '@/utils/storage'
 import { showToast } from '@/utils/helpers'
 
 const store = useStore()
@@ -85,32 +78,22 @@ const currentCategory = ref(store.state.currentCategory || 'hot')
 // 分类列表
 const categories = CATEGORIES
 
-// 收藏列表
-const favorites = computed(() => store.state.favorites)
+// swiper 当前所在的分类索引
+const categoryIndex = ref(
+  Math.max(0, CATEGORIES.findIndex(c => c.key === currentCategory.value))
+)
 
-// 最近使用记录（前10条）
-const recentList = computed(() => {
-  const records = store.state.records || getRecords()
-  // 获取前5条不同工具的记录
-  const seen = new Set()
-  const tools = []
-  for (const record of records) {
-    if (!seen.has(record.toolId) && tools.length < 5) {
-      seen.add(record.toolId)
-      const tool = getToolById(record.toolId)
-      if (tool) tools.push(tool)
-    }
-  }
-  return tools
-})
+// 每个分类对应的工具面板（滑动切换的各个面板）
+const panels = computed(() =>
+  CATEGORIES.map(cat => ({
+    key: cat.key,
+    name: cat.name,
+    tools: getToolsByCategory(cat.key)
+  }))
+)
 
-// 过滤后的工具列表
-const filteredTools = computed(() => {
-  if (searchQuery.value) {
-    return searchTools(searchQuery.value)
-  }
-  return getToolsByCategory(currentCategory.value)
-})
+// 搜索结果（仅搜索模式下使用）
+const searchResults = computed(() => searchTools(searchQuery.value))
 
 /** 搜索处理 */
 function handleSearch(value) {
@@ -122,8 +105,19 @@ function handleClear() {
   searchQuery.value = ''
 }
 
-/** 切换分类 */
+/** 点击分类标签切换 */
 function switchCategory(key) {
+  const idx = CATEGORIES.findIndex(c => c.key === key)
+  categoryIndex.value = idx
+  currentCategory.value = key
+  store.commit('SET_CATEGORY', key)
+}
+
+/** 左右滑动切换分类 */
+function onSwiperChange(e) {
+  const idx = e.detail.current
+  const key = CATEGORIES[idx].key
+  categoryIndex.value = idx
   currentCategory.value = key
   store.commit('SET_CATEGORY', key)
 }
@@ -145,17 +139,21 @@ function handleToolTap(tool) {
   })
 }
 
-/** 收藏/取消收藏 */
+/** 长按收藏/取消收藏 */
 function handleFavorite(tool) {
   store.dispatch('toggleFavorite', tool.id)
   const isFav = store.getters.isFavorited(tool.id)
+  // 轻震反馈
+  if (uni.vibrateShort) uni.vibrateShort({ type: 'light' })
   showToast(isFav ? '已收藏' : '已取消收藏', 'none')
 }
 
 /** 底部Tab切换 - 使用 reLaunch 清除页面栈 */
 function handleTabChange(key) {
   if (key === 'tools') return
-  if (key === 'coupons') {
+  if (key === 'favorites') {
+    uni.reLaunch({ url: '/pages/favorites/index' })
+  } else if (key === 'coupons') {
     uni.reLaunch({ url: '/pages/coupons/index' })
   } else if (key === 'profile') {
     uni.reLaunch({ url: '/pages/profile/index' })
@@ -163,70 +161,38 @@ function handleTabChange(key) {
 }
 
 onMounted(() => {
-  // 初始化时从 store 同步当前分类
+  // 初始化时从 store 同步当前分类与 swiper 索引
   currentCategory.value = store.state.currentCategory || 'hot'
+  const idx = CATEGORIES.findIndex(c => c.key === currentCategory.value)
+  categoryIndex.value = idx >= 0 ? idx : 0
 })
 </script>
 
 <style lang="scss" scoped>
 .page-index {
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  box-sizing: border-box;
   background: $bg-color;
+  overflow: hidden;
+  // 预留底部固定 TabBar（110rpx 内容 + 安全区），swiper 占满其上方空间
+  padding-bottom: calc(110rpx + env(safe-area-inset-bottom, 0px));
 
-  // 区域标题
-  &__section {
-    padding: 0 24rpx 8rpx;
-
-    &-header {
-      padding: 8rpx 0 12rpx;
-    }
-    &-title {
-      font-size: $font-size-md;
-      font-weight: 600;
-      color: $text-primary;
-    }
-  }
-
-  // 最近使用横向滚动
-  &__recent-scroll {
-    white-space: nowrap;
-    padding-bottom: 12rpx;
-  }
-
-  &__recent-item {
-    display: inline-flex;
-    flex-direction: column;
-    align-items: center;
-    margin-right: 24rpx;
-    width: 120rpx;
-  }
-
-  &__recent-icon {
-    width: 100rpx;
-    height: 100rpx;
-    border-radius: 20rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 44rpx;
-    background: $card-bg;
-    box-shadow: $shadow-sm;
-  }
-
-  &__recent-name {
-    font-size: 20rpx;
-    color: $text-secondary;
-    margin-top: 8rpx;
-    text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  // swiper：占满搜索栏与底栏之间的剩余空间，高度固定 → 滑动无裁剪、无抖动
+  &__swiper {
+    flex: 1;
+    min-height: 0;
     width: 100%;
   }
 
-  // 底部占位
-  &__bottom-placeholder {
-    height: 140rpx;
+  &__panel {
+    height: 100%;
+  }
+
+  // 分类面板 / 搜索结果的内部滚动区
+  &__panel-scroll {
+    height: 100%;
   }
 }
 </style>

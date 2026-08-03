@@ -25,6 +25,14 @@
       }
     },
     {
+      "path": "pages/favorites/index",
+      "style": {
+        "navigationBarTitleText": "我的收藏",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
       "path": "pages/tools/calculator/index",
       "style": {
         "navigationBarTitleText": "科学计算器",

@@ -125,6 +125,8 @@ function handleTabChange(key) {
   if (key === 'profile') return
   if (key === 'tools') {
     uni.reLaunch({ url: '/pages/index/index' })
+  } else if (key === 'favorites') {
+    uni.reLaunch({ url: '/pages/favorites/index' })
   } else if (key === 'coupons') {
     uni.reLaunch({ url: '/pages/coupons/index' })
   }

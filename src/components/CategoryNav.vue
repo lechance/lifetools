@@ -1,6 +1,6 @@
 /**
  * 分类导航组件 - CategoryNav
- * 横向滚动的分类标签，支持切换选中状态
+ * 横向滚动的分类标签，固定高度，激活项自动滚动到可视区
  * 使用：<CategoryNav :categories="categories" :active="current" @change="onChange" />
  */
 <template>
@@ -10,11 +10,14 @@
       scroll-x
       show-scrollbar="false"
       enhanced
+      :scroll-into-view="activeId"
+      scroll-with-animation
     >
       <view class="category-nav__list">
         <view
           v-for="cat in categories"
           :key="cat.key"
+          :id="'cat-item-' + cat.key"
           class="category-nav__item"
           :class="{ 'category-nav__item--active': cat.key === active }"
           @tap="handleChange(cat.key)"
@@ -27,7 +30,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { computed } from 'vue'
+
+const props = defineProps({
   categories: {
     type: Array,
     required: true
@@ -40,6 +45,9 @@ defineProps({
 
 const emit = defineEmits(['change'])
 
+// 激活项 id，用于 scroll-into-view 自动滚动到可视区
+const activeId = computed(() => 'cat-item-' + props.active)
+
 function handleChange(key) {
   emit('change', key)
 }
@@ -49,9 +57,8 @@ function handleChange(key) {
 .category-nav {
   padding: 8rpx 0 16rpx;
   background: $bg-color;
-  position: sticky;
-  top: 0;
   z-index: 10;
+  box-sizing: border-box;
 
   &__scroll {
     white-space: nowrap;
@@ -64,14 +71,18 @@ function handleChange(key) {
     gap: 16rpx;
   }
 
+  // 固定高度 + border-box：激活态的 2rpx 边框不会改变整行高度，避免菜单抖动
   &__item {
     display: inline-flex;
     align-items: center;
-    padding: 12rpx 28rpx;
+    justify-content: center;
+    height: 64rpx;
+    padding: 0 28rpx;
+    box-sizing: border-box;
     border-radius: 40rpx;
     background: $card-bg;
     box-shadow: $shadow-sm;
-    transition: all 0.3s ease;
+    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 
     &--active {
       background: $primary-bg;

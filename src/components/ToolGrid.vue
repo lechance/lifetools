@@ -1,6 +1,7 @@
 /**
  * 工具网格组件 - ToolGrid
- * 3列网格展示工具卡片，简洁白色卡片风格，无背景色
+ * 3列网格展示工具卡片，图标 + 名称同格子，无背景/边框
+ * 点击打开工具，长按3秒收藏/取消收藏
  */
 <template>
   <view class="tool-grid">
@@ -17,20 +18,13 @@
         :key="tool.id"
         class="tool-grid__item"
         @tap="handleTap(tool)"
+        @touchstart="onTouchStart(tool)"
+        @touchend="onTouchEnd"
+        @touchcancel="onTouchEnd"
+        @touchmove="onTouchMove"
       >
-        <!-- 图标卡片 - 纯白色无背景色 -->
-        <view class="tool-grid__card">
-          <text class="tool-grid__icon">{{ tool.icon }}</text>
-          <!-- 收藏心形 -->
-          <text
-            class="tool-grid__favorite"
-            :class="{ 'tool-grid__favorite--active': isFav(tool.id) }"
-            @tap.stop="handleFavorite(tool)"
-          >
-            {{ isFav(tool.id) ? '❤️' : '🤍' }}
-          </text>
-        </view>
-        <!-- 工具名称 -->
+        <!-- 图标（最大化）+ 名称，无背景卡片 -->
+        <text class="tool-grid__icon">{{ tool.icon }}</text>
         <text class="tool-grid__name">{{ tool.name }}</text>
       </view>
     </view>
@@ -38,12 +32,10 @@
 </template>
 
 <script setup>
+import { onBeforeUnmount } from 'vue'
+
 const props = defineProps({
   tools: {
-    type: Array,
-    default: () => []
-  },
-  favorites: {
     type: Array,
     default: () => []
   }
@@ -51,17 +43,51 @@ const props = defineProps({
 
 const emit = defineEmits(['select', 'favorite'])
 
-function isFav(toolId) {
-  return props.favorites.includes(toolId)
+// 长按收藏时长（毫秒）
+const LONG_PRESS_MS = 2000
+
+let longPressTimer = null
+let longPressTool = null
+let longPressed = false
+
+function clearLongPress() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer)
+    longPressTimer = null
+  }
+}
+
+/** 按下：启动3秒定时器，到时触发收藏 */
+function onTouchStart(tool) {
+  clearLongPress()
+  longPressTool = tool
+  longPressed = false
+  longPressTimer = setTimeout(() => {
+    longPressed = true
+    emit('favorite', tool)
+  }, LONG_PRESS_MS)
+}
+
+/** 抬起/取消：取消定时器 */
+function onTouchEnd() {
+  clearLongPress()
+}
+
+/** 移动：视为非长按，取消定时器 */
+function onTouchMove() {
+  clearLongPress()
 }
 
 function handleTap(tool) {
+  // 若本次按压已触发过长按收藏，抑制 tap，避免同时跳转页面
+  if (longPressed) {
+    longPressed = false
+    return
+  }
   emit('select', tool)
 }
 
-function handleFavorite(tool) {
-  emit('favorite', tool)
-}
+onBeforeUnmount(clearLongPress)
 </script>
 
 <style lang="scss" scoped>
@@ -94,56 +120,35 @@ function handleFavorite(tool) {
     gap: 16rpx;
   }
 
-  // 每个工具项
+  // 每个工具项：图标 + 名称同格子，无背景/边框
   &__item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8rpx 0;
-  }
-
-  // 工具卡片 - 纯白简约设计
-  &__card {
-    position: relative;
-    width: 200rpx;
-    height: 200rpx;
-    border-radius: 24rpx;
-    display: flex;
-    align-items: center;
     justify-content: center;
-    background: $card-bg;
-    box-shadow: $shadow-sm;
+    padding: 20rpx 0 24rpx;
     transition: transform 0.2s;
 
     &:active {
-      transform: scale(0.95);
+      transform: scale(0.9);
     }
   }
 
-  // 收藏按钮
-  &__favorite {
-    position: absolute;
-    top: 8rpx;
-    right: 8rpx;
-    font-size: 22rpx;
-    line-height: 1;
-    z-index: 2;
-  }
-
-  // 图标
+  // 图标 - 最大化
   &__icon {
-    font-size: 64rpx;
-    line-height: 1;
+    font-size: 100rpx;
+    line-height: 1.2;
   }
 
   // 工具名称
   &__name {
     font-size: $font-size-sm;
     color: $text-primary;
-    margin-top: 10rpx;
+    margin-top: 12rpx;
     text-align: center;
     line-height: 1.3;
-    max-width: 200rpx;
+    max-width: 100%;
+    padding: 0 8rpx;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
