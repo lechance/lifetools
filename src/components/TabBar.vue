@@ -1,6 +1,6 @@
 /**
  * 底部菜单栏组件 - TabBar
- * 自定义底部导航栏（替代原生 tabBar），带活跃指示点
+ * 自定义底部导航栏（替代原生 tabBar）
  * 使用：<TabBar :current="currentTab" @change="onTabChange" />
  */
 <template>
@@ -13,8 +13,6 @@
         :class="{ 'tab-bar__item--active': current === tab.key }"
         @tap="handleChange(tab.key)"
       >
-        <!-- 活跃指示点 -->
-        <view v-if="current === tab.key" class="tab-bar__dot"></view>
         <text class="tab-bar__icon">{{ tab.icon }}</text>
         <text class="tab-bar__label">{{ tab.name }}</text>
       </view>
@@ -73,7 +71,7 @@ function handleChange(key) {
     justify-content: center;
     flex: 1;
     height: 100%;
-    padding: 0;
+    padding: 10rpx 0 0;
     position: relative;
     -webkit-tap-highlight-color: transparent;
 
@@ -84,6 +82,8 @@ function handleChange(key) {
     &--active {
       .tab-bar__icon {
         transform: scale(1.15);
+        filter: grayscale(0);
+        opacity: 1;
       }
       .tab-bar__label {
         color: $text-primary;
@@ -92,25 +92,21 @@ function handleChange(key) {
     }
   }
 
-  // 活跃指示点
-  &__dot {
-    position: absolute;
-    top: 8rpx;
-    width: 12rpx;
-    height: 12rpx;
-    border-radius: 50%;
-    background: $text-primary;
-  }
-
   &__icon {
     font-size: 48rpx;
+    line-height: 1;
     margin-bottom: 4rpx;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+    // 未选中：图标去色（灰度）+ 降低透明度，仅选中 tab 有色彩
+    filter: grayscale(100%);
+    opacity: 0.5;
   }
 
   &__label {
     font-size: 20rpx;
+    line-height: 1.3;
     color: $text-light;
+    margin-top: 2rpx;
     transition: color 0.2s;
   }
 

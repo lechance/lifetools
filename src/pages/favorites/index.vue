@@ -35,8 +35,8 @@
       </view>
       <view class="page-favorites__notice-body">
         <text class="page-favorites__notice-text">1. 点击工具即可打开使用</text>
-        <text class="page-favorites__notice-text">2. 长按工具 2 秒可取消收藏</text>
-        <text class="page-favorites__notice-text">3. 在首页长按工具 2 秒即可收藏</text>
+        <text class="page-favorites__notice-text">2. 长按工具 1 秒可取消收藏</text>
+        <text class="page-favorites__notice-text">3. 在首页长按工具 1 秒即可收藏</text>
         <text class="page-favorites__notice-text">4. 支持在搜索框输入关键词筛选收藏的工具</text>
       </view>
     </view>

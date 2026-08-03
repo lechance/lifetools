@@ -1,7 +1,7 @@
 /**
  * 工具网格组件 - ToolGrid
  * 3列网格展示工具卡片，图标 + 名称同格子，无背景/边框
- * 点击打开工具，长按3秒收藏/取消收藏
+ * 点击打开工具，长按1秒收藏/取消收藏
  */
 <template>
   <view class="tool-grid">
@@ -44,7 +44,7 @@ const props = defineProps({
 const emit = defineEmits(['select', 'favorite'])
 
 // 长按收藏时长（毫秒）
-const LONG_PRESS_MS = 2000
+const LONG_PRESS_MS = 1000
 
 let longPressTimer = null
 let longPressTool = null
