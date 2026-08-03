@@ -34,8 +34,8 @@ const emit = defineEmits(['change'])
 
 // 底部菜单项定义
 const tabs = [
-  { key: 'tools', name: '工具列表', icon: '🧰' },
-  { key: 'favorites', name: '我的收藏', icon: '⭐' },
+  { key: 'tools', name: '工具', icon: '🧰' },
+  { key: 'favorites', name: '收藏', icon: '⭐' },
   { key: 'coupons', name: '卡券', icon: '🎫' },
   { key: 'profile', name: '我的', icon: '👤' }
 ]
