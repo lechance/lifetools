@@ -101,6 +101,7 @@ function compress() {
       fileType: 'jpg',
       quality: quality.value / 100,
       success: (res) => {
+        // #ifdef MP-WEIXIN
         uni.getFileSystemManager().getFileInfo({
           filePath: res.tempFilePath,
           success: (info) => {
@@ -108,6 +109,11 @@ function compress() {
           },
           fail: () => { resultSize.value = 0 }
         })
+        // #endif
+        // #ifdef H5
+        // H5 端无 getFileSystemManager，无法直接取文件大小
+        resultSize.value = 0
+        // #endif
         result.value = true
         hideLoading()
       },

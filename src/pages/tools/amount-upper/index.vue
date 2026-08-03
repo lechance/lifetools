@@ -61,17 +61,18 @@ function convertInt(n) {
   if (n === 0) return '零'
   let str = ''
   let bigIdx = 0
+  let lowerSection = 0 // 已拼入 str 的最低位段数值，用于判断是否需补零
   while (n > 0) {
     const section = n % 10000
     if (section !== 0) {
-      let sec = convertSection(section)
-      // 处理段间零
-      if (str && str[0] !== '零' && section < 1000) {
-        sec = '零' + sec
+      // 存在空档（更低段为0）或更低段不足四位（<1000）时补零
+      if (str && (lowerSection === 0 || lowerSection < 1000)) {
+        str = '零' + str
       }
-      str = sec + CN_BIG_UNITS[bigIdx] + str
-    } else if (str && str[0] !== '零' && str[0] !== CN_BIG_UNITS[bigIdx]) {
-      str = '零' + str
+      str = convertSection(section) + CN_BIG_UNITS[bigIdx] + str
+      lowerSection = section
+    } else {
+      lowerSection = 0
     }
     n = Math.floor(n / 10000)
     bigIdx++

@@ -4,7 +4,7 @@
       <view class="dice-row">
         <view v-for="(d, i) in dice" :key="i" class="dice" :class="{ 'dice--rolling': rolling }">
           <view class="dice-face">
-            <view v-for="n in d" :key="n" class="dice-dot" :class="'dice-dot--' + n"></view>
+            <view v-for="(pos, i) in dotPositions(d)" :key="i" class="dice-dot" :class="'dice-dot--' + pos"></view>
           </view>
         </view>
       </view>
@@ -34,6 +34,19 @@ const rolling = ref(false)
 const history = ref([])
 
 const total = computed(() => dice.value.reduce((a, b) => a + b, 0))
+
+// 骰子点数对应的 3x3 网格位置（tl/tc/tr/ml/mc/mr/bl/bc/br）
+const DOT_POSITIONS = {
+  1: ['mc'],
+  2: ['tl', 'br'],
+  3: ['tl', 'mc', 'br'],
+  4: ['tl', 'tr', 'bl', 'br'],
+  5: ['tl', 'tr', 'mc', 'bl', 'br'],
+  6: ['tl', 'ml', 'bl', 'tr', 'mr', 'br'],
+}
+function dotPositions(val) {
+  return DOT_POSITIONS[val] || ['mc']
+}
 
 function roll() {
   if (rolling.value) return
@@ -108,18 +121,15 @@ function toggleCount() {
   border-radius: 50%;
 }
 // 点阵位置（3x3 网格）
-.dice-dot--1 { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.dice-dot--2 { top: 20%; left: 20%; }
-.dice-dot--3 { top: 20%; left: 20%; }
-.dice-dot--4 { top: 20%; left: 20%; }
-.dice-dot--5 { top: 20%; left: 20%; }
-.dice-dot--6 { top: 20%; left: 20%; }
-.dice-dot--1:nth-child(1) { top: 20%; left: 20%; }
-.dice-dot--2:nth-child(2) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.dice-dot--3:nth-child(3) { bottom: 20%; right: 20%; top: auto; left: auto; }
-.dice-dot--4:nth-child(4) { top: 20%; right: 20%; left: auto; }
-.dice-dot--5:nth-child(5) { top: 50%; left: 50%; transform: translate(-50%, -50%); }
-.dice-dot--6:nth-child(6) { bottom: 20%; right: 20%; top: auto; left: auto; }
+.dice-dot--tl { top: 20%; left: 20%; }
+.dice-dot--tc { top: 20%; left: 50%; transform: translateX(-50%); }
+.dice-dot--tr { top: 20%; right: 20%; }
+.dice-dot--ml { top: 50%; left: 20%; transform: translateY(-50%); }
+.dice-dot--mc { top: 50%; left: 50%; transform: translate(-50%, -50%); }
+.dice-dot--mr { top: 50%; right: 20%; transform: translateY(-50%); }
+.dice-dot--bl { bottom: 20%; left: 20%; }
+.dice-dot--bc { bottom: 20%; left: 50%; transform: translateX(-50%); }
+.dice-dot--br { bottom: 20%; right: 20%; }
 
 .total {
   text-align: center;

@@ -1,7 +1,6 @@
 /**
  * 专业科学计算器
- * 行业标准：函数即时计算、运算符优先级、括号、记忆功能
- * 表达式仅含数字/运算符/括号，函数立即作用于当前值
+ * 支持加减乘除，含运算符优先级（×÷ 优先于 +−），即时计算，除零保护
  */
 
 <template>
@@ -28,9 +27,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const current = ref('0')
-const previous = ref(null)
-const operator = ref(null)
-const waitingForOperand = ref(false)
+const waitingForOperand = ref(true)
 const expression = ref('')
 const activeKey = ref('')
 
@@ -57,10 +54,12 @@ const buttons = [
 ]
 
 const displayValue = computed(() => {
-  if (current.value.length > 12) {
-    return parseFloat(current.value).toPrecision(12).replace(/\.?0+$/, '')
+  const v = current.value === '' ? '0' : current.value
+  if (v === 'Error' || v === 'NaN') return v
+  if (v.length > 12) {
+    return parseFloat(v).toPrecision(12).replace(/\.?0+$/, '')
   }
-  return current.value
+  return v
 })
 
 function handleClick(btn) {
@@ -72,16 +71,18 @@ function handleClick(btn) {
 }
 
 function inputDigit(digit) {
+  // 上一步是 '='：开始新运算，清空旧表达式
+  if (expression.value.includes('=')) expression.value = ''
   if (waitingForOperand.value) {
     current.value = digit
     waitingForOperand.value = false
   } else {
     current.value = current.value === '0' ? digit : current.value + digit
   }
-  if (!operator.value) expression.value = ''
 }
 
 function inputDecimal() {
+  if (expression.value.includes('=')) expression.value = ''
   if (waitingForOperand.value) {
     current.value = '0.'
     waitingForOperand.value = false
@@ -91,60 +92,114 @@ function inputDecimal() {
 }
 
 function inputOperator(nextOperator) {
-  const inputValue = parseFloat(current.value)
-  if (previous.value === null) {
-    previous.value = inputValue
-  } else if (operator.value) {
-    const result = performCalculation()
-    current.value = String(result)
-    previous.value = result
-  }
-  waitingForOperand.value = true
-  operator.value = nextOperator
   const symbols = { add: '+', subtract: '−', multiply: '×', divide: '÷' }
-  expression.value = `${previous.value} ${symbols[nextOperator]}`
+  const op = symbols[nextOperator]
+
+  // 上一步是 '='：用当前结果继续计算
+  if (expression.value.includes('=')) {
+    expression.value = (current.value === '' ? '0' : current.value) + op
+    current.value = ''
+    waitingForOperand.value = true
+    return
+  }
+
+  if (waitingForOperand.value) {
+    // 连续按运算符：替换末尾运算符
+    if (expression.value) {
+      expression.value = expression.value.replace(/[+−×÷]$/, '') + op
+    }
+    return
+  }
+
+  expression.value += current.value + op
+  current.value = ''
+  waitingForOperand.value = true
 }
 
-function performCalculation() {
-  const prev = parseFloat(previous.value)
-  const curr = parseFloat(current.value)
-  if (isNaN(prev) || isNaN(curr)) return curr
-  let result = 0
-  switch (operator.value) {
-    case 'add': result = prev + curr; break
-    case 'subtract': result = prev - curr; break
-    case 'multiply': result = prev * curr; break
-    case 'divide': result = curr === 0 ? 'Error' : prev / curr; break
+/** 表达式求值：×÷ 优先于 +−，同级从左到右（调度场算法） */
+function evaluateExpression(str) {
+  const tokens = str.match(/(\d+\.?\d*|[+−×÷])/g) || []
+  const prec = { '+': 1, '−': 1, '×': 2, '÷': 2 }
+  // 中缀转后缀
+  const output = []
+  const opStack = []
+  for (const t of tokens) {
+    if (t === '+' || t === '−' || t === '×' || t === '÷') {
+      while (opStack.length && prec[opStack[opStack.length - 1]] >= prec[t]) {
+        output.push(opStack.pop())
+      }
+      opStack.push(t)
+    } else {
+      output.push(parseFloat(t))
+    }
   }
-  return typeof result === 'string' ? result : Math.round(result * 1000000000) / 1000000000
+  while (opStack.length) output.push(opStack.pop())
+  // 求后缀表达式
+  const stack = []
+  for (const t of output) {
+    if (typeof t === 'number') {
+      stack.push(t)
+      continue
+    }
+    const b = stack.pop()
+    const a = stack.pop()
+    let r
+    switch (t) {
+      case '+': r = a + b; break
+      case '−': r = a - b; break
+      case '×': r = a * b; break
+      case '÷': r = b === 0 ? 'Error' : a / b; break
+    }
+    if (r === 'Error') return 'Error'
+    stack.push(r)
+  }
+  const final = stack[stack.length - 1]
+  return Math.round(final * 1000000000) / 1000000000
 }
 
 function calculate() {
-  if (!operator.value || waitingForOperand.value) return
-  const result = performCalculation()
-  const symbols = { add: '+', subtract: '−', multiply: '×', divide: '÷' }
-  expression.value = `${previous.value} ${symbols[operator.value]} ${current.value} =`
-  current.value = String(result)
-  previous.value = null
-  operator.value = null
+  if (waitingForOperand.value) {
+    // 末尾是运算符且无当前值：去掉末尾运算符再计算
+    expression.value = expression.value.replace(/[+−×÷]$/, '')
+  } else {
+    expression.value += current.value
+  }
+  if (!expression.value) return
+  const result = evaluateExpression(expression.value)
+  if (result === 'Error') {
+    expression.value = ''
+    current.value = 'Error'
+  } else {
+    expression.value += ' ='
+    current.value = String(result)
+  }
   waitingForOperand.value = true
 }
 
 function performFunction(action) {
-  const value = parseFloat(current.value)
   switch (action) {
     case 'clear':
       current.value = '0'
-      previous.value = null
-      operator.value = null
-      waitingForOperand.value = false
       expression.value = ''
+      waitingForOperand.value = true
       break
     case 'negate':
-      current.value = String(value * -1)
+      if (current.value === 'Error' || current.value === 'NaN') {
+        current.value = '0'
+        expression.value = ''
+        waitingForOperand.value = true
+        return
+      }
+      current.value = String(parseFloat(current.value || '0') * -1)
       break
     case 'percent':
-      current.value = String(value / 100)
+      if (current.value === 'Error' || current.value === 'NaN') {
+        current.value = '0'
+        expression.value = ''
+        waitingForOperand.value = true
+        return
+      }
+      current.value = String(parseFloat(current.value || '0') / 100)
       break
     case 'decimal':
       inputDecimal()
@@ -185,8 +240,13 @@ function handleKeydown(e) {
   if (btn) handleClick(btn)
 }
 
-onMounted(() => window.addEventListener('keydown', handleKeydown))
-onUnmounted(() => window.removeEventListener('keydown', handleKeydown))
+// 键盘快捷键仅 H5 支持，小程序端无 window 对象（加守卫避免报错）
+onMounted(() => {
+  if (typeof window !== 'undefined') window.addEventListener('keydown', handleKeydown)
+})
+onUnmounted(() => {
+  if (typeof window !== 'undefined') window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <style scoped>

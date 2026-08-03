@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 
 const images = ref([])
@@ -125,20 +125,23 @@ function computeAndDraw(sizes) {
   if (dispRatio >= 1) { canvasW.value = 300; canvasH.value = Math.round(300 / dispRatio) }
   else { canvasH.value = 400; canvasW.value = Math.round(400 * dispRatio) }
 
-  const ctx = uni.createCanvasContext('stitchCanvas')
-  ctx.setFillStyle('#fff')
-  ctx.fillRect(0, 0, canvasW.value, canvasH.value)
-  // 绘制（缩放至显示尺寸）
-  const scaleX = canvasW.value / outW
-  const scaleY = canvasH.value / outH
-  images.value.forEach((src, i) => {
-    const p = placements[i]
-    ctx.drawImage(src, p.x * scaleX, p.y * scaleY, p.w * scaleX, p.h * scaleY)
-  })
-  ctx.draw(false, () => {
-    result.value = true
-    hideLoading()
-    showSuccess('拼接完成')
+  // 先让结果画布挂载（v-if="result"），再在 nextTick 后绘制
+  result.value = true
+  nextTick(() => {
+    const ctx = uni.createCanvasContext('stitchCanvas')
+    ctx.setFillStyle('#fff')
+    ctx.fillRect(0, 0, canvasW.value, canvasH.value)
+    // 绘制（缩放至显示尺寸）
+    const scaleX = canvasW.value / outW
+    const scaleY = canvasH.value / outH
+    images.value.forEach((src, i) => {
+      const p = placements[i]
+      ctx.drawImage(src, p.x * scaleX, p.y * scaleY, p.w * scaleX, p.h * scaleY)
+    })
+    ctx.draw(false, () => {
+      hideLoading()
+      showSuccess('拼接完成')
+    })
   })
 }
 

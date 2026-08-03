@@ -60,9 +60,8 @@ function generate() {
   charOptions.forEach(o => { if (o.on) pool += sets[o.key] })
   if (!pool) pool = sets.number
 
+  // 使用 Math.random 生成（小程序端无 window.crypto，避免引用报错）
   let result = ''
-  const arr = new Uint32Array(length.value)
-  crypto.getRandomValues ? crypto.getRandomValues(arr) : null
   for (let i = 0; i < length.value; i++) {
     result += pool[Math.floor(Math.random() * pool.length)]
   }

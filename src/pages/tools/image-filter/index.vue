@@ -92,11 +92,69 @@ function drawAndFilter(type) {
   })
   // #endif
   // #ifndef H5
-  // 小程序：用 canvas 绘制后用 wx.canvasGetImageData 处理（降级为简单绘制）
+  if (type === 'original') {
+    const ctx = uni.createCanvasContext('filterCanvas')
+    ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
+    ctx.draw()
+  } else {
+    applyPixelMp(type)
+  }
+  // #endif
+}
+
+/** 小程序端：canvasGetImageData 取像素处理后写回 */
+function applyPixelMp(type) {
   const ctx = uni.createCanvasContext('filterCanvas')
   ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
-  ctx.draw()
-  // #endif
+  ctx.draw(false, () => {
+    uni.canvasGetImageData({
+      canvasId: 'filterCanvas',
+      x: 0, y: 0,
+      width: canvasW.value,
+      height: canvasH.value,
+      success: (res) => {
+        const d = res.data
+        for (let i = 0; i < d.length; i += 4) {
+          let r = d[i], g = d[i + 1], b = d[i + 2]
+          switch (type) {
+            case 'gray': {
+              const v = 0.299 * r + 0.587 * g + 0.114 * b
+              r = g = b = v
+              break
+            }
+            case 'sepia': {
+              const nr = 0.393 * r + 0.769 * g + 0.189 * b
+              const ng = 0.349 * r + 0.686 * g + 0.168 * b
+              const nb = 0.272 * r + 0.534 * g + 0.131 * b
+              r = Math.min(255, nr); g = Math.min(255, ng); b = Math.min(255, nb)
+              break
+            }
+            case 'invert':
+              r = 255 - r; g = 255 - g; b = 255 - b
+              break
+            case 'bright':
+              r = Math.min(255, r * 1.3); g = Math.min(255, g * 1.3); b = Math.min(255, b * 1.3)
+              break
+            case 'contrast': {
+              const f = (x) => 128 + (x - 128) * 1.4
+              r = f(r); g = f(g); b = f(b)
+              break
+            }
+          }
+          d[i] = r; d[i + 1] = g; d[i + 2] = b
+        }
+        uni.canvasPutImageData({
+          canvasId: 'filterCanvas',
+          x: 0, y: 0,
+          width: canvasW.value,
+          height: canvasH.value,
+          data: d,
+          fail: () => {}
+        })
+      },
+      fail: () => {}
+    })
+  })
 }
 
 function applyPixel(ctx, el, type) {
@@ -135,17 +193,7 @@ function applyPixel(ctx, el, type) {
 }
 
 function applyFilter(key) {
-  // #ifdef H5
   drawAndFilter(key)
-  // #endif
-  // #ifndef H5
-  if (key === 'original') {
-    const ctx = uni.createCanvasContext('filterCanvas')
-    ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
-    ctx.draw()
-  }
-  activeFilter.value = key
-  // #endif
 }
 
 function saveImage() {

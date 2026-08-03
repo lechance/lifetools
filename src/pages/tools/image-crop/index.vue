@@ -126,9 +126,7 @@ function drawPreview() {
 function doCrop() {
   showLoading('裁剪中...')
   const ctx = uni.createCanvasContext('cropCanvas')
-  // 高分辨率绘制裁剪区域
-  const outW = Math.min(2000, imgW.value)
-  const outH = Math.round(outW / getRatio())
+  // 按显示尺寸绘制（画布缓冲区与显示一致，避免绘制超出缓冲区被裁剪）
   const r = getRatio()
   let sx, sy, sw, sh
   if (imgW.value / imgH.value >= r) {
@@ -136,7 +134,7 @@ function doCrop() {
   } else {
     sw = imgW.value; sh = imgW.value / r; sx = 0; sy = (imgH.value - sh) / 2
   }
-  ctx.drawImage(imagePath.value, sx, sy, sw, sh, 0, 0, outW, outH)
+  ctx.drawImage(imagePath.value, sx, sy, sw, sh, 0, 0, canvasW.value, canvasH.value)
   ctx.draw(false, () => {
     uni.canvasToTempFilePath({
       canvasId: 'cropCanvas',

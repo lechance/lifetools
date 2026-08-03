@@ -75,6 +75,12 @@ function search() {
           weatherDesc: (cond.weatherDesc && cond.weatherDesc[0] && cond.weatherDesc[0].value) || '--'
         }
         cityName.value = (data.nearest_area && data.nearest_area[0] && data.nearest_area[0].areaName && data.nearest_area[0].areaName[0].value) || c
+      } else {
+        // wttr.in 对不存在的城市仍返回 200，此时无 current_condition，需明确提示
+        error.value = '未找到该城市，请检查城市名'
+        current.value = null
+        forecast.value = []
+        return
       }
       forecast.value = (data.weather || []).slice(0, 3).map(w => ({
         date: w.date,

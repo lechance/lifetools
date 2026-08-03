@@ -28,6 +28,8 @@
       class="history__list"
       scroll-y
       show-scrollbar
+      :scroll-top="scrollTop"
+      @scroll="onListScroll"
       @scrolltolower="loadMore"
     >
       <view
@@ -65,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed } from 'vue'
 
 // ==================================================================
 //  内置历史事件数据（至少30条，中西方混编）
@@ -147,6 +149,7 @@ const day = now.getDate()
 
 const loading = ref(false)
 const showTopBtn = ref(false)
+const scrollTop = ref(0)
 const pageSize = 10
 const currentPage = ref(1)
 const randomSeed = ref(0)
@@ -193,19 +196,16 @@ function loadMore() {
   currentPage.value++
 }
 
-/** 回到顶部 */
+/** 回到顶部（scroll-view 内部滚动） */
 function scrollToTop() {
-  uni.pageScrollTo({ scrollTop: 0, duration: 300 })
+  scrollTop.value = 0
   showTopBtn.value = false
 }
 
-// 监听页面滚动
-onMounted(() => {
-  // 初始化滚动监听
-  uni.onPageScroll((e) => {
-    showTopBtn.value = e.scrollTop > 600
-  })
-})
+/** 监听列表滚动，控制回到顶部按钮显示 */
+function onListScroll(e) {
+  showTopBtn.value = (e.detail.scrollTop || 0) > 600
+}
 </script>
 
 <style lang="scss" scoped>

@@ -63,7 +63,7 @@ function draw() {
       ctx.fillRect(x, H - 28, 2, 28)
       ctx.setFontSize(14)
       ctx.setTextAlign('center')
-      ctx.fillText(String(i), x, H - 38)
+      ctx.fillText(String(i), x, H - 44)
       // 毫米刻度
       for (let m = 1; m < 10; m++) {
         const mx = Math.round((i * 10 + m) * pxPerCm / 10)

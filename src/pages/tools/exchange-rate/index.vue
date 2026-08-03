@@ -92,7 +92,7 @@ function calc() {
   const val = parseFloat(amount.value)
   const target = currencies[toIdx.value]
   const r = rates.value[target]
-  if (!val || !r) return
+  if (isNaN(val) || !r) return
   result.value = (val * r).toFixed(2)
   rate.value = r.toFixed(4)
 }

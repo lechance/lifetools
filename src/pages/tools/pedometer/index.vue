@@ -31,7 +31,7 @@
     <view class="card">
       <view class="calib-row">
         <text class="calib-label">灵敏度（阈值）</text>
-        <slider :value="threshold" min="8" max="25" step="1" @change="onThreshold" activeColor="#1D1D1F" backgroundColor="#E5E5EA" block-size="16" />
+        <slider :value="threshold" min="10" max="25" step="1" @change="onThreshold" activeColor="#1D1D1F" backgroundColor="#E5E5EA" block-size="16" />
         <text class="calib-val">{{ threshold }}</text>
       </view>
       <text class="tip">阈值越低越灵敏。步行时加速度峰值约 12-18，跑步更高。若频繁误计请调高。</text>

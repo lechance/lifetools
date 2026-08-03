@@ -30,7 +30,6 @@ import { showToast } from '@/utils/helpers'
 const db = ref(0)
 const recording = ref(false)
 let recorder = null
-let dbTimer = null
 const MAX_DB = 100
 
 const levels = [
@@ -98,7 +97,8 @@ function startRecord() {
     numberOfChannels: 1,
     encodeBitRate: 192000,
     format: 'aac',
-    frameSize: 4096
+    // frameSize 单位 KB（微信限定 1-256），取较小值保证 onFrameRecorded 频繁回调刷新分贝
+    frameSize: 8
   })
 }
 

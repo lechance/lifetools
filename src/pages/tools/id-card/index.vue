@@ -22,7 +22,7 @@
       </view>
       <view class="result-item">
         <text class="result-label">出生日期</text>
-        <text class="result-val">{{ result.birthday }}</text>
+        <text class="result-val">{{ result.birthday }}<text v-if="!result.dateValid" class="bad">（日期无效）</text></text>
       </view>
       <view class="result-item">
         <text class="result-label">性别</text>
@@ -30,7 +30,7 @@
       </view>
       <view class="result-item">
         <text class="result-label">年龄</text>
-        <text class="result-val">{{ result.age }} 岁</text>
+        <text class="result-val">{{ result.age === '—' ? '—' : result.age + ' 岁' }}</text>
       </view>
       <view class="result-item">
         <text class="result-label">星座</text>
@@ -57,11 +57,10 @@ const WEIGHTS = [7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2]
 const CHECK_CODES = ['1', '0', 'X', '9', '8', '7', '6', '5', '4', '3', '2']
 
 const ZODIACS = [
-  { key: 120, name: '摩羯座' }, { key: 219, name: '水瓶座' }, { key: 321, name: '双鱼座' },
-  { key: 420, name: '白羊座' }, { key: 521, name: '金牛座' }, { key: 622, name: '双子座' },
-  { key: 723, name: '巨蟹座' }, { key: 823, name: '狮子座' }, { key: 923, name: '处女座' },
-  { key: 1024, name: '天秤座' }, { key: 1123, name: '天蝎座' }, { key: 1222, name: '射手座' },
-  { key: 1231, name: '摩羯座' },
+  { key: 120, name: '水瓶座' }, { key: 219, name: '双鱼座' }, { key: 321, name: '白羊座' },
+  { key: 420, name: '金牛座' }, { key: 521, name: '双子座' }, { key: 622, name: '巨蟹座' },
+  { key: 723, name: '狮子座' }, { key: 823, name: '处女座' }, { key: 923, name: '天秤座' },
+  { key: 1024, name: '天蝎座' }, { key: 1123, name: '射手座' }, { key: 1222, name: '摩羯座' },
 ]
 
 const id = ref('')
@@ -78,14 +77,18 @@ function parse() {
   const month = parseInt(birth.slice(4, 6), 10)
   const day = parseInt(birth.slice(6, 8), 10)
   const genderCode = parseInt(val[16], 10)
+  // 出生日期合法性校验
+  const daysInMonth = new Date(year, month, 0).getDate()
+  const dateValid = year >= 1900 && year <= 2100 && month >= 1 && month <= 12 && day >= 1 && day <= daysInMonth
 
   result.value = {
     valid,
     province: PROVINCES[val.slice(0, 2)] || '未知',
     birthday: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
     gender: genderCode % 2 === 1 ? '男' : '女',
-    age: calcAge(year, month, day),
+    age: dateValid ? calcAge(year, month, day) : '—',
     zodiac: getZodiac(month, day),
+    dateValid,
   }
 }
 
@@ -106,10 +109,11 @@ function calcAge(y, m, d) {
 
 function getZodiac(m, d) {
   const val = m * 100 + d
+  let name = '摩羯座'
   for (const z of ZODIACS) {
-    if (val <= z.key) return z.name
+    if (val >= z.key) name = z.name
   }
-  return '摩羯座'
+  return name
 }
 </script>
 

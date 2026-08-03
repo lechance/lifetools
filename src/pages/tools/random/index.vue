@@ -176,10 +176,14 @@ function genRange() {
   const min = parseFloat(rMin.value) || 0
   const max = parseFloat(rMax.value) || 100
   const dec = Math.max(0, parseInt(rDec.value) || 0)
-  if (min >= max) { showToast('最大值需大于最小值'); return }
+  if (min > max) { showToast('最大值需大于等于最小值'); return }
 
+  // 闭区间 [min, max]，按小数精度放大为整数后随机，保证上界可取
   const factor = Math.pow(10, dec)
-  const val = Math.floor((Math.random() * (max - min) + min) * factor) / factor
+  const scaledMin = min * factor
+  const scaledMax = max * factor
+  const scaled = Math.floor(Math.random() * (scaledMax - scaledMin + 1)) + scaledMin
+  const val = scaled / factor
   const display = dec > 0 ? val.toFixed(dec) : String(val)
   rangeResult.value = display
   addHistory(`范围 ${rMin.value}~${rMax.value}`, display)

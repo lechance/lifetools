@@ -55,14 +55,29 @@ const sizeKey = ref('1inch')
 const bgColor = ref('#D9001B')
 const canvasW = ref(240)
 const canvasH = ref(336)
+const imgW = ref(0)
+const imgH = ref(0)
 
 function chooseImage() {
   uni.chooseImage({
     count: 1,
     success: (res) => {
       imagePath.value = res.tempFilePaths[0]
-      calcCanvas()
-      nextTick(() => draw())
+      uni.getImageInfo({
+        src: imagePath.value,
+        success: (info) => {
+          imgW.value = info.width
+          imgH.value = info.height
+          calcCanvas()
+          nextTick(() => draw())
+        },
+        fail: () => {
+          imgW.value = 0
+          imgH.value = 0
+          calcCanvas()
+          nextTick(() => draw())
+        }
+      })
     }
   })
 }
@@ -85,30 +100,43 @@ function selectBg(color) {
   draw()
 }
 
-function draw() {
+/** 按证件照比例对原图居中裁剪绘制（不拉伸变形），底色铺底 */
+function draw(cb) {
   const s = SIZES[sizeKey.value]
+  const targetRatio = s.w / s.h
   const ctx = uni.createCanvasContext('idphotoCanvas')
   // 背景
   ctx.setFillStyle(bgColor.value)
   ctx.fillRect(0, 0, canvasW.value, canvasH.value)
 
   // 图片按证件照比例居中裁剪绘制
-  const targetRatio = s.w / s.h
-  ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
-  ctx.draw(false, () => {})
+  if (imagePath.value && imgW.value > 0) {
+    let sx, sy, sw, sh
+    if (imgW.value / imgH.value >= targetRatio) {
+      sh = imgH.value
+      sw = imgH.value * targetRatio
+      sx = (imgW.value - sw) / 2
+      sy = 0
+    } else {
+      sw = imgW.value
+      sh = imgW.value / targetRatio
+      sx = 0
+      sy = (imgH.value - sh) / 2
+    }
+    ctx.drawImage(imagePath.value, sx, sy, sw, sh, 0, 0, canvasW.value, canvasH.value)
+  }
+  ctx.draw(false, cb || (() => {}))
 }
 
 function saveImage() {
   showLoading('生成中...')
-  // 用原尺寸重绘
   const s = SIZES[sizeKey.value]
-  const ctx = uni.createCanvasContext('idphotoCanvas')
-  ctx.setFillStyle(bgColor.value)
-  ctx.fillRect(0, 0, s.w, s.h)
-  ctx.drawImage(imagePath.value, 0, 0, s.w, s.h)
-  ctx.draw(false, () => {
+  draw(() => {
+    // destWidth/destHeight 控制导出为真实证件照尺寸
     uni.canvasToTempFilePath({
       canvasId: 'idphotoCanvas',
+      destWidth: s.w,
+      destHeight: s.h,
       success: (res) => {
         hideLoading()
         // #ifdef H5

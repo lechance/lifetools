@@ -52,13 +52,27 @@ const imagePath = ref('')
 const canvasSize = ref(280)
 const deco = ref('solid')
 const borderColor = ref('#FF4081')
+const imgW = ref(0)
+const imgH = ref(0)
 
 function chooseImage() {
   uni.chooseImage({
     count: 1,
     success: (res) => {
       imagePath.value = res.tempFilePaths[0]
-      nextTick(() => draw())
+      uni.getImageInfo({
+        src: imagePath.value,
+        success: (info) => {
+          imgW.value = info.width
+          imgH.value = info.height
+          nextTick(() => draw())
+        },
+        fail: () => {
+          imgW.value = 0
+          imgH.value = 0
+          nextTick(() => draw())
+        }
+      })
     }
   })
 }
@@ -78,12 +92,28 @@ function draw() {
   const center = size / 2
   const radius = size / 2 - 10
 
-  // 圆形裁剪头像
+  // 圆形裁剪头像（正方形 cover 裁剪，避免拉伸变形）
   ctx.save()
   ctx.beginPath()
   ctx.arc(center, center, radius, 0, Math.PI * 2)
   ctx.clip()
-  ctx.drawImage(imagePath.value, 0, 0, size, size)
+  if (imgW.value > 0 && imgH.value > 0) {
+    let sx, sy, sw, sh
+    if (imgW.value / imgH.value >= 1) {
+      sh = imgH.value
+      sw = imgH.value
+      sx = (imgW.value - sw) / 2
+      sy = 0
+    } else {
+      sw = imgW.value
+      sh = imgW.value
+      sx = 0
+      sy = (imgH.value - sh) / 2
+    }
+    ctx.drawImage(imagePath.value, sx, sy, sw, sh, 0, 0, size, size)
+  } else {
+    ctx.drawImage(imagePath.value, 0, 0, size, size)
+  }
   ctx.restore()
 
   // 装饰边框
@@ -96,14 +126,13 @@ function draw() {
       ctx.setLineDash([12, 8])
     }
     if (deco.value === 'gradient') {
-      // 渐变：分段绘制
+      // 渐变：分段绘制（小程序旧版 canvas 不支持 hsl，改用调色板颜色）
       ctx.setLineDash([])
       const steps = 24
       for (let i = 0; i < steps; i++) {
         const start = i / steps * Math.PI * 2
         const end = (i + 1) / steps * Math.PI * 2
-        const hue = Math.round(i / steps * 360)
-        ctx.setStrokeStyle(`hsl(${hue}, 90%, 60%)`)
+        ctx.setStrokeStyle(colors[i % colors.length])
         ctx.beginPath()
         ctx.arc(center, center, radius - 3, start, end)
         ctx.stroke()

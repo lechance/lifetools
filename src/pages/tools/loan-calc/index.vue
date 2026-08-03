@@ -75,15 +75,27 @@ function calculate() {
 
   if (method.value === 'equal') {
     // 等额本息
-    const pow = Math.pow(1 + r, n)
-    const monthly = P * r * pow / (pow - 1)
-    const payment = monthly * n
-    result.value = {
-      total: P,
-      interest: payment - P,
-      payment,
-      monthly,
-      firstInterest: P * r
+    if (r === 0) {
+      // 0 利率：月供 = 本金 / 月数，避免 0/0 除零
+      const monthly = P / n
+      result.value = {
+        total: P,
+        interest: 0,
+        payment: P,
+        monthly,
+        firstInterest: 0
+      }
+    } else {
+      const pow = Math.pow(1 + r, n)
+      const monthly = P * r * pow / (pow - 1)
+      const payment = monthly * n
+      result.value = {
+        total: P,
+        interest: payment - P,
+        payment,
+        monthly,
+        firstInterest: P * r
+      }
     }
   } else {
     // 等额本金

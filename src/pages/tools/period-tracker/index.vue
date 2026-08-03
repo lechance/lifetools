@@ -74,6 +74,9 @@ try {
   }
 } catch (e) {}
 
+// 页面加载时若有本地记录立即计算预测
+calculate()
+
 watch([lastStart, cycle, period], (val) => {
   uni.setStorageSync(STORAGE_KEY, JSON.stringify({
     lastStart: val[0], cycle: val[1], period: val[2]
@@ -106,7 +109,9 @@ function calculate() {
   const ovulationStart = addDays(ovulation, -3)
   const ovulationEnd = addDays(ovulation, 3)
   const safeStart = addDays(start, period.value)
-  const safeEnd = addDays(ovulationStart, -1)
+  let safeEnd = addDays(ovulationStart, -1)
+  // 经期与排卵期重叠时前段安全区为空，钳制避免反向区间
+  if (safeEnd < safeStart) safeEnd = safeStart
   const todayDate = new Date()
   todayDate.setHours(0, 0, 0, 0)
   const daysLeft = Math.round((nextPeriod - todayDate) / 86400000)

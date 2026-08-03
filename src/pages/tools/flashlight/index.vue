@@ -87,6 +87,7 @@
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
+import { onHide } from '@dcloudio/uni-app'
 
 // ====== 模式定义 ======
 const modeOptions = [
@@ -286,6 +287,11 @@ function clearAllTimers() {
     sosTimer = null
   }
 }
+
+// 页面隐藏（切走但未卸载）时关闭手电筒，避免定时器与常亮屏继续运行
+onHide(() => {
+  if (isOn.value) turnOff()
+})
 
 // 页面卸载时清理资源
 onUnmounted(() => {

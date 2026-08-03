@@ -30,8 +30,8 @@
         <view class="add-btn" @tap="showAdd = true">＋ 添加</view>
       </view>
 
-      <view v-if="events.length === 0" class="event-empty">当天暂无日程</view>
-      <view v-for="ev in events" :key="ev.id" class="event-item">
+      <view v-if="currentEvents.length === 0" class="event-empty">当天暂无日程</view>
+      <view v-for="ev in currentEvents" :key="ev.id" class="event-item">
         <text class="event-time">{{ ev.time }}</text>
         <text class="event-text">{{ ev.text }}</text>
         <text class="event-del" @tap="removeEvent(ev.id)">✕</text>
@@ -64,6 +64,9 @@ const showAdd = ref(false)
 const newText = ref('')
 const newTime = ref('09:00')
 const events = ref(loadEvents())
+
+// 选中日期当天的日程数组（events 是「日期 → 事件数组」字典）
+const currentEvents = computed(() => events.value[selectedDate.value] || [])
 
 const isCurrentMonth = computed(() => {
   const t = new Date()
