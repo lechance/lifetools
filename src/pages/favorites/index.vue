@@ -19,13 +19,27 @@
       <text class="page-favorites__empty-desc">在首页长按工具即可收藏</text>
     </view>
 
-    <!-- 收藏工具网格 -->
+    <!-- 有收藏：工具网格 -->
     <ToolGrid
       v-else
       :tools="displayedTools"
       @select="handleToolTap"
       @favorite="handleFavorite"
     />
+
+    <!-- 收藏使用说明：置于页面最底部 -->
+    <view v-if="favoriteTools.length > 0" class="page-favorites__notice">
+      <view class="page-favorites__notice-header">
+        <text class="page-favorites__notice-icon">💡</text>
+        <text class="page-favorites__notice-title">使用说明</text>
+      </view>
+      <view class="page-favorites__notice-body">
+        <text class="page-favorites__notice-text">1. 点击工具即可打开使用</text>
+        <text class="page-favorites__notice-text">2. 长按工具 2 秒可取消收藏</text>
+        <text class="page-favorites__notice-text">3. 在首页长按工具 2 秒即可收藏</text>
+        <text class="page-favorites__notice-text">4. 支持在搜索框输入关键词筛选收藏的工具</text>
+      </view>
+    </view>
 
     <!-- 底部菜单栏 -->
     <TabBar current="favorites" @change="handleTabChange" />
@@ -116,11 +130,14 @@ function handleTabChange(key) {
 
 <style lang="scss" scoped>
 .page-favorites {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background: $bg-color;
 
   // 空状态
   &__empty {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -140,6 +157,44 @@ function handleTabChange(key) {
     &-desc {
       font-size: $font-size-sm;
       color: $text-secondary;
+    }
+  }
+
+  // 收藏使用说明：margin-top: auto 使其始终位于页面最底部
+  &__notice {
+    margin: auto 24rpx 24rpx;
+    background: $card-bg;
+    border-radius: $radius-md;
+    padding: 24rpx;
+    box-shadow: $shadow-sm;
+
+    &-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16rpx;
+    }
+
+    &-icon {
+      font-size: 36rpx;
+      margin-right: 12rpx;
+    }
+
+    &-title {
+      font-size: $font-size-md;
+      font-weight: 600;
+      color: $text-primary;
+    }
+
+    &-body {
+      display: flex;
+      flex-direction: column;
+      gap: 12rpx;
+    }
+
+    &-text {
+      font-size: $font-size-sm;
+      color: $text-secondary;
+      line-height: 1.5;
     }
   }
 
