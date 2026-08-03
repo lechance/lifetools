@@ -184,6 +184,12 @@
       }
     },
     {
+      "path": "pages/tools/ct-scan/index",
+      "style": {
+        "navigationBarTitleText": "CT检查"
+      }
+    },
+    {
       "path": "pages/tools/image-compress/index",
       "style": {
         "navigationBarTitleText": "图片压缩"

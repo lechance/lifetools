@@ -46,7 +46,8 @@ const FUN_TOOLS = [
   { id: 'sudoku', name: '数独游戏', icon: '🧩', color: COLORS.fun },
   { id: 'idiom-chain', name: '成语接龙', icon: '📖', color: COLORS.fun },
   { id: 'guess-number', name: '猜数字', icon: '❓', color: COLORS.fun },
-  { id: 'rock-scissors', name: '石头剪刀布', icon: '✊', color: COLORS.fun }
+  { id: 'rock-scissors', name: '石头剪刀布', icon: '✊', color: COLORS.fun },
+  { id: 'ct-scan', name: 'CT检查', icon: '🩻', color: COLORS.fun }
 ]
 
 /** 图片工具 */
