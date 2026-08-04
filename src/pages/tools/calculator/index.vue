@@ -255,17 +255,16 @@ onUnmounted(() => {
 .page {
   min-height: 100vh;
   background: #F5F5F7;
-  padding: 24rpx;
-}
-.card {
-  background: #fff;
-  border-radius: 20rpx;
-  padding: 28rpx;
-  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
-  margin-bottom: 24rpx;
+  display: flex;
+  flex-direction: column;
 }
 .display-card {
-  text-align: right;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  margin: 24rpx;
+  margin-bottom: 0;
   padding: 32rpx 24rpx;
 }
 .expression {
@@ -274,17 +273,20 @@ onUnmounted(() => {
   min-height: 40rpx;
   margin-bottom: 12rpx;
   word-break: break-all;
+  text-align: right;
 }
 .current {
   color: #1D1D1F;
-  font-size: 72rpx;
+  font-size: 80rpx;
   font-weight: 300;
-  min-height: 88rpx;
+  min-height: 96rpx;
   word-break: break-all;
   line-height: 1.1;
   font-family: monospace;
+  text-align: right;
 }
 .keypad-card {
+  margin: 0 24rpx 24rpx;
   padding: 16rpx;
 }
 .keypad {
