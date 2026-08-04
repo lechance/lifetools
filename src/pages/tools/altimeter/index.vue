@@ -70,6 +70,10 @@ const updateCount = ref(0)
 const source = ref('')
 
 const MAX_ALT = 1000
+const CACHE_THRESHOLD = 0.001
+let lastApiLat = null
+let lastApiLng = null
+let lastApiAlt = null
 
 const meterWidth = computed(() => {
   if (altitude.value === '--') return 0
@@ -131,12 +135,27 @@ function getLocation() {
 }
 
 function fetchAltitudeFromAPI(lat, lng) {
+  if (lastApiLat !== null && lastApiLng !== null) {
+    const latDiff = Math.abs(lat - lastApiLat)
+    const lngDiff = Math.abs(lng - lastApiLng)
+    if (latDiff < CACHE_THRESHOLD && lngDiff < CACHE_THRESHOLD) {
+      altitude.value = lastApiAlt
+      source.value = 'API(缓存)'
+      updateCount.value++
+      loading.value = false
+      return
+    }
+  }
+
   uni.request({
     url: `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`,
     success: (res) => {
       if (res.statusCode === 200 && res.data && res.data.results && res.data.results[0]) {
         altitude.value = res.data.results[0].elevation.toFixed(1)
         source.value = 'API'
+        lastApiLat = lat
+        lastApiLng = lng
+        lastApiAlt = altitude.value
       } else {
         altitude.value = '--'
         showToast('无法获取海拔数据')
