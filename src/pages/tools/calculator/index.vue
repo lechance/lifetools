@@ -253,10 +253,11 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .page {
-  min-height: 100vh;
+  height: 100vh;
   background: #F5F5F7;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 .display-card {
   flex: 1;
