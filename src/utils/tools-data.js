@@ -86,7 +86,8 @@ const UTILITY_TOOLS = [
   { id: 'id-card', name: '身份证解析', icon: '🆔', color: COLORS.utility },
   { id: 'password-gen', name: '随机密码生成', icon: '🔑', color: COLORS.utility },
   { id: 'qr-code', name: '二维码工具', icon: '📱', color: COLORS.utility },
-  { id: 'altimeter', name: '海拔测量', icon: '⛰️', color: COLORS.utility }
+  { id: 'altimeter', name: '海拔测量', icon: '⛰️', color: COLORS.utility },
+  { id: 'photo-filter', name: '拍照滤镜', icon: '📸', color: COLORS.utility }
 ]
 
 /** 分类定义 */

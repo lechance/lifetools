@@ -344,6 +344,12 @@
       "style": {
         "navigationBarTitleText": "海拔测量"
       }
+    },
+    {
+      "path": "pages/tools/photo-filter/index",
+      "style": {
+        "navigationBarTitleText": "拍照滤镜"
+      }
     }
   ],
   "globalStyle": {
