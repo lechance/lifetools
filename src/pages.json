@@ -338,6 +338,12 @@
       "style": {
         "navigationBarTitleText": "二维码工具"
       }
+    },
+    {
+      "path": "pages/tools/altimeter/index",
+      "style": {
+        "navigationBarTitleText": "海拔测量"
+      }
     }
   ],
   "globalStyle": {
