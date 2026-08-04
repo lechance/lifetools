@@ -333,23 +333,27 @@ const displayEvents = computed(() => {
 //  API 请求
 // ==================================================================
 function fetchApiEvents() {
-  // 免费 API：https://api.oick.cn/lishi/api.php
   uni.request({
-    url: `https://api.oick.cn/lishi/api.php?month=${month}&day=${day}`,
+    url: 'https://v2.xxapi.cn/api/history',
+    timeout: 10000,
     success: (res) => {
-      if (res.statusCode === 200 && res.data && Array.isArray(res.data)) {
-        const mapped = res.data.map(item => ({
-          year: parseInt(item.year) || 0,
-          title: item.title || item.name || '',
-          desc: item.desc || item.info || '',
-          month,
-          day,
-        })).filter(e => e.year > 0 && e.title)
+      if (res.statusCode === 200 && res.data && res.data.code === 200 && Array.isArray(res.data.data)) {
+        const mapped = res.data.data.map(item => {
+          const match = item.match(/^(\d{4})年\d{2}月\d{2}日\s*(.*)$/)
+          if (!match) return null
+          return {
+            year: parseInt(match[1]) || 0,
+            title: match[2] || '',
+            desc: '',
+            month,
+            day,
+          }
+        }).filter(e => e && e.year > 0 && e.title)
         apiEvents.value = mapped.slice(0, 30)
       }
     },
     fail: () => {
-      apiError.value = ''
+      apiError.value = '网络错误，请稍后重试'
     },
   })
 }
