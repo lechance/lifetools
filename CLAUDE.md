@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 "治点工具箱" — 微信小程序，集合日常生活常用工具。uni-app 3.x (Vue 3 + Vite) 构建，编译到微信小程序和 H5。
 
-**48 个工具已全部实现**（无占位页面），覆盖：热门、生活、娱乐、图片、计算、实用六大分类。
+**49 个工具已全部实现**（无占位页面），覆盖：热门、生活、娱乐、图片、计算、实用六大分类。
 
 ## Commands
 
@@ -27,7 +27,7 @@ npm run dev:mp-weixin
 **注意：**
 - 构建前需在 `src/manifest.json` 配置 `mp-weixin.appid` 为真实 AppID（当前为占位 `wx0000000000000000`）
 - 微信小程序产物 `dist/build/mp-weixin/` 用微信开发者工具打开
-- 依赖极少：无外部二维码库（`src/utils/qrcode.js` 为内联源码），仅 weather/汇率两工具用外部 API
+- 依赖极少：无外部二维码库（`src/utils/qrcode.js` 为内联源码），weather/汇率/历史上的今天 三个工具用外部 API
 
 ## Architecture
 
@@ -40,8 +40,9 @@ npm run dev:mp-weixin
 | 表单计算 | BMI/房贷/个税/进制等 | `input` + `picker` + 本地计算 |
 | 本地存储 | 待办/备忘/生理期/日历日程 | `uni.getStorageSync/setStorageSync` |
 | Canvas 图片 | 压缩/裁剪/滤镜/拼接/取色/表情包/证件照/头像 | `uni.createCanvasContext` + `canvasToTempFilePath` 导出 |
-| 传感器 | 计步/分贝/尺子 | `uni.startAccelerometer` / `uni.getRecorderManager` |
-| 外部 API | 天气/汇率 | `uni.request` 调 `wttr.in` / `open.er-api.com` |
+| 传感器/录音 | 计步/分贝 | `uni.onAccelerometerChange` / `uni.getRecorderManager`（尺子为 DPI 校准的虚拟直尺，非传感器） |
+| 外部 API | 天气/汇率/历史上的今天 | `uni.request` 调 `wttr.in` / `open.er-api.com` / `api.oick.cn` |
+| 娱乐模拟 | CT检查 | 多阶段流程（选部位→贴近提示→扫描→出片）+ canvas 绘制结果片 + 定时器动画 |
 
 ### 关键工具文件
 
@@ -53,7 +54,13 @@ npm run dev:mp-weixin
 
 ### 外部 API 域名
 
-天气工具用 `wttr.in`，汇率工具用 `open.er-api.com`。**H5 直接可用**；微信小程序需在公众平台把这些域名加入 request 合法域名白名单，否则请求失败。
+天气工具用 `wttr.in`，汇率工具用 `open.er-api.com`，历史上的今天用 `api.oick.cn`。**H5 直接可用**；微信小程序需在公众平台把这些域名加入 request 合法域名白名单，否则请求失败。
+
+### Canvas 工具要点（影响压缩/裁剪/滤镜/拼接/取色/表情包/证件照/水印/头像/二维码/CT检查 等）
+
+- canvas 元素需同时设 `canvas-id`（JS 引用）和 `id`，宽高用内联 `:style` 的 **px**（非 rpx）
+- 每次绘制前需确认 canvas 已挂载（`nextTick` 后调用 `uni.createCanvasContext`），绘制命令在 `ctx.draw()` 前按序执行
+- 导出必须在 `ctx.draw(false, cb)` 回调里调 `canvasToTempFilePath`，否则导出为空；需要高分辨率输出用 `destWidth/destHeight`
 
 ### 二维码工具
 
@@ -79,4 +86,4 @@ qr-code 工具用 `src/utils/qrcode.js` 生成矩阵，`uni.createCanvasContext`
 
 ## Tab Switching
 
-三个主页面使用**自定义 TabBar 组件**（非原生 `tabBar`），点击触发 `@change` 事件，通过 `uni.reLaunch()` 切换页面以清除导航栈。
+四个主页面（工具/收藏/卡券/我的）使用**自定义 TabBar 组件**（非原生 `tabBar`），点击触发 `@change` 事件，通过 `uni.reLaunch()` 切换页面以清除导航栈。收藏页 `src/pages/favorites/index.vue` 复用 `ToolGrid` 展示已收藏工具并支持搜索、长按取消收藏。首页工具网格与收藏页复用 `ToolGrid` 组件（长按 1 秒收藏，图标最大化、无卡片背景）。
