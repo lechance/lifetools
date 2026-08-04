@@ -363,6 +363,12 @@
       "style": {
         "navigationBarTitleText": "古诗文"
       }
+    },
+    {
+      "path": "pages/settings/index",
+      "style": {
+        "navigationBarTitleText": "API 设置"
+      }
     }
   ],
   "globalStyle": {

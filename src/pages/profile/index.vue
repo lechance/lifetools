@@ -31,6 +31,18 @@
       </view>
     </view>
 
+    <!-- 设置 -->
+    <view class="page-profile__menu-group">
+      <view class="page-profile__menu-title">设置</view>
+      <view class="page-profile__menu-list">
+        <view class="page-profile__menu-item" @tap="handleApiSettings">
+          <text class="page-profile__menu-icon">🔑</text>
+          <text class="page-profile__menu-label">API 设置</text>
+          <text class="page-profile__menu-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
     <!-- 关于小程序 -->
     <view class="page-profile__menu-group">
       <view class="page-profile__menu-title">关于小程序</view>
@@ -160,6 +172,11 @@ function handleSuggestion() {
 /** 隐私政策 */
 function handlePrivacy() {
   showToast('隐私政策内容准备中')
+}
+
+/** API 设置 */
+function handleApiSettings() {
+  uni.navigateTo({ url: '/pages/settings/index' })
 }
 
 /** 用户协议 */
