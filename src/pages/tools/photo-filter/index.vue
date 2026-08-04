@@ -18,32 +18,10 @@
       <view v-else class="filter-tool__on-info">
         <text class="filter-tool__mode-badge">{{ currentFilter.label }}</text>
       </view>
-
-      <!-- 全屏模式下的控制按钮 -->
-      <view
-        v-if="isFullscreen && showButtons"
-        class="filter-tool__fullscreen-btn"
-        @tap.stop="toggleFullscreen"
-      >
-        <text class="filter-tool__fullscreen-icon">⛶</text>
-      </view>
-    </view>
-
-    <!-- 返回按钮 -->
-    <view
-      v-if="isFullscreen && showButtons"
-      class="filter-tool__back-btn"
-      @tap.stop="() => uni.navigateBack()"
-    >
-      <text class="filter-tool__back-text">←</text>
     </view>
 
     <!-- 底部控制面板 -->
-    <view
-      class="filter-tool__panel"
-      :class="{ 'filter-tool__panel--hidden': isFullscreen }"
-      @tap.stop
-    >
+    <view class="filter-tool__panel" @tap.stop>
       <!-- 滤镜预设选择 -->
       <view class="filter-tool__section">
         <text class="filter-tool__section-title">韩系滤镜</text>
@@ -64,7 +42,7 @@
             </view>
           </view>
         </scroll-view>
-      </view>
+        </view>
 
       <!-- 亮度调节 -->
       <view class="filter-tool__section">
@@ -104,6 +82,14 @@
         />
       </view>
 
+      <!-- 全屏显示按钮 -->
+      <view class="filter-tool__section">
+        <button class="filter-tool__fullscreen-btn" @tap="goFullscreen">
+          <text class="filter-tool__fullscreen-icon">⛶</text>
+          <text class="filter-tool__fullscreen-text">全屏显示</text>
+        </button>
+      </view>
+
       <!-- 状态信息 -->
       <view class="filter-tool__status-bar">
         <text class="filter-tool__status-text">
@@ -137,8 +123,6 @@ const isOn = ref(false)
 const activeKey = ref('milky')
 const opacity = ref(0.85)
 const warmth = ref(0)
-const isFullscreen = ref(false)
-const showButtons = ref(true)
 
 const currentFilter = computed(() => {
   return filters.find(f => f.key === activeKey.value) || filters[0]
@@ -208,6 +192,12 @@ function onWarmthChange(e) {
   saveSettings()
 }
 
+function goFullscreen() {
+  uni.navigateTo({
+    url: '/pages/tools/photo-filter/fullscreen/index'
+  })
+}
+
 function saveSettings() {
   const data = {
     activeKey: activeKey.value,
@@ -236,60 +226,16 @@ function loadSettings() {
   } catch (e) {}
 }
 
-// ====== 全屏功能 ======
-function toggleFullscreen() {
-  isFullscreen.value = !isFullscreen.value
-  if (isFullscreen.value) {
-    showButtons.value = true
-    // 隐藏导航栏（uni-app 兼容方式）
-    uni.setNavigationBarTitle({ title: '' })
-    uni.hideNavigationBar()
-    uni.hideHomeButton()
-  } else {
-    showButtons.value = false
-    // 恢复导航栏
-    uni.showNavigationBar()
-    uni.showHomeButton()
-  }
-  saveSettings()
-}
-
-function showButtonsTemporarily() {
-  if (isFullscreen.value && !showButtons.value) {
-    showButtons.value = true
-    setTimeout(() => {
-      if (isFullscreen.value) showButtons.value = false
-    }, 3000)
-  }
-}
-
 onMounted(() => {
   loadSettings()
-  // 监听点击事件以显示按钮
-  if (typeof window !== 'undefined') {
-    window.addEventListener('click', showButtonsTemporarily)
-  }
 })
 
 onHide(() => {
   if (isOn.value) turnOff()
-  if (isFullscreen.value) {
-    isFullscreen.value = false
-    showButtons.value = false
-  }
-  // 恢复导航栏
-  uni.showNavigationBar()
-  uni.showHomeButton()
 })
 
 onUnmounted(() => {
   uni.setKeepScreenOn({ keepScreenOn: false })
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('click', showButtonsTemporarily)
-  }
-  // 恢复导航栏
-  uni.showNavigationBar()
-  uni.showHomeButton()
 })
 </script>
 
@@ -436,6 +382,27 @@ onUnmounted(() => {
   }
   &__slider {
     width: 100%;
+  }
+
+  // ====== 全屏按钮 ======
+  &__fullscreen-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12rpx;
+    background: #007AFF;
+    color: #fff;
+    border: none;
+    border-radius: 24rpx;
+    padding: 16rpx 32rpx;
+    font-size: 28rpx;
+    font-weight: 600;
+    transition: all 0.2s;
+
+    &:active {
+      transform: scale(0.95);
+      opacity: 0.8;
+    }
   }
 
   // ====== 状态栏 ======
