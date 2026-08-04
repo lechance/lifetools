@@ -49,7 +49,8 @@
     </view>
 
     <view class="card">
-      <text class="tip">海拔数据来源于GPS定位，精度受设备和环境影响。开阔地带定位更准确。</text>
+      <text class="tip">海拔数据来源于GPS定位或网络API查询，精度受设备和环境影响。开阔地带定位更准确。</text>
+      <text v-if="source" class="source">数据来源: {{ source }}</text>
     </view>
   </view>
 </template>
@@ -66,6 +67,7 @@ const verticalAccuracy = ref('--')
 const horizontalAccuracy = ref('--')
 const loading = ref(false)
 const updateCount = ref(0)
+const source = ref('')
 
 const MAX_ALT = 1000
 
@@ -98,17 +100,24 @@ onMounted(() => {
 function getLocation() {
   if (loading.value) return
   loading.value = true
+  source.value = ''
 
   uni.getLocation({
     altitude: true,
     success: (res) => {
-      altitude.value = res.altitude ? res.altitude.toFixed(1) : '--'
       latitude.value = res.latitude ? res.latitude.toFixed(6) : '--'
       longitude.value = res.longitude ? res.longitude.toFixed(6) : '--'
       accuracy.value = res.accuracy ? res.accuracy.toFixed(1) : '--'
       verticalAccuracy.value = res.verticalAccuracy ? res.verticalAccuracy.toFixed(1) : '--'
       horizontalAccuracy.value = res.horizontalAccuracy ? res.horizontalAccuracy.toFixed(1) : '--'
-      updateCount.value++
+
+      if (res.altitude && res.altitude !== 0) {
+        altitude.value = res.altitude.toFixed(1)
+        source.value = 'GPS'
+        updateCount.value++
+      } else {
+        fetchAltitudeFromAPI(res.latitude, res.longitude)
+      }
     },
     fail: (err) => {
       if (err.errMsg && err.errMsg.includes('auth deny')) {
@@ -116,6 +125,27 @@ function getLocation() {
       } else {
         showToast('定位失败，请稍后重试')
       }
+      loading.value = false
+    }
+  })
+}
+
+function fetchAltitudeFromAPI(lat, lng) {
+  uni.request({
+    url: `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`,
+    success: (res) => {
+      if (res.statusCode === 200 && res.data && res.data.results && res.data.results[0]) {
+        altitude.value = res.data.results[0].elevation.toFixed(1)
+        source.value = 'API'
+      } else {
+        altitude.value = '--'
+        showToast('无法获取海拔数据')
+      }
+      updateCount.value++
+    },
+    fail: () => {
+      altitude.value = '--'
+      showToast('网络请求失败')
     },
     complete: () => {
       loading.value = false
@@ -205,5 +235,11 @@ function getLocation() {
   font-size: 22rpx;
   color: #C7C7CC;
   line-height: 1.6;
+}
+.source {
+  display: block;
+  font-size: 22rpx;
+  color: #007AFF;
+  margin-top: 8rpx;
 }
 </style>

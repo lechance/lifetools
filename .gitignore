@@ -1,6 +1,7 @@
 node_modules/
 unpackage/
 dist/
+certs/
 *.log
 .DS_Store
 *.local
