@@ -9,16 +9,7 @@
     <view
       class="filter-tool__screen"
       :style="screenStyle"
-      @tap="togglePower"
-    >
-      <view v-if="!isOn" class="filter-tool__off-hint">
-        <text class="filter-tool__off-icon">📸</text>
-        <text class="filter-tool__off-text">点击屏幕开启滤镜</text>
-      </view>
-      <view v-else class="filter-tool__on-info">
-        <text class="filter-tool__mode-badge">{{ currentFilter.label }}</text>
-      </view>
-    </view>
+    />
 
     <!-- 底部控制面板 -->
     <view class="filter-tool__panel" @tap.stop>
@@ -84,25 +75,14 @@
 
       <!-- 全屏显示按钮 -->
       <view class="filter-tool__section">
-        <button class="filter-tool__fullscreen-btn" @tap="goFullscreen">
-          <text class="filter-tool__fullscreen-icon">⛶</text>
-          <text class="filter-tool__fullscreen-text">全屏显示</text>
-        </button>
-      </view>
-
-      <!-- 状态信息 -->
-      <view class="filter-tool__status-bar">
-        <text class="filter-tool__status-text">
-          {{ isOn ? currentFilter.label + ' · 亮度' + Math.round(opacity * 100) + '%' : '已关闭' }}
-        </text>
+        <button class="filter-tool__fullscreen-btn" @tap="goFullscreen">全屏显示</button>
       </view>
     </view>
   </view>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { onHide } from '@dcloudio/uni-app'
+import { ref, computed, onMounted } from 'vue'
 
 // ====== 韩系滤镜预设 ======
 const filters = [
@@ -119,7 +99,6 @@ const filters = [
 const STORAGE_KEY = 'photo-filter-settings'
 
 // ====== 响应式状态 ======
-const isOn = ref(false)
 const activeKey = ref('milky')
 const opacity = ref(0.85)
 const warmth = ref(0)
@@ -137,9 +116,6 @@ const warmthLabel = computed(() => {
 })
 
 const screenStyle = computed(() => {
-  if (!isOn.value) {
-    return { backgroundColor: '#1A1A1E' }
-  }
   const base = currentFilter.value.color
   const r = parseInt(base.slice(1, 3), 16)
   const g = parseInt(base.slice(3, 5), 16)
@@ -156,26 +132,6 @@ const screenStyle = computed(() => {
 })
 
 // ====== 方法 ======
-
-function togglePower() {
-  if (isOn.value) {
-    turnOff()
-  } else {
-    turnOn()
-  }
-}
-
-function turnOn() {
-  isOn.value = true
-  uni.setKeepScreenOn({ keepScreenOn: true })
-  saveSettings()
-}
-
-function turnOff() {
-  isOn.value = false
-  uni.setKeepScreenOn({ keepScreenOn: false })
-  saveSettings()
-}
 
 function selectFilter(f) {
   activeKey.value = f.key
@@ -202,8 +158,7 @@ function saveSettings() {
   const data = {
     activeKey: activeKey.value,
     opacity: opacity.value,
-    warmth: warmth.value,
-    isOn: isOn.value
+    warmth: warmth.value
   }
   try {
     uni.setStorageSync(STORAGE_KEY, JSON.stringify(data))
@@ -218,24 +173,12 @@ function loadSettings() {
       if (data.activeKey) activeKey.value = data.activeKey
       if (data.opacity !== undefined) opacity.value = data.opacity
       if (data.warmth !== undefined) warmth.value = data.warmth
-      if (data.isOn) {
-        isOn.value = true
-        uni.setKeepScreenOn({ keepScreenOn: true })
-      }
     }
   } catch (e) {}
 }
 
 onMounted(() => {
   loadSettings()
-})
-
-onHide(() => {
-  if (isOn.value) turnOff()
-})
-
-onUnmounted(() => {
-  uni.setKeepScreenOn({ keepScreenOn: false })
 })
 </script>
 
@@ -251,44 +194,7 @@ onUnmounted(() => {
     position: fixed;
     inset: 0;
     z-index: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     transition: background-color 0.3s ease, opacity 0.3s ease;
-  }
-
-  &__off-hint {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24rpx;
-    opacity: 0.6;
-  }
-  &__off-icon {
-    font-size: 96rpx;
-  }
-  &__off-text {
-    font-size: 28rpx;
-    color: rgba(255, 255, 255, 0.5);
-    letter-spacing: 4rpx;
-  }
-
-  &__on-info {
-    position: absolute;
-    top: 100rpx;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-  }
-  &__mode-badge {
-    font-size: 24rpx;
-    color: rgba(255, 255, 255, 0.7);
-    background: rgba(0, 0, 0, 0.25);
-    padding: 12rpx 32rpx;
-    border-radius: 40rpx;
-    backdrop-filter: blur(8px);
-    letter-spacing: 2rpx;
   }
 
   // ====== 底部控制面板 ======
@@ -386,37 +292,20 @@ onUnmounted(() => {
 
   // ====== 全屏按钮 ======
   &__fullscreen-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12rpx;
-    background: #007AFF;
-    color: #fff;
+    display: block;
+    width: 100%;
+    text-align: center;
+    background: #F0F0F0;
+    color: #1D1D1F;
     border: none;
     border-radius: 24rpx;
-    padding: 16rpx 32rpx;
-    font-size: 28rpx;
-    font-weight: 600;
-    transition: all 0.2s;
+    font-size: 30rpx;
+    padding: 24rpx 0;
+    line-height: 1;
 
     &:active {
-      transform: scale(0.95);
       opacity: 0.8;
     }
-  }
-
-  // ====== 状态栏 ======
-  &__status-bar {
-    margin-top: 20rpx;
-    padding-top: 20rpx;
-    border-top: 2rpx solid #F0F0F0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  &__status-text {
-    font-size: 22rpx;
-    color: #8E8E93;
   }
 }
 </style>

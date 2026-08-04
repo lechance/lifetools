@@ -348,6 +348,12 @@
     {
       "path": "pages/tools/photo-filter/index",
       "style": {
+        "navigationBarTitleText": "拍照滤镜"
+      }
+    },
+    {
+      "path": "pages/tools/photo-filter/fullscreen/index",
+      "style": {
         "navigationBarTitleText": "拍照滤镜",
         "navigationStyle": "custom"
       }
