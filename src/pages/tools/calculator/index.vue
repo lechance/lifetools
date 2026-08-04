@@ -4,23 +4,25 @@
  */
 
 <template>
-  <div class="calculator">
-    <div class="display">
-      <div class="expression">{{ expression }}</div>
-      <div class="current">{{ displayValue }}</div>
-    </div>
+  <view class="page">
+    <view class="card display-card">
+      <view class="expression">{{ expression }}</view>
+      <view class="current">{{ displayValue }}</view>
+    </view>
 
-    <div class="keypad">
-      <button
-        v-for="btn in buttons"
-        :key="btn.label"
-        :class="['btn', btn.type, { zero: btn.label === '0', active: btn.label === activeKey }]"
-        @click="handleClick(btn)"
-      >
-        {{ btn.label }}
-      </button>
-    </div>
-  </div>
+    <view class="card keypad-card">
+      <view class="keypad">
+        <view
+          v-for="btn in buttons"
+          :key="btn.label"
+          :class="['btn', btn.type, { zero: btn.label === '0', active: btn.label === activeKey }]"
+          @tap="handleClick(btn)"
+        >
+          {{ btn.label }}
+        </view>
+      </view>
+    </view>
+  </view>
 </template>
 
 <script setup>
@@ -249,106 +251,94 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-.calculator {
-  width: 320px;
-  background: #1c1c1c;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  user-select: none;
+<style lang="scss" scoped>
+.page {
+  min-height: 100vh;
+  background: #F5F5F7;
+  padding: 24rpx;
 }
-
-.display {
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+  margin-bottom: 24rpx;
+}
+.display-card {
   text-align: right;
-  padding: 20px 10px;
-  margin-bottom: 15px;
+  padding: 32rpx 24rpx;
 }
-
 .expression {
-  color: #a5a5a5;
-  font-size: 16px;
-  min-height: 24px;
-  margin-bottom: 8px;
+  color: #86868B;
+  font-size: 28rpx;
+  min-height: 40rpx;
+  margin-bottom: 12rpx;
   word-break: break-all;
 }
-
 .current {
-  color: #ffffff;
-  font-size: 48px;
+  color: #1D1D1F;
+  font-size: 72rpx;
   font-weight: 300;
-  min-height: 58px;
+  min-height: 88rpx;
   word-break: break-all;
   line-height: 1.1;
+  font-family: monospace;
 }
-
+.keypad-card {
+  padding: 16rpx;
+}
 .keypad {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
+  gap: 16rpx;
 }
-
 .btn {
-  border: none;
-  border-radius: 50%;
-  width: 64px;
-  height: 64px;
-  font-size: 24px;
-  cursor: pointer;
-  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100rpx;
+  border-radius: 16rpx;
+  font-size: 36rpx;
   font-weight: 500;
-  outline: none;
+  transition: all 0.15s ease;
+  user-select: none;
+  &:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  &.active {
+    transform: scale(0.95);
+  }
 }
-
-.btn:active,
-.btn.active {
-  transform: scale(0.92);
-}
-
 .number {
-  background: #333333;
-  color: #ffffff;
+  background: #FFFFFF;
+  color: #1D1D1F;
+  box-shadow: 0 2rpx 8rpx rgba(0,0,0,0.04);
+  &:active { background: #F5F5F7; }
 }
-
-.number:hover {
-  background: #737373;
-}
-
 .zero {
   grid-column: span 2;
-  width: 100%;
-  border-radius: 32px;
   text-align: left;
-  padding-left: 28px;
+  padding-left: 36rpx;
 }
-
 .function {
-  background: #a5a5a5;
-  color: #1c1c1c;
+  background: #F5F5F7;
+  color: #1D1D1F;
+  &:active { background: #E5E5EA; }
 }
-
-.function:hover {
-  background: #d4d4d2;
-}
-
 .operator {
-  background: #ff9f0c;
-  color: #ffffff;
+  background: #1D1D1F;
+  color: #FFFFFF;
+  &:active { background: #3A3A3C; }
+  &.active {
+    background: #FFFFFF;
+    color: #1D1D1F;
+    box-shadow: 0 0 0 2rpx #1D1D1F;
+  }
 }
-
-.operator:hover,
-.operator.active {
-  background: #ffffff;
-  color: #ff9f0c;
-}
-
 .equals {
-  background: #ff9f0c;
-  color: #ffffff;
-}
-
-.equals:hover {
-  background: #ffb340;
+  background: #007AFF;
+  color: #FFFFFF;
+  &:active { background: #0056CC; }
 }
 </style>
