@@ -290,18 +290,20 @@ onUnmounted(() => {
 .keypad-card {
   margin: 0 24rpx 24rpx;
   padding: 16rpx;
-  flex-shrink: 0;
+  flex: 2;
+  min-height: 0;
 }
 .keypad {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(5, 1fr);
   gap: 16rpx;
+  height: 100%;
 }
 .btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100rpx;
   border-radius: 16rpx;
   font-size: 36rpx;
   font-weight: 500;
