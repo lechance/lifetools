@@ -357,6 +357,12 @@
         "navigationBarTitleText": "拍照滤镜",
         "navigationStyle": "custom"
       }
+    },
+    {
+      "path": "pages/tools/ancient-poetry/index",
+      "style": {
+        "navigationBarTitleText": "古诗文"
+      }
     }
   ],
   "globalStyle": {
