@@ -163,30 +163,16 @@ function start() {
   // #endif
 }
 
-let aacFallbackTimer = null
-
 function startRecord() {
   trackMax = 0; trackMin = Infinity; trackSum = 0; trackCount = 0; trackStart = Date.now()
   recorder = uni.getRecorderManager()
-  recorder.onStart(() => {
-    recording.value = true
-    console.log('[decibel] Recording started')
-  })
+  recorder.onStart(() => { recording.value = true })
   recorder.onError((err) => {
     recording.value = false
-    console.error('[decibel] Recorder error:', err)
     showToast('录音失败：' + (err.errMsg || '未知错误'))
   })
   recorder.onFrameRecorded((res) => {
-    if (aacFallbackTimer) {
-      clearTimeout(aacFallbackTimer)
-      aacFallbackTimer = null
-      console.log('[decibel] AAC frame received, no fallback needed')
-    }
     const data = new Int16Array(res.frameBuffer)
-    if (trackCount === 0) {
-      console.log('[decibel] First frame — byteLength:', res.frameBuffer.byteLength, 'samples:', data.length, 'first 5:', Array.from(data.slice(0, 5)))
-    }
     let sum = 0
     for (let i = 0; i < data.length; i++) sum += data[i] * data[i]
     const rms = Math.sqrt(sum / data.length)
@@ -194,55 +180,17 @@ function startRecord() {
     db.value = Math.max(0, Math.min(120, 90 + dbVal))
     trackDb(db.value)
   })
-  tryStartRecorder('aac')
-}
-
-function tryStartRecorder(format) {
-  console.log('[decibel] Trying format:', format)
   recorder.start({
     duration: 600000,
     sampleRate: 16000,
     numberOfChannels: 1,
     encodeBitRate: 24000,
-    format: format,
+    format: 'aac',
     frameSize: 4
   })
-  if (format === 'aac') {
-    aacFallbackTimer = setTimeout(() => {
-      if (trackCount === 0 && recording.value) {
-        console.log('[decibel] No AAC frames after 3s, falling back to PCM')
-        recorder.stop()
-        recorder = null
-        recorder = uni.getRecorderManager()
-        recorder.onStart(() => { recording.value = true })
-        recorder.onError((err) => {
-          recording.value = false
-          console.error('[decibel] Recorder error (PCM fallback):', err)
-          showToast('录音失败：' + (err.errMsg || '未知错误'))
-        })
-        recorder.onFrameRecorded((res) => {
-          const data = new Int16Array(res.frameBuffer)
-          if (trackCount === 0) {
-            console.log('[decibel] PCM fallback first frame — byteLength:', res.frameBuffer.byteLength, 'samples:', data.length)
-          }
-          let sum = 0
-          for (let i = 0; i < data.length; i++) sum += data[i] * data[i]
-          const rms = Math.sqrt(sum / data.length)
-          const dbVal = 20 * Math.log10((rms / 32768) + 1e-10)
-          db.value = Math.max(0, Math.min(120, 90 + dbVal))
-          trackDb(db.value)
-        })
-        tryStartRecorder('pcm')
-      }
-    }, 3000)
-  }
 }
 
 function stop() {
-  if (aacFallbackTimer) {
-    clearTimeout(aacFallbackTimer)
-    aacFallbackTimer = null
-  }
   if (recording.value && trackCount > 0) {
     saveRecord({
       id: Date.now(),
@@ -314,10 +262,6 @@ onUnmounted(() => {
   // #ifdef H5
   stopH5()
   // #endif
-  if (aacFallbackTimer) {
-    clearTimeout(aacFallbackTimer)
-    aacFallbackTimer = null
-  }
   if (recording.value) {
     recording.value = false
     if (recorder) {
