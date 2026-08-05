@@ -184,11 +184,11 @@ function startRecord() {
   })
   recorder.start({
     duration: 600000,
-    sampleRate: 44100,
+    sampleRate: 16000,
     numberOfChannels: 1,
-    encodeBitRate: 192000,
-    format: 'aac',
-    frameSize: 8
+    encodeBitRate: 16000,
+    format: 'pcm',
+    frameSize: 4
   })
 }
 
