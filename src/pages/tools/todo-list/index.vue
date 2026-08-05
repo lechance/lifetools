@@ -33,7 +33,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 
 const STORAGE_KEY = 'lifetool_todo'
 const newTodo = ref('')
@@ -60,27 +60,31 @@ function load() {
   }
 }
 
-watch(todos, (val) => {
-  uni.setStorageSync(STORAGE_KEY, JSON.stringify(val))
-}, { deep: true })
+function save() {
+  uni.setStorageSync(STORAGE_KEY, JSON.stringify(todos.value))
+}
 
 function addTodo() {
   const text = newTodo.value.trim()
   if (!text) return
   todos.value.unshift({ id: Date.now(), text, done: false, time: Date.now() })
   newTodo.value = ''
+  save()
 }
 
 function toggleTodo(todo) {
   todo.done = !todo.done
+  save()
 }
 
 function removeTodo(id) {
   todos.value = todos.value.filter(t => t.id !== id)
+  save()
 }
 
 function clearDone() {
   todos.value = todos.value.filter(t => !t.done)
+  save()
 }
 </script>
 

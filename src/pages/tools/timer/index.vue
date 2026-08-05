@@ -29,12 +29,14 @@
 
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
+import { onHide } from '@dcloudio/uni-app'
 
 const elapsed = ref(0)  // 毫秒
 const running = ref(false)
 const laps = ref([])
-let timer = null
+let raf = null
 let lastLap = 0
+let lastTick = 0
 
 const displayTime = computed(() => formatTime(elapsed.value))
 
@@ -47,20 +49,29 @@ function formatTime(ms) {
   return `${pad(h)}:${pad(m)}:${pad(s)}.${pad(cs)}`
 }
 
+function tick(ts) {
+  if (!running.value) return
+  raf = requestAnimationFrame(tick)
+  if (ts - lastTick < 100) return // ~10fps for centisecond display
+  lastTick = ts
+  elapsed.value += 100
+}
+
 function toggle() {
   if (running.value) {
-    clearInterval(timer)
-    timer = null
+    cancelAnimationFrame(raf)
+    raf = null
   } else {
     lastLap = elapsed.value
-    timer = setInterval(() => { elapsed.value += 10 }, 10)
+    lastTick = 0
+    raf = requestAnimationFrame(tick)
   }
   running.value = !running.value
 }
 
 function reset() {
-  clearInterval(timer)
-  timer = null
+  cancelAnimationFrame(raf)
+  raf = null
   running.value = false
   elapsed.value = 0
   laps.value = []
@@ -72,9 +83,15 @@ function addLap() {
   lastLap = elapsed.value
 }
 
-onUnmounted(() => {
-  if (timer) clearInterval(timer)
-})
+function cleanup() {
+  if (raf) {
+    cancelAnimationFrame(raf)
+    raf = null
+  }
+}
+
+onUnmounted(cleanup)
+onHide(cleanup)
 </script>
 
 <style lang="scss" scoped>

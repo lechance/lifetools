@@ -28,7 +28,7 @@
     />
 
     <!-- 收藏使用说明：置于页面最底部 -->
-    <view v-if="favoriteTools.length > 0" class="page-favorites__notice">
+    <view v-if="favoriteTools.length > 0" v-once class="page-favorites__notice">
       <view class="page-favorites__notice-header">
         <text class="page-favorites__notice-icon">💡</text>
         <text class="page-favorites__notice-title">使用说明</text>

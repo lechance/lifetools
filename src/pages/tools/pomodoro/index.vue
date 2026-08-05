@@ -117,6 +117,7 @@
 
 <script setup>
 import { ref, computed, watch, onUnmounted } from 'vue'
+import { onHide, onShow } from '@dcloudio/uni-app'
 
 // ====== 常量 ======
 const DURATION_OPTIONS = [
@@ -381,6 +382,18 @@ function handleTimeUp() {
 // 页面卸载时清理
 onUnmounted(() => {
   stopTimer()
+})
+
+// 页面隐藏时暂停计时
+onHide(() => {
+  stopTimer()
+})
+
+// 页面显示时恢复计时
+onShow(() => {
+  if (status.value === 'running' || status.value === 'break') {
+    startTimer()
+  }
 })
 
 // 监听状态变化提供震动反馈

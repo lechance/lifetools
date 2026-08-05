@@ -12,7 +12,7 @@
     </view>
 
     <!-- ====== 排序控制 ====== -->
-    <view class="countdown__bar">
+    <view v-once class="countdown__bar">
       <text class="countdown__bar-title">
         共 <text class="countdown__bar-num">{{ sortedFestivals.length }}</text> 个节日
       </text>
@@ -39,7 +39,7 @@
         :key="f.id"
         class="countdown__card"
         :class="urgencyClass(f.days)"
-        :style="{ animationDelay: i * 0.05 + 's' }"
+        :style="{ animationDelay: f.animDelay }"
       >
         <view class="countdown__card-left">
           <text class="countdown__card-emoji">{{ f.emoji }}</text>
@@ -111,7 +111,7 @@
         :key="cd.id"
         class="countdown__card countdown__card--custom"
         :class="urgencyClass(cd.days)"
-        :style="{ animationDelay: (sortedFestivals.length + i) * 0.05 + 's' }"
+        :style="{ animationDelay: (sortedFestivals.length * 0.05 + (i + 1) * 0.05) + 's' }"
       >
         <view class="countdown__card-left">
           <text class="countdown__card-emoji">📌</text>
@@ -185,6 +185,7 @@ const sortedFestivals = computed(() => {
       return { ...f, days }
     })
     .sort((a, b) => a.days - b.days)
+    .map((f, i) => ({ ...f, animDelay: i * 0.05 + 's' }))
 })
 
 // ====== 工具函数 ======

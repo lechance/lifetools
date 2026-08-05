@@ -93,7 +93,7 @@
     </view>
 
     <!-- 使用说明 -->
-    <view class="page-profile__notice">
+    <view v-once class="page-profile__notice">
       <view class="page-profile__notice-header">
         <text class="page-profile__notice-icon">💡</text>
         <text class="page-profile__notice-title">使用说明</text>
@@ -123,14 +123,14 @@
 import { computed } from 'vue'
 import { useStore } from 'vuex'
 import TabBar from '@/components/TabBar.vue'
-import { getAllTools } from '@/utils/tools-data'
+import { TOTAL_TOOL_COUNT } from '@/utils/tools-data'
 import { showToast } from '@/utils/helpers'
 
 const store = useStore()
 
 const favoritesCount = computed(() => store.state.favorites.length)
 const recordsCount = computed(() => store.state.records.length)
-const totalTools = computed(() => getAllTools().length)
+const totalTools = TOTAL_TOOL_COUNT
 
 /** 底部Tab切换 - 使用 reLaunch 清除页面栈 */
 function handleTabChange(key) {

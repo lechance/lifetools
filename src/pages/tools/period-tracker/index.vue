@@ -82,7 +82,7 @@ watch([lastStart, cycle, period], (val) => {
     lastStart: val[0], cycle: val[1], period: val[2]
   }))
   calculate()
-}, { deep: true })
+})
 
 function onLastStart(e) {
   lastStart.value = e.detail.value

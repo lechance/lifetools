@@ -107,6 +107,61 @@ page {
   box-sizing: border-box;
 }
 
+/* 工具页面基础样式（在工具页 .page scoped 中使用） */
+.tool-page {
+  min-height: 100vh;
+  background: $bg-color;
+  padding: $spacing-base;
+}
+
+.tool-card {
+  background: $card-bg;
+  border-radius: 20rpx;
+  padding: 28rpx;
+  box-shadow: 0 2rpx 12rpx rgba(0, 0, 0, 0.06);
+  margin-bottom: $spacing-base;
+}
+
+.tool-btn {
+  width: 100%;
+  margin-top: $spacing-base;
+  background: $primary-color;
+  color: #fff;
+  border: none;
+  border-radius: $radius-md;
+  padding: 20rpx 0;
+  font-size: 30rpx;
+  text-align: center;
+  &:active { opacity: 0.8; }
+}
+
+.tool-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 0;
+  &:not(:last-child) { border-bottom: 1rpx solid $bg-color; }
+}
+
+.tool-label {
+  font-size: $font-size-base;
+  color: $text-primary;
+}
+
+.tool-input {
+  background: $bg-color;
+  border-radius: $radius-base;
+  padding: 10rpx $spacing-base;
+  font-size: $font-size-base;
+  color: $text-primary;
+}
+
+.tool-tip {
+  font-size: $font-size-sm;
+  color: $text-light;
+  line-height: 1.7;
+}
+
 /* 工具占位页面样式 */
 .tool-placeholder {
   display: flex;

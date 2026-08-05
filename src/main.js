@@ -10,9 +10,6 @@ export function createApp() {
   const store = createStore()
   app.use(store)
 
-  // 全局属性注入
-  app.config.globalProperties.$primaryColor = '#4F6EF7'
-
   return {
     app,
     store

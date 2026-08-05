@@ -29,7 +29,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
 const STORAGE_KEY = 'lifetool_memo'
 const memos = ref(load())
@@ -77,9 +77,11 @@ function saveEdit() {
   }
   editing.value = null
   draft.value = ''
+  save()
 }
 function deleteMemo(id) {
   memos.value = memos.value.filter(m => m.id !== id)
+  save()
 }
 </script>
 

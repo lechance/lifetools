@@ -102,7 +102,9 @@ const CATEGORIES = [
 ]
 
 /** 获取所有工具（扁平数组） */
+let _allToolsCache = null
 function getAllTools() {
+  if (_allToolsCache) return _allToolsCache
   const all = []
   const seen = new Set()
   CATEGORIES.forEach(cat => {
@@ -117,24 +119,18 @@ function getAllTools() {
       }
     })
   })
+  _allToolsCache = all
   return all
 }
 
-/** 根据分类 key 获取工具列表 */
-function getToolsByCategory(categoryKey) {
-  const cat = CATEGORIES.find(c => c.key === categoryKey)
-  if (!cat) return []
-  return cat.tools.map(tool => ({
-    ...tool,
-    category: cat.key,
-    path: `/pages/tools/${tool.id}/index`
-  }))
-}
-
 /** 根据 ID 获取工具信息 */
+let _toolMapCache = null
 function getToolById(toolId) {
-  const allTools = getAllTools()
-  return allTools.find(t => t.id === toolId) || null
+  if (!_toolMapCache) {
+    _toolMapCache = new Map()
+    getAllTools().forEach(tool => _toolMapCache.set(tool.id, tool))
+  }
+  return _toolMapCache.get(toolId) || null
 }
 
 /** 搜索工具 */
@@ -147,6 +143,20 @@ function searchTools(query) {
   )
 }
 
+/** 工具总数（去重后） */
+const TOTAL_TOOL_COUNT = getAllTools().length
+
+/** 根据分类 key 获取工具列表 */
+function getToolsByCategory(categoryKey) {
+  const cat = CATEGORIES.find(c => c.key === categoryKey)
+  if (!cat) return []
+  return cat.tools.map(tool => ({
+    ...tool,
+    category: cat.key,
+    path: `/pages/tools/${tool.id}/index`
+  }))
+}
+
 export {
   CATEGORIES,
   HOT_TOOLS,
@@ -156,6 +166,7 @@ export {
   CALC_TOOLS,
   UTILITY_TOOLS,
   COLORS,
+  TOTAL_TOOL_COUNT,
   getAllTools,
   getToolsByCategory,
   getToolById,

@@ -31,7 +31,6 @@
 
 <script setup>
 import { ref, nextTick } from 'vue'
-import qrcode from '@/utils/qrcode'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 
 const content = ref('')
@@ -46,23 +45,28 @@ const levels = [
   { key: 'H', label: '高' },
 ]
 
+let qrcodeModule = null
+
 function selectLevel(k) {
   level.value = k
   if (content.value.trim()) generate()
 }
 
-function generate() {
+async function generate() {
   const text = content.value.trim()
   if (!text) {
     showToast('请输入内容')
     return
+  }
+  if (!qrcodeModule) {
+    qrcodeModule = await import('@/utils/qrcode')
   }
   nextTick(() => drawQr(text))
 }
 
 function drawQr(text) {
   try {
-    const qr = qrcode(0, level.value)  // typeNumber 0 = 自动版本
+    const qr = qrcodeModule.default(0, level.value)  // typeNumber 0 = 自动版本
     qr.addData(text)
     qr.make()
     const size = qr.getModuleCount()
