@@ -203,7 +203,7 @@ function tryStartRecorder(format) {
     duration: 600000,
     sampleRate: 16000,
     numberOfChannels: 1,
-    encodeBitRate: 16000,
+    encodeBitRate: 24000,
     format: format,
     frameSize: 4
   })
