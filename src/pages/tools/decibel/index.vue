@@ -47,7 +47,7 @@
     </view>
 
     <view class="card">
-      <view v-for="l in levels" :key="l.range" class="level-row">
+      <view v-for="(l, i) in levels" :key="l.range" class="level-row" :class="{ 'level-row--active': i === activeLevel }">
         <text class="level-range">{{ l.range }}</text>
         <text class="level-name">{{ l.name }}</text>
       </view>
@@ -66,21 +66,31 @@ const MAX_DB = 120
 let h5Stream = null
 let h5AudioCtx = null
 let h5Afr = null
+let h5LastTick = 0
 
 const records = ref([])
 const STORAGE_KEY = 'lifetool_decibel_records'
 let trackMax = 0
-let trackMin = 120
+let trackMin = Infinity
 let trackSum = 0
 let trackCount = 0
 let trackStart = 0
 
 const levels = [
-  { range: '0-30', name: '安静环境' },
-  { range: '30-60', name: '正常交谈' },
-  { range: '60-80', name: '嘈杂环境' },
-  { range: '80-120', name: '高分贝·刺耳' },
+  { range: '0-30', name: '安静环境', min: 0, max: 30 },
+  { range: '30-60', name: '正常交谈', min: 30, max: 60 },
+  { range: '60-80', name: '嘈杂环境', min: 60, max: 80 },
+  { range: '80-120', name: '高分贝·刺耳', min: 80, max: 120 },
 ]
+
+const activeLevel = computed(() => {
+  if (!recording.value) return -1
+  const v = db.value
+  for (let i = 0; i < levels.length; i++) {
+    if (v >= levels[i].min && v < levels[i].max) return i
+  }
+  return levels.length - 1
+})
 
 function loadRecords() {
   try {
@@ -154,7 +164,7 @@ function start() {
 }
 
 function startRecord() {
-  trackMax = 0; trackMin = 120; trackSum = 0; trackCount = 0; trackStart = Date.now()
+  trackMax = 0; trackMin = Infinity; trackSum = 0; trackCount = 0; trackStart = Date.now()
   recorder = uni.getRecorderManager()
   recorder.onStart(() => {
     recording.value = true
@@ -189,7 +199,7 @@ function stop() {
       time: trackStart,
       duration: Date.now() - trackStart,
       max: +trackMax.toFixed(1),
-      min: +trackMin.toFixed(1),
+      min: trackMin === Infinity ? 0 : +trackMin.toFixed(1),
       avg: +(trackSum / trackCount).toFixed(1)
     })
   }
@@ -210,7 +220,7 @@ function startRecordH5() {
     showToast('当前浏览器不支持录音')
     return
   }
-  trackMax = 0; trackMin = 120; trackSum = 0; trackCount = 0; trackStart = Date.now()
+  trackMax = 0; trackMin = Infinity; trackSum = 0; trackCount = 0; trackStart = Date.now()
   navigator.mediaDevices.getUserMedia({ audio: true })
     .then(stream => {
       h5Stream = stream
@@ -221,7 +231,11 @@ function startRecordH5() {
       source.connect(analyser)
       recording.value = true
       const data = new Float32Array(analyser.fftSize)
-      function tick() {
+      h5LastTick = 0
+      function tick(ts) {
+        h5Afr = requestAnimationFrame(tick)
+        if (ts - h5LastTick < 66) return // ~15fps
+        h5LastTick = ts
         analyser.getFloatTimeDomainData(data)
         let sum = 0
         for (let i = 0; i < data.length; i++) sum += data[i] * data[i]
@@ -229,9 +243,8 @@ function startRecordH5() {
         const dbVal = 20 * Math.log10(rms + 1e-10)
         db.value = Math.max(0, Math.min(MAX_DB, dbVal + 94))
         trackDb(db.value)
-        h5Afr = requestAnimationFrame(tick)
       }
-      tick()
+      h5Afr = requestAnimationFrame(tick)
     })
     .catch(() => showToast('需要麦克风权限'))
 }
@@ -251,11 +264,13 @@ onUnmounted(() => {
   // #ifdef H5
   stopH5()
   // #endif
-  if (recorder) {
-    recorder.stop()
-    recorder = null
+  if (recording.value) {
+    recording.value = false
+    if (recorder) {
+      recorder.stop()
+      recorder = null
+    }
   }
-  recording.value = false
 })
 </script>
 
@@ -312,9 +327,12 @@ onUnmounted(() => {
 .level-row {
   display: flex;
   justify-content: space-between;
-  padding: 12rpx 0;
+  padding: 12rpx 16rpx;
   border-bottom: 1rpx solid #F5F5F7;
+  border-radius: 8rpx;
+  transition: background 0.15s;
   &:last-child { border-bottom: none; }
+  &--active { background: rgba(0, 122, 255, 0.08); }
 }
 .level-range { font-size: 26rpx; color: #86868B; }
 .level-name { font-size: 26rpx; color: #1D1D1F; }
