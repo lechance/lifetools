@@ -93,7 +93,7 @@
     </view>
 
     <!-- 使用说明 -->
-    <view v-once class="page-profile__notice">
+    <view class="page-profile__notice">
       <view class="page-profile__notice-header">
         <text class="page-profile__notice-icon">💡</text>
         <text class="page-profile__notice-title">使用说明</text>

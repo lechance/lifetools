@@ -15,7 +15,7 @@
     </view>
 
     <!-- 使用说明 -->
-    <view v-once class="page-coupons__notice">
+    <view class="page-coupons__notice">
       <view class="page-coupons__notice-header">
         <text class="page-coupons__notice-icon">💡</text>
         <text class="page-coupons__notice-title">使用说明</text>

@@ -12,7 +12,7 @@
     </view>
 
     <!-- ====== 排序控制 ====== -->
-    <view v-once class="countdown__bar">
+    <view class="countdown__bar">
       <text class="countdown__bar-title">
         共 <text class="countdown__bar-num">{{ sortedFestivals.length }}</text> 个节日
       </text>
