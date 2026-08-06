@@ -375,6 +375,12 @@
       "style": {
         "navigationBarTitleText": "关于我们"
       }
+    },
+    {
+      "path": "pages/suggestion/index",
+      "style": {
+        "navigationBarTitleText": "工具建议"
+      }
     }
   ],
   "globalStyle": {

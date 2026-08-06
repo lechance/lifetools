@@ -88,7 +88,7 @@ function handleEncourage() {
 
 /** 工具建议 */
 function handleSuggestion() {
-  showToast('感谢您的建议！请通过在线客服反馈 💪')
+  uni.navigateTo({ url: '/pages/suggestion/index' })
 }
 
 /** API 设置 */

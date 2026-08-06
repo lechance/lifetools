@@ -32,6 +32,12 @@ const DEFAULT_CONFIG = {
     label: '汇率 API Key',
     placeholder: '留空使用免费接口 er-api.com',
   },
+  // 工具建议 - 提交建议的 HTTP 接口地址
+  suggestion: {
+    url: '',
+    label: '工具建议提交地址',
+    placeholder: '填写接收建议的接口地址（POST）',
+  },
 }
 
 function loadConfig() {
@@ -68,6 +74,10 @@ function getConfig() {
   return loadConfig()
 }
 
+function getSuggestionUrl() {
+  return loadConfig().suggestion?.url || ''
+}
+
 function resetConfig() {
   saveConfig({ ...DEFAULT_CONFIG })
 }
@@ -78,5 +88,6 @@ export {
   saveConfig,
   getApiKey,
   setApiKey,
+  getSuggestionUrl,
   resetConfig,
 }

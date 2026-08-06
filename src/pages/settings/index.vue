@@ -50,6 +50,17 @@
           @focus="onFocus"
         />
       </view>
+      <view class="settings__item">
+        <text class="settings__item-label">工具建议提交地址</text>
+        <input
+          class="settings__input"
+          type="text"
+          :value="suggestionUrl"
+          placeholder="填写接收建议的接口地址（POST）"
+          @input="suggestionUrl = $event.detail.value"
+          @focus="onFocus"
+        />
+      </view>
     </view>
 
     <view class="settings__actions">
@@ -72,6 +83,7 @@ const weatherKey = ref('')
 const historyKey = ref('')
 const poetryKey = ref('')
 const exchangeKey = ref('')
+const suggestionUrl = ref('')
 
 onMounted(() => {
   const saved = getConfig()
@@ -79,6 +91,7 @@ onMounted(() => {
   if (saved.todayInHistory) historyKey.value = saved.todayInHistory.apiKey || ''
   if (saved.ancientPoetry) poetryKey.value = saved.ancientPoetry.apiKey || ''
   if (saved.exchangeRate) exchangeKey.value = saved.exchangeRate.apiKey || ''
+  if (saved.suggestion) suggestionUrl.value = saved.suggestion.url || ''
 })
 
 function onFocus() {}
@@ -89,6 +102,7 @@ function onSave() {
     todayInHistory: { apiKey: historyKey.value },
     ancientPoetry: { apiKey: poetryKey.value },
     exchangeRate: { apiKey: exchangeKey.value },
+    suggestion: { url: suggestionUrl.value },
   })
   showSuccess('保存成功')
 }
@@ -99,6 +113,7 @@ function onReset() {
   historyKey.value = ''
   poetryKey.value = ''
   exchangeKey.value = ''
+  suggestionUrl.value = ''
   showSuccess('已恢复默认')
 }
 </script>

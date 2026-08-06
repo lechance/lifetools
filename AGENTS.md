@@ -43,9 +43,12 @@ npm run build:mp-weixin   # 产物 → unpackage/dist/dev|build/mp-weixin
 
 - `src/pages/tools/*/index.vue` — 各工具页面
 - `src/pages/favorites/index.vue` — 收藏页（复用 `ToolGrid`）
-- `src/pages/settings/index.vue` — API Key 设置页
+- `src/pages/settings/index.vue` — API Key 设置页（含工具建议提交地址）
+- `src/pages/suggestion/index.vue` — 工具建议提交页（POST 至 api-config 配置的接口）
+- `src/pages/about/index.vue` — 关于我们（在线客服/用户协议/隐私政策）
 - `src/utils/tools-data.js` — 工具元数据与分类过滤（`getAllTools`/`getToolById`/`searchTools`）
 - `src/utils/storage.js` — 本地存储封装（收藏、记录、搜索历史）
+- `src/utils/api-config.js` — API Key 与自定义配置（含建议提交地址 `getSuggestionUrl`）
 - `src/utils/helpers.js` — 通用函数（`debounce`/`showToast`/`showModal` 等）
 - `src/utils/qrcode.js` — 内联的 QR 编码源码（零依赖，不要改为 npm 依赖）
 - `src/manifest.json` — 平台/AppID 配置
