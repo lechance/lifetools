@@ -381,6 +381,18 @@
       "style": {
         "navigationBarTitleText": "工具建议"
       }
+    },
+    {
+      "path": "pages/agreement/index",
+      "style": {
+        "navigationBarTitleText": "用户协议"
+      }
+    },
+    {
+      "path": "pages/privacy/index",
+      "style": {
+        "navigationBarTitleText": "隐私政策"
+      }
     }
   ],
   "globalStyle": {

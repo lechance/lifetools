@@ -45,12 +45,12 @@ function handleContact() {
 
 /** 用户协议 */
 function handleAgreement() {
-  showToast('用户协议内容准备中')
+  uni.navigateTo({ url: '/pages/agreement/index' })
 }
 
 /** 隐私政策 */
 function handlePrivacy() {
-  showToast('隐私政策内容准备中')
+  uni.navigateTo({ url: '/pages/privacy/index' })
 }
 </script>
 
