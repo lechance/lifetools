@@ -369,6 +369,12 @@
       "style": {
         "navigationBarTitleText": "API 设置"
       }
+    },
+    {
+      "path": "pages/about/index",
+      "style": {
+        "navigationBarTitleText": "关于我们"
+      }
     }
   ],
   "globalStyle": {

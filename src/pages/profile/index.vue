@@ -43,27 +43,10 @@
           <text class="page-profile__menu-label">工具建议</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
-        <!-- 关于我们（标题） -->
-        <view class="page-profile__menu-item page-profile__menu-item--header">
+        <!-- 关于我们 -->
+        <view class="page-profile__menu-item" @tap="handleAbout">
           <text class="page-profile__menu-icon">📋</text>
           <text class="page-profile__menu-label">关于我们</text>
-        </view>
-        <!-- 在线客服 -->
-        <view class="page-profile__menu-item page-profile__menu-item--sub" @tap="handleContact">
-          <text class="page-profile__menu-icon">💬</text>
-          <text class="page-profile__menu-label">在线客服</text>
-          <text class="page-profile__menu-arrow">›</text>
-        </view>
-        <!-- 用户协议 -->
-        <view class="page-profile__menu-item page-profile__menu-item--sub" @tap="handleAgreement">
-          <text class="page-profile__menu-icon">📄</text>
-          <text class="page-profile__menu-label">用户协议</text>
-          <text class="page-profile__menu-arrow">›</text>
-        </view>
-        <!-- 隐私政策 -->
-        <view class="page-profile__menu-item page-profile__menu-item--sub" @tap="handlePrivacy">
-          <text class="page-profile__menu-icon">🔒</text>
-          <text class="page-profile__menu-label">隐私政策</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
       </view>
@@ -93,9 +76,9 @@ function handleTabChange(key) {
   }
 }
 
-/** 在线客服 */
-function handleContact() {
-  showToast('客服功能开发中，敬请期待')
+/** 关于我们 */
+function handleAbout() {
+  uni.navigateTo({ url: '/pages/about/index' })
 }
 
 /** 鼓励我们 */
@@ -108,19 +91,9 @@ function handleSuggestion() {
   showToast('感谢您的建议！请通过在线客服反馈 💪')
 }
 
-/** 隐私政策 */
-function handlePrivacy() {
-  showToast('隐私政策内容准备中')
-}
-
 /** API 设置 */
 function handleApiSettings() {
   uni.navigateTo({ url: '/pages/settings/index' })
-}
-
-/** 用户协议 */
-function handleAgreement() {
-  showToast('用户协议内容准备中')
 }
 </script>
 
@@ -202,17 +175,6 @@ function handleAgreement() {
 
     &:active {
       background: $primary-bg;
-    }
-
-    &--header {
-      opacity: 0.6;
-      &:active {
-        background: transparent;
-      }
-    }
-
-    &--sub {
-      padding-left: 72rpx;
     }
   }
 
