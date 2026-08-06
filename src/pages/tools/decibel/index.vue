@@ -177,7 +177,9 @@ function startRecord() {
     for (let i = 0; i < data.length; i++) sum += data[i] * data[i]
     const rms = Math.sqrt(sum / data.length)
     const dbVal = 20 * Math.log10((rms / 32768) + 1e-10)
-    db.value = Math.max(0, Math.min(120, 90 + dbVal))
+    const finalDb = Math.max(0, Math.min(120, 90 + dbVal))
+    console.log('[decibel] rms:', rms.toFixed(1), 'dbFS:', dbVal.toFixed(1), 'dB:', finalDb.toFixed(1), 'samples:', data.length)
+    db.value = finalDb
     trackDb(db.value)
   })
   recorder.start({
@@ -186,7 +188,8 @@ function startRecord() {
     numberOfChannels: 1,
     encodeBitRate: 24000,
     format: 'aac',
-    frameSize: 4
+    frameSize: 4,
+    audioSource: 'voice_recognition'
   })
 }
 
