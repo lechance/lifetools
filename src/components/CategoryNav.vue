@@ -55,7 +55,7 @@ function handleChange(key) {
 
 <style lang="scss" scoped>
 .category-nav {
-  padding: 8rpx 0 16rpx;
+  padding: 8rpx 0 0;
   background: $bg-color;
   z-index: 10;
   box-sizing: border-box;
@@ -71,26 +71,37 @@ function handleChange(key) {
     gap: 16rpx;
   }
 
-  // 固定高度 + border-box：激活态的 2rpx 边框不会改变整行高度，避免菜单抖动
   &__item {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    height: 64rpx;
+    position: relative;
+    height: 72rpx;
     padding: 0 28rpx;
     box-sizing: border-box;
-    border-radius: 40rpx;
-    background: $card-bg;
-    box-shadow: $shadow-sm;
-    transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: color 0.25s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 60%;
+      height: 4rpx;
+      border-radius: 2rpx;
+      background: $primary-color;
+      transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
 
     &--active {
-      background: $primary-bg;
-      border: 2rpx solid $text-primary;
-
       .category-nav__text {
         color: $primary-color;
         font-weight: 600;
+      }
+
+      &::after {
+        transform: translateX(-50%) scaleX(1);
       }
     }
   }
@@ -99,6 +110,7 @@ function handleChange(key) {
     font-size: $font-size-sm;
     color: $text-secondary;
     white-space: nowrap;
+    transition: color 0.25s ease;
   }
 }
 </style>
