@@ -20,13 +20,10 @@ const HOT_TOOLS = [
   { id: 'flashlight', name: 'SOS手电筒', icon: '🔦', color: COLORS.hot },
   { id: 'countdown', name: '节日倒计时', icon: '⏰', color: COLORS.hot },
   { id: 'today-in-history', name: '历史上的今天', icon: '📜', color: COLORS.hot },
-  { id: 'safe-period', name: '安全期计算', icon: '📊', color: COLORS.hot },
-  { id: 'shelf-life', name: '保质期计算', icon: '📅', color: COLORS.hot },
   { id: 'pomodoro', name: '番茄专注', icon: '🍅', color: COLORS.hot },
   { id: 'led-marquee', name: 'LED弹幕', icon: '💡', color: COLORS.hot },
-  { id: 'date-calc', name: '日期计算器', icon: '📆', color: COLORS.hot },
-  { id: 'random', name: '随机数生成', icon: '🎲', color: COLORS.hot },
-  { id: 'unit-convert', name: '单位换算', icon: '📐', color: COLORS.hot }
+  { id: 'decibel', name: '分贝测试', icon: '🔊', color: COLORS.hot },
+  { id: 'altimeter', name: '海拔测量', icon: '⛰️', color: COLORS.hot }
 ]
 
 /** 生活工具 */
@@ -36,7 +33,9 @@ const LIFE_TOOLS = [
   { id: 'exchange-rate', name: '汇率换算', icon: '💱', color: COLORS.life },
   { id: 'size-chart', name: '尺码对照', icon: '📏', color: COLORS.life },
   { id: 'period-tracker', name: '生理期记录', icon: '❤️', color: COLORS.life },
-  { id: 'garbage-classify', name: '垃圾分类查询', icon: '♻️', color: COLORS.life }
+  { id: 'garbage-classify', name: '垃圾分类查询', icon: '♻️', color: COLORS.life },
+  { id: 'safe-period', name: '安全期计算', icon: '📊', color: COLORS.life },
+  { id: 'shelf-life', name: '保质期计算', icon: '📅', color: COLORS.life }
 ]
 
 /** 娱乐工具 */
@@ -71,7 +70,9 @@ const CALC_TOOLS = [
   { id: 'bmi-calc', name: 'BMI计算器', icon: '⚖️', color: COLORS.calc },
   { id: 'age-calc', name: '年龄计算器', icon: '🎂', color: COLORS.calc },
   { id: 'base-convert', name: '进制转换', icon: '🔀', color: COLORS.calc },
-  { id: 'amount-upper', name: '金额转大写', icon: '💵', color: COLORS.calc }
+  { id: 'amount-upper', name: '金额转大写', icon: '💵', color: COLORS.calc },
+  { id: 'date-calc', name: '日期计算器', icon: '📆', color: COLORS.calc },
+  { id: 'random', name: '随机数生成', icon: '🎲', color: COLORS.calc }
 ]
 
 /** 实用工具 */
@@ -88,7 +89,8 @@ const UTILITY_TOOLS = [
   { id: 'qr-code', name: '二维码工具', icon: '📱', color: COLORS.utility },
   { id: 'altimeter', name: '海拔测量', icon: '⛰️', color: COLORS.utility },
   { id: 'photo-filter', name: '拍照滤镜', icon: '📸', color: COLORS.utility },
-  { id: 'ancient-poetry', name: '古诗文', icon: '📜', color: COLORS.utility }
+  { id: 'ancient-poetry', name: '古诗文', icon: '📜', color: COLORS.utility },
+  { id: 'unit-convert', name: '单位换算', icon: '📐', color: COLORS.utility }
 ]
 
 /** 分类定义 */
