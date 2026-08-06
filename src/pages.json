@@ -244,6 +244,12 @@
       }
     },
     {
+      "path": "pages/tools/grid-split/index",
+      "style": {
+        "navigationBarTitleText": "九宫格切图"
+      }
+    },
+    {
       "path": "pages/tools/loan-calc/index",
       "style": {
         "navigationBarTitleText": "房贷计算器"

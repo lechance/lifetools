@@ -60,7 +60,8 @@ const IMAGE_TOOLS = [
   { id: 'meme-maker', name: '表情包制作', icon: '🖼️', color: COLORS.image },
   { id: 'id-photo', name: '证件照制作', icon: '📷', color: COLORS.image },
   { id: 'watermark', name: '图片水印', icon: '💧', color: COLORS.image },
-  { id: 'avatar-deco', name: '头像加装饰', icon: '👤', color: COLORS.image }
+  { id: 'avatar-deco', name: '头像加装饰', icon: '👤', color: COLORS.image },
+  { id: 'grid-split', name: '九宫格切图', icon: '🔲', color: COLORS.image }
 ]
 
 /** 计算工具 */
