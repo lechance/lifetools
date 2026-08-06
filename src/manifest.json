@@ -32,8 +32,14 @@
       "minified": true
     },
     "usingComponents": {},
-    "permission": {},
-    "requiredPrivateInfos": []
+    "permission": {
+      "scope.userLocation": {
+        "desc": "你的位置信息将用于海拔高度查询"
+      }
+    },
+    "requiredPrivateInfos": [
+      "getLocation"
+    ]
   },
   "uniStatistics": {
     "enable": false

@@ -109,6 +109,7 @@ function getLocation() {
   uni.getLocation({
     altitude: true,
     success: (res) => {
+      console.log('[altimeter] getLocation success:', JSON.stringify(res))
       latitude.value = res.latitude ? res.latitude.toFixed(6) : '--'
       longitude.value = res.longitude ? res.longitude.toFixed(6) : '--'
       accuracy.value = res.accuracy ? res.accuracy.toFixed(1) : '--'
@@ -124,6 +125,7 @@ function getLocation() {
       }
     },
     fail: (err) => {
+      console.error('[altimeter] getLocation fail:', err)
       if (err.errMsg && err.errMsg.includes('auth deny')) {
         showToast('请在设置中允许定位权限')
       } else {
@@ -150,6 +152,7 @@ function fetchAltitudeFromAPI(lat, lng) {
   uni.request({
     url: `https://api.open-elevation.com/api/v1/lookup?locations=${lat},${lng}`,
     success: (res) => {
+      console.log('[altimeter] API response:', res.statusCode, JSON.stringify(res.data))
       if (res.statusCode === 200 && res.data && res.data.results && res.data.results[0]) {
         altitude.value = res.data.results[0].elevation.toFixed(1)
         source.value = 'API'
@@ -162,7 +165,8 @@ function fetchAltitudeFromAPI(lat, lng) {
       }
       updateCount.value++
     },
-    fail: () => {
+    fail: (err) => {
+      console.error('[altimeter] API fail:', err)
       altitude.value = '--'
       showToast('网络请求失败')
     },
