@@ -31,28 +31,10 @@
     <view class="page-profile__menu-group">
       <view class="page-profile__menu-title">关于小程序</view>
       <view class="page-profile__menu-list">
-        <!-- 在线客服 -->
-        <view class="page-profile__menu-item" @tap="handleContact">
-          <text class="page-profile__menu-icon">💬</text>
-          <text class="page-profile__menu-label">在线客服</text>
-          <text class="page-profile__menu-arrow">›</text>
-        </view>
-        <!-- 关于我们 -->
-        <view class="page-profile__menu-item" @tap="handleAbout">
-          <text class="page-profile__menu-icon">📋</text>
-          <text class="page-profile__menu-label">关于我们</text>
-          <text class="page-profile__menu-arrow">›</text>
-        </view>
         <!-- 鼓励我们 -->
         <view class="page-profile__menu-item" @tap="handleEncourage">
           <text class="page-profile__menu-icon">⭐</text>
           <text class="page-profile__menu-label">鼓励我们</text>
-          <text class="page-profile__menu-arrow">›</text>
-        </view>
-        <!-- 分享我们 -->
-        <view class="page-profile__menu-item" @tap="handleShare">
-          <text class="page-profile__menu-icon">📤</text>
-          <text class="page-profile__menu-label">分享我们</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
         <!-- 工具建议 -->
@@ -61,16 +43,28 @@
           <text class="page-profile__menu-label">工具建议</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
-        <!-- 隐私政策 -->
-        <view class="page-profile__menu-item" @tap="handlePrivacy">
-          <text class="page-profile__menu-icon">🔒</text>
-          <text class="page-profile__menu-label">隐私政策</text>
+        <!-- 关于我们 -->
+        <view class="page-profile__menu-item" @tap="handleAbout">
+          <text class="page-profile__menu-icon">📋</text>
+          <text class="page-profile__menu-label">关于我们</text>
+          <text class="page-profile__menu-arrow">›</text>
+        </view>
+        <!-- 在线客服 -->
+        <view class="page-profile__menu-item" @tap="handleContact">
+          <text class="page-profile__menu-icon">💬</text>
+          <text class="page-profile__menu-label">在线客服</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
         <!-- 用户协议 -->
         <view class="page-profile__menu-item" @tap="handleAgreement">
           <text class="page-profile__menu-icon">📄</text>
           <text class="page-profile__menu-label">用户协议</text>
+          <text class="page-profile__menu-arrow">›</text>
+        </view>
+        <!-- 隐私政策 -->
+        <view class="page-profile__menu-item" @tap="handlePrivacy">
+          <text class="page-profile__menu-icon">🔒</text>
+          <text class="page-profile__menu-label">隐私政策</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
       </view>
@@ -113,11 +107,6 @@ function handleAbout() {
 /** 鼓励我们 */
 function handleEncourage() {
   showToast('感谢您的鼓励！我们会继续努力 💪')
-}
-
-/** 分享我们 */
-function handleShare() {
-  showToast('分享功能开发中，敬请期待')
 }
 
 /** 工具建议 */
