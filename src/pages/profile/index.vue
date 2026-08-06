@@ -43,26 +43,25 @@
           <text class="page-profile__menu-label">工具建议</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
-        <!-- 关于我们 -->
-        <view class="page-profile__menu-item" @tap="handleAbout">
+        <!-- 关于我们（标题） -->
+        <view class="page-profile__menu-item page-profile__menu-item--header">
           <text class="page-profile__menu-icon">📋</text>
           <text class="page-profile__menu-label">关于我们</text>
-          <text class="page-profile__menu-arrow">›</text>
         </view>
         <!-- 在线客服 -->
-        <view class="page-profile__menu-item" @tap="handleContact">
+        <view class="page-profile__menu-item page-profile__menu-item--sub" @tap="handleContact">
           <text class="page-profile__menu-icon">💬</text>
           <text class="page-profile__menu-label">在线客服</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
         <!-- 用户协议 -->
-        <view class="page-profile__menu-item" @tap="handleAgreement">
+        <view class="page-profile__menu-item page-profile__menu-item--sub" @tap="handleAgreement">
           <text class="page-profile__menu-icon">📄</text>
           <text class="page-profile__menu-label">用户协议</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
         <!-- 隐私政策 -->
-        <view class="page-profile__menu-item" @tap="handlePrivacy">
+        <view class="page-profile__menu-item page-profile__menu-item--sub" @tap="handlePrivacy">
           <text class="page-profile__menu-icon">🔒</text>
           <text class="page-profile__menu-label">隐私政策</text>
           <text class="page-profile__menu-arrow">›</text>
@@ -97,11 +96,6 @@ function handleTabChange(key) {
 /** 在线客服 */
 function handleContact() {
   showToast('客服功能开发中，敬请期待')
-}
-
-/** 关于我们 */
-function handleAbout() {
-  showToast('治点工具箱 v1.0.0')
 }
 
 /** 鼓励我们 */
@@ -208,6 +202,17 @@ function handleAgreement() {
 
     &:active {
       background: $primary-bg;
+    }
+
+    &--header {
+      opacity: 0.6;
+      &:active {
+        background: transparent;
+      }
+    }
+
+    &--sub {
+      padding-left: 72rpx;
     }
   }
 
