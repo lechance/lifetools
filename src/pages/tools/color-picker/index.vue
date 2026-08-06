@@ -1,12 +1,9 @@
 <template>
   <view class="page">
-    <view class="toolbar">
-      <button class="btn btn--primary" @tap="chooseImage">{{ imagePath ? '重新选择' : '选择图片' }}</button>
-    </view>
-
-    <view class="empty" v-if="!imagePath">
+    <view class="empty" v-if="!imagePath" @tap="chooseImage">
       <text class="empty-icon">🎯</text>
       <text class="empty-text">选择图片，点击任意位置取色</text>
+      <text class="empty-sub">点击添加，支持相册与拍照</text>
     </view>
 
     <view v-if="imagePath" class="card">
@@ -16,6 +13,7 @@
           @touchstart="onTouch"></canvas>
       </view>
       <text class="hint">点击图片取色</text>
+      <text class="replace-hint" @tap="chooseImage">更换图片</text>
 
       <view v-if="pickedColor" class="color-result">
         <view class="color-swatch" :style="{ background: pickedColor }"></view>
@@ -27,41 +25,50 @@
       </view>
     </view>
   </view>
+
+  <ImageSourceSheet :visible="showSheet" @select="onSourceSelect" @close="showSheet = false" />
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
 import { showToast, showSuccess } from '@/utils/helpers'
+import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
+import { pickImage } from '@/utils/image-picker'
 
 const imagePath = ref('')
+const showSheet = ref(false)
 const canvasW = ref(300)
 const canvasH = ref(300)
 const pickedColor = ref('')
 const pickedRgb = ref('')
 
 function chooseImage() {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      imagePath.value = res.tempFilePaths[0]
-      pickedColor.value = ''
-      uni.getImageInfo({
-        src: imagePath.value,
-        success: (info) => {
-          const ratio = info.width / info.height
-          if (ratio >= 1) { canvasW.value = 300; canvasH.value = Math.round(300 / ratio) }
-          else { canvasH.value = 300; canvasW.value = Math.round(300 * ratio) }
-          // #ifdef H5
-          nextTick(() => {
-            const el = document.getElementById('pickerCanvas')
-            if (el) { el.width = canvasW.value; el.height = canvasH.value }
-          })
-          // #endif
-          nextTick(() => drawImage())
-        }
-      })
-    }
-  })
+  showSheet.value = true
+}
+
+/** 选源弹窗回调：拍摄 / 相册 / 聊天记录 */
+async function onSourceSelect(source) {
+  showSheet.value = false
+  try {
+    const { paths } = await pickImage({ source, count: 1 })
+    imagePath.value = paths[0]
+    pickedColor.value = ''
+    uni.getImageInfo({
+      src: imagePath.value,
+      success: (info) => {
+        const ratio = info.width / info.height
+        if (ratio >= 1) { canvasW.value = 300; canvasH.value = Math.round(300 / ratio) }
+        else { canvasH.value = 300; canvasW.value = Math.round(300 * ratio) }
+        // #ifdef H5
+        nextTick(() => {
+          const el = document.getElementById('pickerCanvas')
+          if (el) { el.width = canvasW.value; el.height = canvasH.value }
+        })
+        // #endif
+        nextTick(() => drawImage())
+      }
+    })
+  } catch (e) {}
 }
 
 function drawImage() {
@@ -138,9 +145,17 @@ function copyColor() {
   flex-direction: column;
   align-items: center;
   gap: 16rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #8E8E93; }
+.empty-text { font-size: 28rpx; font-weight: 600; color: #1D1D1F; }
+.empty-sub {
+  font-size: 22rpx;
+  color: #C7C7CC;
+  margin-top: 4rpx;
+}
 .card {
   background: #fff;
   border-radius: 20rpx;
@@ -159,6 +174,19 @@ function copyColor() {
   font-size: 24rpx;
   color: #C7C7CC;
   margin-bottom: 16rpx;
+}
+.replace-hint {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8E8E93;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx;
+  margin: 0 auto 16rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .color-result {
   display: flex;

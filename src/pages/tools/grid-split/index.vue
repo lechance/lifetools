@@ -1,10 +1,6 @@
 <template>
   <view class="page">
-    <view class="toolbar">
-      <button class="btn btn--primary" @tap="chooseImage">{{ imagePath ? '重新选择' : '选择图片' }}</button>
-    </view>
-
-    <view class="empty" v-if="!imagePath">
+    <view class="empty" v-if="!imagePath" @tap="chooseImage">
       <text class="empty-icon">🔲</text>
       <text class="empty-text">选择一张图片进行九宫格切图</text>
       <text class="empty-tip">图片将自动裁剪为正方形并切成 3×3 共 9 张</text>
@@ -12,9 +8,10 @@
 
     <!-- 选图后、切图前：画布预览 -->
     <view v-if="imagePath && !split" class="card">
-      <view class="canvas-wrap">
+      <view class="canvas-wrap" @tap="chooseImage">
         <canvas canvas-id="gridCanvas" id="gridCanvas" class="grid-canvas"
           :style="{ width: canvasW + 'px', height: canvasH + 'px' }"></canvas>
+        <text class="replace-hint">点击更换图片</text>
       </view>
       <button class="btn" @tap="doSplit">开始切图</button>
     </view>
@@ -32,13 +29,18 @@
       <button class="btn btn--ghost" @tap="reset">重新切图</button>
     </view>
   </view>
+
+  <ImageSourceSheet :visible="showSheet" @select="onSourceSelect" @close="showSheet = false" />
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
+import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
+import { pickImage } from '@/utils/image-picker'
 
 const imagePath = ref('')
+const showSheet = ref(false)
 const canvasW = ref(300)
 const canvasH = ref(300)
 const split = ref(false)
@@ -52,23 +54,27 @@ let cropSy = 0
 let cropSize = 0
 
 function chooseImage() {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      imagePath.value = res.tempFilePaths[0]
-      split.value = false
-      pieces.value = []
-      uni.getImageInfo({
-        src: imagePath.value,
-        success: (info) => {
-          imgW = info.width
-          imgH = info.height
-          calcCrop()
-          nextTick(() => drawPreview())
-        }
-      })
-    }
-  })
+  showSheet.value = true
+}
+
+/** 选源弹窗回调：拍摄 / 相册 / 聊天记录 */
+async function onSourceSelect(source) {
+  showSheet.value = false
+  try {
+    const { paths } = await pickImage({ source, count: 1 })
+    imagePath.value = paths[0]
+    split.value = false
+    pieces.value = []
+    uni.getImageInfo({
+      src: imagePath.value,
+      success: (info) => {
+        imgW = info.width
+        imgH = info.height
+        calcCrop()
+        nextTick(() => drawPreview())
+      }
+    })
+  } catch (e) {}
 }
 
 /** 计算居中的正方形裁剪区域 */
@@ -197,9 +203,12 @@ function reset() {
   flex-direction: column;
   align-items: center;
   gap: 16rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #3A3A3C; }
+.empty-text { font-size: 28rpx; font-weight: 600; color: #1D1D1F; }
 .empty-tip { font-size: 24rpx; color: #C7C7CC; }
 .card {
   background: #fff;
@@ -209,11 +218,23 @@ function reset() {
 }
 .canvas-wrap {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   background: #000;
   border-radius: 8rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .grid-canvas { display: block; }
+.replace-hint {
+  font-size: 22rpx;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx;
+  margin-top: 12rpx;
+}
 .result-title {
   display: block;
   font-size: 28rpx;

@@ -1,21 +1,19 @@
 <template>
   <view class="page">
-    <view class="toolbar">
-      <button class="btn btn--primary" @tap="chooseImages">{{ images.length ? '重新选择' : '选择图片' }}</button>
-    </view>
-
-    <view class="empty" v-if="!images.length">
+    <view class="empty" v-if="!images.length" @tap="chooseImages">
       <text class="empty-icon">🧩</text>
       <text class="empty-text">选择 2-9 张图片拼接</text>
+      <text class="empty-sub">点击添加，支持相册与拍照</text>
     </view>
 
     <view v-if="images.length" class="card">
-      <view class="thumbs">
+      <view class="thumbs" @tap="chooseImages">
         <view v-for="(img, i) in images" :key="i" class="thumb">
           <image class="thumb-img" :src="img" mode="aspectFill" />
-          <text class="thumb-del" @tap="removeImage(i)">✕</text>
+          <text class="thumb-del" @tap.stop="removeImage(i)">✕</text>
         </view>
       </view>
+      <text class="replace-hint" @tap="chooseImages">点击选择其他图片</text>
 
       <view class="dir-row">
         <view class="dir-btn" :class="{ 'dir-btn--active': dir === 'vertical' }" @tap="dir = 'vertical'">上下拼接</view>
@@ -33,26 +31,35 @@
       </view>
     </view>
   </view>
+
+  <ImageSourceSheet :visible="showSheet" @select="onSourceSelect" @close="showSheet = false" />
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
+import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
+import { pickImage } from '@/utils/image-picker'
 
 const images = ref([])
+const showSheet = ref(false)
 const dir = ref('vertical')
 const result = ref(false)
 const canvasW = ref(300)
 const canvasH = ref(300)
 
 function chooseImages() {
-  uni.chooseImage({
-    count: 9,
-    success: (res) => {
-      images.value = res.tempFilePaths
-      result.value = false
-    }
-  })
+  showSheet.value = true
+}
+
+/** 选源弹窗回调：拍摄 / 相册 / 聊天记录（最多 9 张） */
+async function onSourceSelect(source) {
+  showSheet.value = false
+  try {
+    const { paths } = await pickImage({ source, count: 9 })
+    images.value = paths
+    result.value = false
+  } catch (e) {}
 }
 
 function removeImage(i) {
@@ -198,9 +205,17 @@ function saveImage() {
   flex-direction: column;
   align-items: center;
   gap: 16rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #8E8E93; }
+.empty-text { font-size: 28rpx; font-weight: 600; color: #1D1D1F; }
+.empty-sub {
+  font-size: 22rpx;
+  color: #C7C7CC;
+  margin-top: 4rpx;
+}
 .card {
   background: #fff;
   border-radius: 20rpx;
@@ -213,6 +228,9 @@ function saveImage() {
   flex-wrap: wrap;
   gap: 16rpx;
   margin-bottom: 20rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .thumb {
   position: relative;
@@ -260,4 +278,17 @@ function saveImage() {
   background: #fff;
 }
 .stitch-canvas { border-radius: 8rpx; }
+.replace-hint {
+  display: block;
+  text-align: center;
+  font-size: 22rpx;
+  color: #8E8E93;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx;
+  margin-bottom: 20rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
+}
 </style>

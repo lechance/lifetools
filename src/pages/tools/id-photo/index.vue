@@ -1,18 +1,16 @@
 <template>
   <view class="page">
-    <view class="toolbar">
-      <button class="btn btn--primary" @tap="chooseImage">{{ imagePath ? '重新选择' : '选择图片' }}</button>
-    </view>
-
-    <view class="empty" v-if="!imagePath">
+    <view class="empty" v-if="!imagePath" @tap="chooseImage">
       <text class="empty-icon">📷</text>
       <text class="empty-text">选择一张正面照制作证件照</text>
+      <text class="empty-sub">点击添加，支持相册与拍照</text>
     </view>
 
     <view v-if="imagePath" class="card">
-      <view class="canvas-wrap">
+      <view class="canvas-wrap" @tap="chooseImage">
         <canvas canvas-id="idphotoCanvas" id="idphotoCanvas" class="idphoto-canvas"
           :style="{ width: canvasW + 'px', height: canvasH + 'px' }"></canvas>
+        <text class="replace-hint">点击更换图片</text>
       </view>
 
       <view class="row">
@@ -33,11 +31,15 @@
       <button class="btn" @tap="saveImage">保存图片</button>
     </view>
   </view>
+
+  <ImageSourceSheet :visible="showSheet" @select="onSourceSelect" @close="showSheet = false" />
 </template>
 
 <script setup>
 import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
+import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
+import { pickImage } from '@/utils/image-picker'
 
 // 一寸 295x413，二寸 413x579
 const SIZES = {
@@ -51,6 +53,7 @@ const bgColors = [
 ]
 
 const imagePath = ref('')
+const showSheet = ref(false)
 const sizeKey = ref('1inch')
 const bgColor = ref('#D9001B')
 const canvasW = ref(240)
@@ -59,27 +62,31 @@ const imgW = ref(0)
 const imgH = ref(0)
 
 function chooseImage() {
-  uni.chooseImage({
-    count: 1,
-    success: (res) => {
-      imagePath.value = res.tempFilePaths[0]
-      uni.getImageInfo({
-        src: imagePath.value,
-        success: (info) => {
-          imgW.value = info.width
-          imgH.value = info.height
-          calcCanvas()
-          nextTick(() => draw())
-        },
-        fail: () => {
-          imgW.value = 0
-          imgH.value = 0
-          calcCanvas()
-          nextTick(() => draw())
-        }
-      })
-    }
-  })
+  showSheet.value = true
+}
+
+/** 选源弹窗回调：拍摄 / 相册 / 聊天记录 */
+async function onSourceSelect(source) {
+  showSheet.value = false
+  try {
+    const { paths } = await pickImage({ source, count: 1 })
+    imagePath.value = paths[0]
+    uni.getImageInfo({
+      src: imagePath.value,
+      success: (info) => {
+        imgW.value = info.width
+        imgH.value = info.height
+        calcCanvas()
+        nextTick(() => draw())
+      },
+      fail: () => {
+        imgW.value = 0
+        imgH.value = 0
+        calcCanvas()
+        nextTick(() => draw())
+      }
+    })
+  } catch (e) {}
 }
 
 function calcCanvas() {
@@ -189,9 +196,17 @@ function saveImage() {
   flex-direction: column;
   align-items: center;
   gap: 16rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .empty-icon { font-size: 80rpx; }
-.empty-text { font-size: 28rpx; color: #8E8E93; }
+.empty-text { font-size: 28rpx; font-weight: 600; color: #1D1D1F; }
+.empty-sub {
+  font-size: 22rpx;
+  color: #C7C7CC;
+  margin-top: 4rpx;
+}
 .card {
   background: #fff;
   border-radius: 20rpx;
@@ -200,10 +215,22 @@ function saveImage() {
 }
 .canvas-wrap {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   margin-bottom: 20rpx;
+  cursor: pointer;
+
+  &:active { opacity: 0.7; }
 }
 .idphoto-canvas { border-radius: 8rpx; }
+.replace-hint {
+  font-size: 22rpx;
+  color: #8E8E93;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 20rpx;
+  padding: 6rpx 20rpx;
+  margin-top: 12rpx;
+}
 .row {
   display: flex;
   align-items: center;

@@ -141,32 +141,16 @@
         </button>
       </view>
     </view>
-
-    <!-- ====== 居中图片来源选择对话框 ====== -->
-    <view v-if="showSourceSheet" class="sheet-mask" @tap="closeSourceSheet">
-      <view class="sheet-dialog" @tap.stop>
-        <view class="sheet-title">选择图片来源</view>
-        <view class="sheet-option" @tap="pickCamera">
-          <text class="sheet-option-icon">📷</text>
-          <text class="sheet-option-text">拍摄</text>
-        </view>
-        <view class="sheet-option" @tap="pickAlbum">
-          <text class="sheet-option-icon">🖼️</text>
-          <text class="sheet-option-text">从相册选择</text>
-        </view>
-        <view class="sheet-option" v-if="canPickMessageFile" @tap="pickMessageFile">
-          <text class="sheet-option-icon">💬</text>
-          <text class="sheet-option-text">从聊天记录选择</text>
-        </view>
-        <view class="sheet-cancel" @tap="closeSourceSheet">取消</view>
-      </view>
-    </view>
   </view>
+
+  <ImageSourceSheet :visible="showSourceSheet" @select="onSourceSelect" @close="closeSourceSheet" />
 </template>
 
 <script setup>
 import { ref, nextTick, onUnmounted } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
+import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
+import { pickImage } from '@/utils/image-picker'
 
 // ========== 颜色方案 ==========
 const colors = [
@@ -233,12 +217,6 @@ function calcCanvasSize(imgW, imgH) {
 
 // ========== 选择图片 ==========
 const showSourceSheet = ref(false)
-const canPickMessageFile = ref(false)
-
-// 仅微信小程序支持从聊天记录选图
-// #ifdef MP-WEIXIN
-canPickMessageFile.value = true
-// #endif
 
 function chooseImage() {
   showSourceSheet.value = true
@@ -248,41 +226,13 @@ function closeSourceSheet() {
   showSourceSheet.value = false
 }
 
-/** 拍摄 */
-function pickCamera() {
+/** 选源弹窗回调：拍摄 / 相册 / 聊天记录 */
+async function onSourceSelect(source) {
   showSourceSheet.value = false
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['original', 'compressed'],
-    sourceType: ['camera'],
-    success: (res) => loadImage(res.tempFilePaths[0])
-  })
-}
-
-/** 从相册选择 */
-function pickAlbum() {
-  showSourceSheet.value = false
-  uni.chooseImage({
-    count: 1,
-    sizeType: ['original', 'compressed'],
-    sourceType: ['album'],
-    success: (res) => loadImage(res.tempFilePaths[0])
-  })
-}
-
-/** 从聊天记录选择（微信小程序） */
-function pickMessageFile() {
-  showSourceSheet.value = false
-  uni.chooseMessageFile({
-    count: 1,
-    type: 'image',
-    success: (res) => {
-      const file = res.tempFiles && res.tempFiles[0]
-      if (file && file.path) {
-        loadImage(file.path)
-      }
-    }
-  })
+  try {
+    const { paths } = await pickImage({ source, count: 1 })
+    if (paths[0]) loadImage(paths[0])
+  } catch (e) {}
 }
 
 /** 加载所选图片到画布 */
@@ -706,58 +656,4 @@ onUnmounted(() => {
   }
 }
 
-// ====== 居中图片来源选择对话框 ======
-.sheet-mask {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.sheet-dialog {
-  width: 560rpx;
-  background: #fff;
-  border-radius: 24rpx;
-  padding: 32rpx 0 0;
-  overflow: hidden;
-}
-.sheet-title {
-  text-align: center;
-  font-size: 28rpx;
-  font-weight: 600;
-  color: #1D1D1F;
-  padding: 0 32rpx 24rpx;
-}
-.sheet-option {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12rpx;
-  height: 96rpx;
-  font-size: 28rpx;
-  color: #1D1D1F;
-  border-top: 1rpx solid #F0F0F2;
-
-  &:active {
-    background: #F5F5F7;
-  }
-}
-.sheet-option-icon {
-  font-size: 32rpx;
-}
-.sheet-cancel {
-  height: 96rpx;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 28rpx;
-  color: #8E8E93;
-  border-top: 12rpx solid #F5F5F7;
-
-  &:active {
-    background: #F5F5F7;
-  }
-}
 </style>
