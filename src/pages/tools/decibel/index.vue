@@ -178,7 +178,6 @@ function startRecord() {
     const rms = Math.sqrt(sum / data.length)
     const dbVal = 20 * Math.log10((rms / 32768) + 1e-10)
     const finalDb = Math.max(0, Math.min(120, 90 + dbVal))
-    console.log('[decibel] rms:', rms.toFixed(1), 'dbFS:', dbVal.toFixed(1), 'dB:', finalDb.toFixed(1), 'samples:', data.length)
     db.value = finalDb
     trackDb(db.value)
   })
