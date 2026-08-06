@@ -32,6 +32,28 @@ npm run build:mp-weixin   # 产物 → unpackage/dist/dev|build/mp-weixin
 
 子页面（如 `led-marquee/player`、`photo-filter/fullscreen`）需额外在 `pages.json` 配置 `pageOrientation`/`navigationStyle`。
 
+## Canvas 工具（压缩/裁剪/滤镜/拼接/取色/表情包/证件照/水印/头像/二维码/CT检查）
+
+**DPR（设备像素比）处理** — 这是最容易出错的点：
+
+- **H5**：uni-canvas 内部已处理 DPR。`onMounted` 时自动调用 `_resize()` 将 buffer 设为 `offsetWidth × pixelRatio`，所有绘制方法（`fillRect`、`drawImage`、`fillText` 等）被 `__hidpi__` 补丁自动乘以 pixelRatio。**绝不能手动 `ctx.scale(dpr, dpr)`**，否则双重缩放 → 图片被裁剪或溢出。
+- **mp-weixin**：旧 canvas API 按逻辑像素绘制，同样无需手动 scale。
+- **结论**：全仓库没有任何工具手动 scale DPR。不要加。
+
+**画布尺寸**：
+
+- canvas 宽高用内联 `:style` 的 **px**（非 rpx），因为 rpx 是动态值。
+- canvas 必须装在父容器内，宽度不能超过可用内容区。计算可用宽度时要把所有水平 padding（rpx）换算为 px：`maxW = Math.floor(windowWidth - totalHorizontalPaddingRpx * windowWidth / 750)`。
+- `v-if` 重挂载 canvas 时，H5 的 `ResizeSensor` 异步更新 buffer。首次绘制需在 `nextTick` 后，建议额外延时（~120ms）重绘一次兜底。
+
+**mp-weixin canvas 状态持久化**：
+
+- `ctx.setGlobalAlpha()` 等状态跨 `ctx.draw()` 调用保留。绘制背景前必须 `ctx.setGlobalAlpha(1)` 重置，否则背景会继承上一次的透明度。
+
+**导出**：
+
+- 导出必须在 `ctx.draw(false, cb)` 回调里调 `canvasToTempFilePath`，否则导出为空；需要高分辨率输出用 `destWidth/destHeight`。
+
 ## 架构
 
 - **TabBar**：自定义 `TabBar.vue`（非原生 tabBar），`uni.reLaunch()` 切页清栈。

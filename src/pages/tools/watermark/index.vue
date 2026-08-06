@@ -1,25 +1,25 @@
 <template>
   <view class="page">
-    <!-- ====== 顶部操作栏 ====== -->
-    <view class="page__toolbar">
-      <button class="page__btn page__btn--primary" @tap="chooseImage">
-        {{ imagePath ? '重新选择' : '选择图片' }}
-      </button>
-      <text v-if="imagePath" class="page__file-name">{{ fileName }}</text>
-    </view>
-
-    <!-- ====== 画布预览区 ====== -->
-    <view v-if="imagePath" class="page__canvas-card">
-      <canvas
-        canvas-id="watermarkCanvas"
-        id="watermarkCanvas"
-        class="page__canvas"
-        :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
-      ></canvas>
-    </view>
-    <view v-else class="page__empty">
-      <text class="page__empty-icon">🖼️</text>
-      <text class="page__empty-text">请选择一张图片添加水印</text>
+    <!-- ====== 预览区：点击添加/更换图片 ====== -->
+    <view
+      class="page__preview"
+      :class="{ 'page__preview--empty': !imagePath }"
+      @tap="chooseImage"
+    >
+      <view v-if="canvasReady" class="page__preview-canvas">
+        <canvas
+          canvas-id="watermarkCanvas"
+          id="watermarkCanvas"
+          class="page__canvas"
+          :style="{ width: canvasWidth + 'px', height: canvasHeight + 'px' }"
+        ></canvas>
+        <view class="page__preview-hint">点击更换图片</view>
+      </view>
+      <view v-else class="page__preview-placeholder">
+        <text class="page__preview-icon">💧</text>
+        <text class="page__preview-text">点击添加图片</text>
+        <text class="page__preview-sub">支持相册与拍照</text>
+      </view>
     </view>
 
     <!-- ====== 水印设置面板 ====== -->
@@ -36,34 +36,54 @@
         />
       </view>
 
-      <!-- 位置选择 -->
-      <view class="page__field">
-        <text class="page__label">位置</text>
-        <view class="page__positions">
-          <view
-            v-for="pos in positions"
-            :key="pos.key"
-            class="page__pos-btn"
-            :class="{ 'page__pos-btn--active': position === pos.key }"
-            @tap="selectPosition(pos.key)"
-          >
-            <text>{{ pos.label }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 字号 -->
+      <!-- 大小 -->
       <view class="page__field">
         <view class="page__slider-header">
-          <text class="page__label">字号</text>
+          <text class="page__label">大小</text>
           <text class="page__value">{{ fontSize }}px</text>
         </view>
         <slider
           class="page__slider"
           :value="fontSize"
           min="14" max="120" step="1"
-          @change="onFontSizeChange"
-          @changing="onFontSizeChanging"
+          @change="onSizeChange"
+          @changing="onSizeChanging"
+          activeColor="#1D1D1F"
+          backgroundColor="#E5E5EA"
+          block-size="16"
+        />
+      </view>
+
+      <!-- 间距 -->
+      <view class="page__field">
+        <view class="page__slider-header">
+          <text class="page__label">间距</text>
+          <text class="page__value">{{ spacing }}px</text>
+        </view>
+        <slider
+          class="page__slider"
+          :value="spacing"
+          min="0" max="300" step="1"
+          @change="onSpacingChange"
+          @changing="onSpacingChanging"
+          activeColor="#1D1D1F"
+          backgroundColor="#E5E5EA"
+          block-size="16"
+        />
+      </view>
+
+      <!-- 角度 -->
+      <view class="page__field">
+        <view class="page__slider-header">
+          <text class="page__label">角度</text>
+          <text class="page__value">{{ angle }}°</text>
+        </view>
+        <slider
+          class="page__slider"
+          :value="angle + 90"
+          min="0" max="180" step="1"
+          @change="onAngleChange"
+          @changing="onAngleChanging"
           activeColor="#1D1D1F"
           backgroundColor="#E5E5EA"
           block-size="16"
@@ -121,21 +141,32 @@
         </button>
       </view>
     </view>
+
+    <!-- ====== 居中图片来源选择对话框 ====== -->
+    <view v-if="showSourceSheet" class="sheet-mask" @tap="closeSourceSheet">
+      <view class="sheet-dialog" @tap.stop>
+        <view class="sheet-title">选择图片来源</view>
+        <view class="sheet-option" @tap="pickCamera">
+          <text class="sheet-option-icon">📷</text>
+          <text class="sheet-option-text">拍摄</text>
+        </view>
+        <view class="sheet-option" @tap="pickAlbum">
+          <text class="sheet-option-icon">🖼️</text>
+          <text class="sheet-option-text">从相册选择</text>
+        </view>
+        <view class="sheet-option" v-if="canPickMessageFile" @tap="pickMessageFile">
+          <text class="sheet-option-icon">💬</text>
+          <text class="sheet-option-text">从聊天记录选择</text>
+        </view>
+        <view class="sheet-cancel" @tap="closeSourceSheet">取消</view>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onUnmounted } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
-
-// ========== 位置选项 ==========
-const positions = [
-  { key: 'top-left',     label: '左上' },
-  { key: 'top-right',    label: '右上' },
-  { key: 'center',       label: '居中' },
-  { key: 'bottom-left',  label: '左下' },
-  { key: 'bottom-right', label: '右下' },
-]
 
 // ========== 颜色方案 ==========
 const colors = [
@@ -153,27 +184,31 @@ const colors = [
 
 // ========== 状态 ==========
 const imagePath = ref('')
-const fileName = ref('')
 const text = ref('')
-const position = ref('bottom-right')
 const fontSize = ref(36)
+const spacing = ref(60)
+const angle = ref(45)
 const color = ref('#FFFFFF')
 const opacity = ref(0.6)
 const canvasWidth = ref(0)
 const canvasHeight = ref(0)
+const canvasReady = ref(false)
 const rendered = ref(false)
 
-// 预渲染时的字号/透明度缓存（slider changing 时不触发 canvas 重绘）
-const pendingFontSize = ref(36)
+// 预渲染缓存（slider changing 时仅更新 pending，不触发完整渲染）
+const pendingSize = ref(36)
+const pendingSpacing = ref(60)
+const pendingAngle = ref(45)
 const pendingOpacity = ref(0.6)
 const renderTimer = ref(null)
-
-const dpr = ref(1)
+const drawTimer = ref(null)
 
 // ========== 画布尺寸计算 ==========
 function calcCanvasSize(imgW, imgH) {
   const sys = uni.getSystemInfoSync()
-  const maxW = sys.windowWidth - 40  // 左右各 20px padding
+  // 1rpx = windowWidth / 750；卡片水平总 padding 为 80rpx（页面 20rpx×2 + 画布容器 20rpx×2）
+  const rpx = sys.windowWidth / 750
+  const maxW = Math.floor(sys.windowWidth - 80 * rpx)
   const maxH = 420
   const ratio = imgW / imgH
 
@@ -197,98 +232,129 @@ function calcCanvasSize(imgW, imgH) {
 }
 
 // ========== 选择图片 ==========
+const showSourceSheet = ref(false)
+const canPickMessageFile = ref(false)
+
+// 仅微信小程序支持从聊天记录选图
+// #ifdef MP-WEIXIN
+canPickMessageFile.value = true
+// #endif
+
 function chooseImage() {
+  showSourceSheet.value = true
+}
+
+function closeSourceSheet() {
+  showSourceSheet.value = false
+}
+
+/** 拍摄 */
+function pickCamera() {
+  showSourceSheet.value = false
   uni.chooseImage({
     count: 1,
     sizeType: ['original', 'compressed'],
-    sourceType: ['album', 'camera'],
+    sourceType: ['camera'],
+    success: (res) => loadImage(res.tempFilePaths[0])
+  })
+}
+
+/** 从相册选择 */
+function pickAlbum() {
+  showSourceSheet.value = false
+  uni.chooseImage({
+    count: 1,
+    sizeType: ['original', 'compressed'],
+    sourceType: ['album'],
+    success: (res) => loadImage(res.tempFilePaths[0])
+  })
+}
+
+/** 从聊天记录选择（微信小程序） */
+function pickMessageFile() {
+  showSourceSheet.value = false
+  uni.chooseMessageFile({
+    count: 1,
+    type: 'image',
     success: (res) => {
-      const path = res.tempFilePaths[0]
-      imagePath.value = path
-      fileName.value = getFileName(path)
-      rendered.value = false
-
-      uni.getImageInfo({
-        src: path,
-        success: (info) => {
-          calcCanvasSize(info.width, info.height)
-          setupCanvas()
-          renderWatermark()
-        },
-        fail: () => {
-          showToast('图片加载失败')
-        }
-      })
+      const file = res.tempFiles && res.tempFiles[0]
+      if (file && file.path) {
+        loadImage(file.path)
+      }
     }
   })
 }
 
-/** 从临时路径提取文件名 */
-function getFileName(path) {
-  const parts = path.split(/[\\/]/)
-  return parts[parts.length - 1] || '图片'
-}
+/** 加载所选图片到画布 */
+function loadImage(path) {
+  imagePath.value = path
+  rendered.value = false
+  canvasReady.value = false
 
-// ========== Canvas 初始化 ==========
-function setupCanvas() {
-  dpr.value = uni.getSystemInfoSync().pixelRatio || 1
-
-  nextTick(() => {
-    // #ifdef H5
-    const el = document.getElementById('watermarkCanvas')
-    if (el) {
-      el.width = canvasWidth.value * dpr.value
-      el.height = canvasHeight.value * dpr.value
+  uni.getImageInfo({
+    src: path,
+    success: (info) => {
+      calcCanvasSize(info.width, info.height)
+      canvasReady.value = true
+      // 首次绘制在 nextTick，另加一次延时兜底重绘，避免 H5 画布 buffer 尺寸竞态导致图片不完整
+      nextTick(() => drawCanvas())
+      if (drawTimer.value) clearTimeout(drawTimer.value)
+      drawTimer.value = setTimeout(() => {
+        drawCanvas()
+        drawTimer.value = null
+      }, 120)
+    },
+    fail: () => {
+      showToast('图片加载失败')
     }
-    // #endif
   })
 }
 
-// ========== 绘制水印 ==========
+// ========== 绘制水印（平铺网格 + 旋转） ==========
 function drawCanvas() {
   return new Promise((resolve) => {
     const ctx = uni.createCanvasContext('watermarkCanvas')
 
-    // DPR 缩放
-    ctx.scale(dpr.value, dpr.value)
-
     const w = canvasWidth.value
     const h = canvasHeight.value
-    const pad = 24
 
-    // 1. 绘制背景图
+    // 1. 绘制背景图（始终不透明，透明度只作用于水印文字）
+    ctx.setGlobalAlpha(1)
     ctx.drawImage(imagePath.value, 0, 0, w, h)
 
-    // 2. 绘制水印文字
+    // 2. 平铺水印
     if (text.value.trim()) {
-      const ft = pendingFontSize.value
-      ctx.setFontSize(ft)
+      const txt = text.value.trim()
+      const size = pendingSize.value
+      const rad = pendingAngle.value * Math.PI / 180
+
+      ctx.setFontSize(size)
       ctx.setFillStyle(color.value)
       ctx.setGlobalAlpha(pendingOpacity.value)
+      ctx.setTextAlign('center')
+      ctx.setTextBaseline('middle')
 
-      let align, baseline, x, y
-      switch (position.value) {
-        case 'top-left':
-          align = 'left'; baseline = 'top'; x = pad; y = pad
-          break
-        case 'top-right':
-          align = 'right'; baseline = 'top'; x = w - pad; y = pad
-          break
-        case 'center':
-          align = 'center'; baseline = 'middle'; x = w / 2; y = h / 2
-          break
-        case 'bottom-left':
-          align = 'left'; baseline = 'bottom'; x = pad; y = h - pad
-          break
-        case 'bottom-right':
-        default:
-          align = 'right'; baseline = 'bottom'; x = w - pad; y = h - pad
-          break
+      // 估算文本宽度（measureText 兼容性兜底）
+      let textW = size * txt.length
+      try {
+        const m = ctx.measureText(txt)
+        if (m && m.width) textW = m.width
+      } catch (e) {}
+
+      const stepX = textW + pendingSpacing.value
+      const stepY = size * 1.6 + pendingSpacing.value
+
+      // 旋转整个坐标系后铺网格，覆盖范围需放大以填充画布四角
+      const half = Math.max(w, h) * 1.5
+      ctx.save()
+      ctx.translate(w / 2, h / 2)
+      ctx.rotate(rad)
+      for (let y = -half; y < half; y += stepY) {
+        for (let x = -half; x < half; x += stepX) {
+          ctx.fillText(txt, x, y)
+        }
       }
-
-      ctx.setTextAlign(align)
-      ctx.setTextBaseline(baseline)
-      ctx.fillText(text.value, x, y)
+      ctx.restore()
     }
 
     // 3. 渲染到画布
@@ -306,10 +372,7 @@ async function renderWatermark() {
   }
 
   showLoading('生成水印...')
-
-  // 同步 pending 值
-  pendingFontSize.value = fontSize.value
-  pendingOpacity.value = opacity.value
+  syncPending()
 
   try {
     await drawCanvas()
@@ -323,7 +386,7 @@ async function renderWatermark() {
 }
 
 // ========== 保存图片 ==========
-async function saveImage() {
+function saveImage() {
   if (!rendered.value) {
     showToast('请先生成水印')
     return
@@ -331,14 +394,12 @@ async function saveImage() {
 
   showLoading('保存中...')
 
-  // 导出 canvas 为临时文件
   uni.canvasToTempFilePath({
     canvasId: 'watermarkCanvas',
     success: (res) => {
       hideLoading()
 
       // #ifdef H5
-      // H5：触发文件下载
       const link = document.createElement('a')
       link.href = res.tempFilePath
       link.download = 'watermark_' + Date.now() + '.png'
@@ -349,7 +410,6 @@ async function saveImage() {
       // #endif
 
       // #ifdef MP-WEIXIN
-      // 微信小程序：保存到相册
       uni.saveImageToPhotosAlbum({
         filePath: res.tempFilePath,
         success: () => {
@@ -372,73 +432,100 @@ async function saveImage() {
   })
 }
 
+// ========== 辅助函数 ==========
+function canDraw() {
+  return imagePath.value && text.value.trim()
+}
+
+function syncPending() {
+  pendingSize.value = fontSize.value
+  pendingSpacing.value = spacing.value
+  pendingAngle.value = angle.value
+  pendingOpacity.value = opacity.value
+}
+
+/** 拖拽结束时：提交值并完整渲染 */
+function finishDraw() {
+  if (canDraw()) {
+    syncPending()
+    drawCanvas().then(() => { rendered.value = true })
+  }
+}
+
+/** 拖拽过程中：仅更新 pending 实时预览 */
+function previewDraw() {
+  if (canDraw()) {
+    drawCanvas()
+  }
+}
+
 // ========== 交互事件 ==========
 
 /** 文字输入：防抖重新渲染 */
 function onTextInput() {
   if (renderTimer.value) clearTimeout(renderTimer.value)
   renderTimer.value = setTimeout(() => {
-    if (imagePath.value && text.value.trim()) {
-      pendingFontSize.value = fontSize.value
-      pendingOpacity.value = opacity.value
-      drawCanvas().then(() => { rendered.value = true })
-    }
+    finishDraw()
   }, 400)
 }
 
-/** 选择位置 */
-function selectPosition(key) {
-  position.value = key
-  if (imagePath.value && text.value.trim()) {
-    pendingFontSize.value = fontSize.value
-    pendingOpacity.value = opacity.value
-    drawCanvas().then(() => { rendered.value = true })
-  }
+/** 大小变化 */
+function onSizeChange(e) {
+  fontSize.value = e.detail.value
+  finishDraw()
+}
+function onSizeChanging(e) {
+  pendingSize.value = e.detail.value
+  previewDraw()
+}
+
+/** 间距变化 */
+function onSpacingChange(e) {
+  spacing.value = e.detail.value
+  finishDraw()
+}
+function onSpacingChanging(e) {
+  pendingSpacing.value = e.detail.value
+  previewDraw()
+}
+
+/** 角度变化（内部 0~180，映射为 -90~90） */
+function onAngleChange(e) {
+  angle.value = e.detail.value - 90
+  finishDraw()
+}
+function onAngleChanging(e) {
+  pendingAngle.value = e.detail.value - 90
+  previewDraw()
 }
 
 /** 颜色选择 */
 function selectColor(val) {
   color.value = val
-  if (imagePath.value && text.value.trim()) {
-    pendingFontSize.value = fontSize.value
-    pendingOpacity.value = opacity.value
-    drawCanvas().then(() => { rendered.value = true })
-  }
+  finishDraw()
 }
 
-/** 字号变化（拖拽结束） */
-function onFontSizeChange(e) {
-  fontSize.value = e.detail.value
-  pendingFontSize.value = fontSize.value
-  if (imagePath.value && text.value.trim()) {
-    drawCanvas().then(() => { rendered.value = true })
-  }
-}
-
-/** 字号拖拽中（实时预览但不触发完整渲染） */
-function onFontSizeChanging(e) {
-  pendingFontSize.value = e.detail.value
-  if (imagePath.value && text.value.trim()) {
-    drawCanvas()
-  }
-}
-
-/** 透明度变化（拖拽结束） */
+/** 透明度变化 */
 function onOpacityChange(e) {
   opacity.value = e.detail.value / 100
-  pendingOpacity.value = opacity.value
-  if (imagePath.value && text.value.trim()) {
-    drawCanvas().then(() => { rendered.value = true })
-  }
+  finishDraw()
 }
-
-/** 透明度拖拽中 */
 function onOpacityChanging(e) {
   pendingOpacity.value = e.detail.value / 100
-  if (imagePath.value && text.value.trim()) {
-    drawCanvas()
-  }
+  previewDraw()
 }
+
+// ========== 生命周期 ==========
+onUnmounted(() => {
+  if (renderTimer.value) {
+    clearTimeout(renderTimer.value)
+    renderTimer.value = null
+  }
+  if (drawTimer.value) {
+    clearTimeout(drawTimer.value)
+    drawTimer.value = null
+  }
+})
 </script>
 
 <style lang="scss" scoped>
@@ -447,55 +534,56 @@ function onOpacityChanging(e) {
   background: #F5F5F7;
   padding: 24rpx 20rpx 48rpx;
 
-  // ====== 顶部工具栏 ======
-  &__toolbar {
-    display: flex;
-    align-items: center;
-    gap: 16rpx;
-    margin-bottom: 24rpx;
-  }
-  &__file-name {
-    flex: 1;
-    font-size: 24rpx;
-    color: #8E8E93;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  // ====== 画布卡片 ======
-  &__canvas-card {
+  // ====== 预览区（可点击） ======
+  &__preview {
     background: #fff;
     border-radius: 20rpx;
-    padding: 20rpx;
     margin-bottom: 24rpx;
     box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+    overflow: hidden;
+  }
+  &__preview--empty {
+    min-height: 400rpx;
+  }
+
+  &__preview-canvas {
+    padding: 20rpx;
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-direction: column;
+    gap: 12rpx;
   }
   &__canvas {
     display: block;
     border-radius: 8rpx;
   }
-
-  // ====== 空状态 ======
-  &__empty {
-    background: #fff;
+  &__preview-hint {
+    font-size: 22rpx;
+    color: #8E8E93;
+    background: rgba(0,0,0,0.04);
     border-radius: 20rpx;
-    padding: 120rpx 40rpx;
-    margin-bottom: 24rpx;
-    box-shadow: 0 2rpx 12rpx rgba(0,0,0,0.06);
+    padding: 6rpx 20rpx;
+  }
+
+  &__preview-placeholder {
+    min-height: 400rpx;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16rpx;
+    justify-content: center;
+    gap: 12rpx;
   }
-  &__empty-icon {
-    font-size: 80rpx;
+  &__preview-icon {
+    font-size: 88rpx;
   }
-  &__empty-text {
-    font-size: 28rpx;
+  &__preview-text {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #1D1D1F;
+  }
+  &__preview-sub {
+    font-size: 24rpx;
     color: #8E8E93;
   }
 
@@ -552,31 +640,6 @@ function onOpacityChanging(e) {
   }
   &__slider {
     margin-top: 8rpx;
-  }
-
-  // 位置按钮网格
-  &__positions {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 12rpx;
-  }
-  &__pos-btn {
-    height: 60rpx;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #F5F5F7;
-    border-radius: 12rpx;
-    font-size: 24rpx;
-    color: #3A3A3C;
-
-    &:active {
-      background: #E5E5EA;
-    }
-    &--active {
-      background: #1D1D1F;
-      color: #fff;
-    }
   }
 
   // 颜色选择
@@ -637,10 +700,64 @@ function onOpacityChanging(e) {
       color: #1D1D1F;
     }
 
-    // button 组件 disabled 状态
     &[disabled] {
       opacity: 0.4;
     }
+  }
+}
+
+// ====== 居中图片来源选择对话框 ======
+.sheet-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sheet-dialog {
+  width: 560rpx;
+  background: #fff;
+  border-radius: 24rpx;
+  padding: 32rpx 0 0;
+  overflow: hidden;
+}
+.sheet-title {
+  text-align: center;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1D1D1F;
+  padding: 0 32rpx 24rpx;
+}
+.sheet-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12rpx;
+  height: 96rpx;
+  font-size: 28rpx;
+  color: #1D1D1F;
+  border-top: 1rpx solid #F0F0F2;
+
+  &:active {
+    background: #F5F5F7;
+  }
+}
+.sheet-option-icon {
+  font-size: 32rpx;
+}
+.sheet-cancel {
+  height: 96rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  color: #8E8E93;
+  border-top: 12rpx solid #F5F5F7;
+
+  &:active {
+    background: #F5F5F7;
   }
 }
 </style>
