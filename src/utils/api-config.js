@@ -6,6 +6,14 @@
 
 const STORAGE_KEY = 'lifetool_api_config'
 
+/**
+ * 生日倒计时 - 微信订阅消息模板 ID
+ * 在微信公众平台「订阅消息」申请模板后，将模板 ID 填入此处。
+ * 注意：本仓库为纯前端，requestSubscribeMessage 仅完成用户订阅授权；
+ * 实际推送需服务端调用 subscribeMessage.send 接口下发（需部署后端 + 模板 ID + openid）。
+ */
+export const BIRTHDAY_TEMPLATE_ID = ''
+
 // 默认配置（留空表示使用免费接口，无需填写）
 const DEFAULT_CONFIG = {
   // 天气查询 - 可替换为和风天气等付费 API

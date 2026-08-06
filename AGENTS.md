@@ -1,8 +1,8 @@
 # AGENTS.md
 
-微信小程序「治点工具箱」，uni-app 3.x (Vue 3 + Vite)。编译目标：mp-weixin 与 H5。Vuex 状态管理。53 个工具页面，全部已实现。
+微信小程序「治点工具箱」，uni-app 3.x (Vue 3 + Vite)。编译目标：mp-weixin 与 H5。Vuex 状态管理。54 个工具页面，全部已实现。
 
-> 仓库中 `CLAUDE.md` 部分已过时（应用名已改为「治点工具箱」），本文件为准。
+> 本文件为旧版说明，部分内容已过时（如"工具页大多数为纯 Web 写法"的论断）。仓库根 `CLAUDE.md` 已合并其有效要点并修正过时数据，两者冲突一律以 `CLAUDE.md` 为准。
 
 ## Commands
 

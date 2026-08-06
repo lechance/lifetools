@@ -6,9 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 「治点工具箱」— 微信小程序，集合日常生活常用工具。uni-app 3.x (Vue 3 + Vite) 构建，编译到微信小程序（mp-weixin）和 H5。纯前端实现，Vuex 状态管理。
 
-**53 个工具已全部实现**（无占位页面），覆盖热门、生活、娱乐、图片、计算、实用六大分类。分类 key 与色值见 `src/utils/tools-data.js` 顶部的 `COLORS` 映射。
+**54 个工具已全部实现**（无占位页面），覆盖热门、生活、娱乐、图片、计算、实用六大分类。分类 key 与色值见 `src/utils/tools-data.js` 顶部的 `COLORS` 映射。
 
-> 仓库中 `AGENTS.md` 为同一项目的独立说明（标注"本文件为准"）。本 CLAUDE.md 已合并其有效要点并修正过时数据；若两者冲突，以本文档为准。
+> 仓库中 `AGENTS.md` 为同一项目的旧版说明，其顶部"本文件为准"标注已过时（其中"工具页大多数为纯 Web 写法"的论断与现状不符，见下方"两种页面写法"）。本 CLAUDE.md 已合并其有效要点并修正过时数据；两者冲突一律以本文档为准。
 
 ## Commands
 
@@ -22,7 +22,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 **注意：**
 - **无 lint / test / typecheck 脚本**。提交前用 `npm run build:h5` 验证可编译。
 - 构建微信小程序前需在 `src/manifest.json` 配置 `mp-weixin.appid` 为真实 AppID（当前为占位 `wx0000000000000000`）。
-- H5 dev server 走 HTTPS（`vite.config.js` 读 `certs/` 下自签证书），首次访问需信任自签证书。
+- H5 dev server 走 HTTPS（`vite.config.js` 读 `certs/` 下自签证书），首次访问需信任自签证书；H5 路由已配 `router.mode = "history"`（`src/manifest.json`）。
 - 微信小程序产物 `dist/build/mp-weixin/` 用微信开发者工具打开。
 - 依赖极少：无外部二维码库（`src/utils/qrcode.js` 为内联源码），仅 4 个工具用外部 API。
 
@@ -31,9 +31,10 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 ### 两种页面写法（改代码前先判断目标写法）
 
 - **主框架页**（`pages/index|coupons|profile|favorites` + `components/*.vue` + `App.vue`）：uni-app 原语 — `<view>`、`uni.navigateTo/reLaunch`、`onLoad` 等。
-- **工具页** `src/pages/tools/*`：多数也用 `<view>`/`<picker>` 等 uni 写法；仅个别工具（`calculator`、`password-gen`、`decibel`）使用 `window.`/`document.`。
+- **工具页** `src/pages/tools/*`：绝大多数用 `<view>`/`<picker>` 等 uni 写法。仅 3 个工具是纯 Web 写法、直接裸用 `window.`（mp-weixin 下会失效）：`calculator`、`password-gen`、`decibel`。
+- **`document.` 例外（安全模式，勿删）**：图片工具在 `// #ifdef H5` 守卫块内用 `document.createElement('a')` 触发浏览器下载导出图片（见 watermark `index.vue` 约 353 行）。这是 H5 导出图片的既有标准模式，必须保持在 `#ifdef H5` 内，mp-weixin 构建会剔除；**不要**在顶层裸用 `document.`。
 
-修改工具页前先 `grep -r "window\." src/pages/tools` 确认目标页写法。mp-weixin 中 `window`/`document` 不可用，会导致白屏或事件失效；反之也不要把主框架的 uni 原语生搬硬套到工具页。
+修改工具页前先 `grep -r "window\.\|document\." src/pages/tools` 确认目标页写法。mp-weixin 中顶层 `window`/`document` 不可用，会导致白屏或事件失效；反之也不要把主框架的 uni 原语生搬硬套到工具页。
 
 ### 工具实现模式
 
@@ -82,6 +83,10 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 
 qr-code 工具用 `src/utils/qrcode.js` 生成矩阵。**该文件是内联的第三方源码**，为 ESM 兼容在文件末尾加了 `export default qrcode` — 不要把它改回 npm 依赖，否则小程序构建会因外部依赖解析失败。
 
+### 生日倒计时
+
+`birthday-countdown` 工具仅支持**阳历生日**（不支持农历）：主页面不占表单空间，右下角**浮动 ＋ 按钮**点击弹出**底部弹窗**（`bd__popup` + `bd__fab`，`showForm` 控制）填写人员（称呼/关系/生日，生日用 `<picker mode="date">` 存 `birthYear` + 月/日）。按年循环计算倒计时，日历视图按阳历月日匹配标记。卡片展示**年龄**（周岁，`getAge` 已过生日算实岁、未到减一）与**星座**（阳历月日计算，函数内联在页面内），下次生日行附带「满 X 岁」。微信订阅提醒仅完成授权（纯前端无后端，实际推送需服务端下发模板消息），模板 ID 在 `api-config.js` 的 `BIRTHDAY_TEMPLATE_ID` 配置。
+
 ## Data Flow
 
 - **工具数据**：`src/utils/tools-data.js` 定义所有工具元数据（名称、emoji 图标、分类），导出 `getAllTools()` / `getToolById()` / `getToolsByCategory()` / `searchTools()`。
@@ -115,5 +120,6 @@ qr-code 工具用 `src/utils/qrcode.js` 生成矩阵。**该文件是内联的�
 - `src/pages/suggestion/index.vue` — 工具建议提交页（POST 至 `api-config.js` 配置的接口）
 - `src/pages/about/index.vue` — 关于我们（在线客服/用户协议/隐私政策入口）
 - `src/pages/agreement/index.vue`、`src/pages/privacy/index.vue` — 用户协议 / 隐私政策
+- `src/utils/helpers.js` — 通用函数（`debounce`/`throttle`/`formatTimestamp`/`generateId`/`showToast`/`showModal` 等）
 - `src/pages.json` — 页面路由 + 全局导航栏样式
 - `src/manifest.json` — 平台 / AppID 配置

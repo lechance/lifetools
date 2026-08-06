@@ -36,7 +36,8 @@ const LIFE_TOOLS = [
   { id: 'period-tracker', name: '生理期记录', icon: '❤️', color: COLORS.life },
   { id: 'garbage-classify', name: '垃圾分类查询', icon: '♻️', color: COLORS.life },
   { id: 'safe-period', name: '安全期计算', icon: '🩺', color: COLORS.life },
-  { id: 'shelf-life', name: '保质期计算', icon: '⏳', color: COLORS.life }
+  { id: 'shelf-life', name: '保质期计算', icon: '⏳', color: COLORS.life },
+  { id: 'birthday-countdown', name: '生日倒计时', icon: '🥳', color: COLORS.life }
 ]
 
 /** 娱乐工具 */

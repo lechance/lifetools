@@ -71,6 +71,12 @@
       }
     },
     {
+      "path": "pages/tools/birthday-countdown/index",
+      "style": {
+        "navigationBarTitleText": "生日倒计时"
+      }
+    },
+    {
       "path": "pages/tools/pomodoro/index",
       "style": {
         "navigationBarTitleText": "番茄专注"
