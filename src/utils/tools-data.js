@@ -65,7 +65,6 @@ const IMAGE_TOOLS = [
 
 /** 计算工具 */
 const CALC_TOOLS = [
-  { id: 'calculator', name: '科学计算器', icon: '🔢', color: COLORS.calc },
   { id: 'loan-calc', name: '房贷计算器', icon: '🏦', color: COLORS.calc },
   { id: 'tax-calc', name: '个税计算器', icon: '🧾', color: COLORS.calc },
   { id: 'bmi-calc', name: 'BMI计算器', icon: '📊', color: COLORS.calc },
@@ -83,14 +82,11 @@ const UTILITY_TOOLS = [
   { id: 'timer', name: '计时器', icon: '⏱️', color: COLORS.utility },
   { id: 'pedometer', name: '计步器', icon: '👟', color: COLORS.utility },
   { id: 'ruler', name: '尺子测量', icon: '📐', color: COLORS.utility },
-  { id: 'decibel', name: '分贝测试', icon: '🔊', color: COLORS.utility },
   { id: 'plate-lookup', name: '车牌归属地', icon: '🚗', color: COLORS.utility },
   { id: 'id-card', name: '身份证解析', icon: '🆔', color: COLORS.utility },
   { id: 'password-gen', name: '随机密码生成', icon: '🔐', color: COLORS.utility },
   { id: 'qr-code', name: '二维码工具', icon: '📱', color: COLORS.utility },
-  { id: 'altimeter', name: '海拔测量', icon: '⛰️', color: COLORS.utility },
   { id: 'photo-filter', name: '拍照滤镜', icon: '📸', color: COLORS.utility },
-  { id: 'ancient-poetry', name: '古诗文', icon: '🖊️', color: COLORS.utility },
   { id: 'unit-convert', name: '单位换算', icon: '🔄', color: COLORS.utility }
 ]
 
