@@ -8,58 +8,73 @@
     <view class="settings__list">
       <view class="settings__item">
         <text class="settings__item-label">天气 API Key</text>
-        <input
-          class="settings__input"
-          type="text"
-          :value="weatherKey"
-          placeholder="留空使用免费接口 wttr.in"
-          @input="weatherKey = $event.detail.value"
-          @focus="onFocus"
-        />
+        <view class="settings__input-wrap">
+          <input
+            class="settings__input"
+            :type="showWeather ? 'text' : 'password'"
+            :value="weatherKey"
+            placeholder="留空使用免费接口 wttr.in"
+            @input="weatherKey = $event.detail.value"
+            @focus="onFocus"
+          />
+          <view class="settings__eye" @tap="showWeather = !showWeather">{{ showWeather ? '🙈' : '👁' }}</view>
+        </view>
       </view>
       <view class="settings__item">
         <text class="settings__item-label">历史上的今天 API Key</text>
-        <input
-          class="settings__input"
-          type="text"
-          :value="historyKey"
-          placeholder="留空使用免费接口 xxapi.cn"
-          @input="historyKey = $event.detail.value"
-          @focus="onFocus"
-        />
+        <view class="settings__input-wrap">
+          <input
+            class="settings__input"
+            :type="showHistory ? 'text' : 'password'"
+            :value="historyKey"
+            placeholder="留空使用免费接口 xxapi.cn"
+            @input="historyKey = $event.detail.value"
+            @focus="onFocus"
+          />
+          <view class="settings__eye" @tap="showHistory = !showHistory">{{ showHistory ? '🙈' : '👁' }}</view>
+        </view>
       </view>
       <view class="settings__item">
         <text class="settings__item-label">古诗文 API Key</text>
-        <input
-          class="settings__input"
-          type="text"
-          :value="poetryKey"
-          placeholder="留空使用免费接口 poetry.palemoky.com"
-          @input="poetryKey = $event.detail.value"
-          @focus="onFocus"
-        />
+        <view class="settings__input-wrap">
+          <input
+            class="settings__input"
+            :type="showPoetry ? 'text' : 'password'"
+            :value="poetryKey"
+            placeholder="留空使用免费接口 poetry.palemoky.com"
+            @input="poetryKey = $event.detail.value"
+            @focus="onFocus"
+          />
+          <view class="settings__eye" @tap="showPoetry = !showPoetry">{{ showPoetry ? '🙈' : '👁' }}</view>
+        </view>
       </view>
       <view class="settings__item">
         <text class="settings__item-label">汇率 API Key</text>
-        <input
-          class="settings__input"
-          type="text"
-          :value="exchangeKey"
-          placeholder="留空使用免费接口 er-api.com"
-          @input="exchangeKey = $event.detail.value"
-          @focus="onFocus"
-        />
+        <view class="settings__input-wrap">
+          <input
+            class="settings__input"
+            :type="showExchange ? 'text' : 'password'"
+            :value="exchangeKey"
+            placeholder="留空使用免费接口 er-api.com"
+            @input="exchangeKey = $event.detail.value"
+            @focus="onFocus"
+          />
+          <view class="settings__eye" @tap="showExchange = !showExchange">{{ showExchange ? '🙈' : '👁' }}</view>
+        </view>
       </view>
       <view class="settings__item">
         <text class="settings__item-label">工具建议提交地址</text>
-        <input
-          class="settings__input"
-          type="text"
-          :value="suggestionUrl"
-          placeholder="填写接收建议的接口地址（POST）"
-          @input="suggestionUrl = $event.detail.value"
-          @focus="onFocus"
-        />
+        <view class="settings__input-wrap">
+          <input
+            class="settings__input"
+            :type="showUrl ? 'text' : 'password'"
+            :value="suggestionUrl"
+            placeholder="填写接收建议的接口地址（POST）"
+            @input="suggestionUrl = $event.detail.value"
+            @focus="onFocus"
+          />
+          <view class="settings__eye" @tap="showUrl = !showUrl">{{ showUrl ? '🙈' : '👁' }}</view>
+        </view>
       </view>
     </view>
 
@@ -69,7 +84,7 @@
     </view>
 
     <view class="settings__tip">
-      <text class="settings__tip-text">提示：所有配置项均可留空，工具会自动使用免费公共接口。如需更稳定的服务，可申请对应平台的 API Key 后填写。</text>
+      <text class="settings__tip-text">提示：所有配置项均可留空，工具会自动使用免费公共接口。如需更稳定的服务，可申请对应平台的 API Key 后填写。所有值默认以密文显示，点击 👁 可切换明文。</text>
     </view>
   </view>
 </template>
@@ -84,6 +99,13 @@ const historyKey = ref('')
 const poetryKey = ref('')
 const exchangeKey = ref('')
 const suggestionUrl = ref('')
+
+// 明文显示开关，默认全部隐藏
+const showWeather = ref(false)
+const showHistory = ref(false)
+const showPoetry = ref(false)
+const showExchange = ref(false)
+const showUrl = ref(false)
 
 onMounted(() => {
   const saved = getConfig()
@@ -166,15 +188,29 @@ function onReset() {
     margin-bottom: 16rpx;
   }
 
+  &__input-wrap {
+    position: relative;
+  }
+
   &__input {
     width: 100%;
     height: 88rpx;
     background: #F5F5F7;
     border-radius: 12rpx;
-    padding: 0 20rpx;
+    padding: 0 76rpx 0 20rpx;
     font-size: 30rpx;
     color: #1D1D1F;
     box-sizing: border-box;
+  }
+
+  &__eye {
+    position: absolute;
+    top: 50%;
+    right: 16rpx;
+    transform: translateY(-50%);
+    font-size: 32rpx;
+    padding: 8rpx;
+    line-height: 1;
   }
 
   &__actions {
