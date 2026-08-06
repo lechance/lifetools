@@ -187,7 +187,7 @@ function startRecord() {
     sampleRate: 16000,
     numberOfChannels: 1,
     encodeBitRate: 24000,
-    format: 'aac',
+    format: 'pcm',
     frameSize: 4,
     audioSource: 'voice_recognition'
   })
