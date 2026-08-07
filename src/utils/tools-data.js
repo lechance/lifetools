@@ -56,7 +56,7 @@ const IMAGE_TOOLS = [
   { id: 'image-compress', name: '图片压缩', icon: '🗜️', color: COLORS.image },
   { id: 'image-crop', name: '图片裁剪', icon: '✂️', color: COLORS.image },
   { id: 'image-filter', name: '图片滤镜', icon: '🎨', color: COLORS.image },
-  { id: 'image-stitch', name: '图片拼接', icon: '🔗', color: COLORS.image },
+  { id: 'image-stitch', name: '图片拼接', icon: '🧩', color: COLORS.image },
   { id: 'color-picker', name: '颜色提取器', icon: '🎯', color: COLORS.image },
   { id: 'meme-maker', name: '表情包制作', icon: '🖼️', color: COLORS.image },
   { id: 'id-photo', name: '证件照制作', icon: '📷', color: COLORS.image },

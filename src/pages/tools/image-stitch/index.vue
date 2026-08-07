@@ -42,7 +42,7 @@ import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
 
 const GAP = 2
-const MAX_OUT = 1500
+const MAX_OUT = 4096
 
 const images = ref([])
 const showSheet = ref(false)
@@ -52,6 +52,7 @@ const canvasW = ref(300)
 const canvasH = ref(300)
 let outW = 0
 let outH = 0
+let placements = []
 
 function chooseImages() {
   showSheet.value = true
@@ -103,7 +104,7 @@ function stitch() {
 function computeAndDraw(sizes) {
   const gapCount = images.value.length - 1
   const totalGap = gapCount * GAP
-  let placements = []
+  placements = []
 
   if (dir.value === 'vertical') {
     const maxW = Math.max(...sizes.map(s => s.w))
@@ -133,34 +134,56 @@ function computeAndDraw(sizes) {
     })
   }
 
-  const dispRatio = outW / outH
-  if (dispRatio >= 1) { canvasW.value = 300; canvasH.value = Math.round(300 / dispRatio) }
-  else { canvasH.value = 400; canvasW.value = Math.round(400 * dispRatio) }
-
   result.value = true
-  nextTick(() => {
+  nextTick(async () => {
+    await drawPreview()
+    hideLoading()
+    showSuccess('拼接完成')
+  })
+}
+
+/** 等待 canvas 缓冲区随 CSS 尺寸异步重建（H5 ResizeSensor / mp-weixin 原生层） */
+function setCanvasSize(w, h) {
+  return new Promise((resolve) => {
+    canvasW.value = w
+    canvasH.value = h
+    nextTick(() => setTimeout(resolve, 150))
+  })
+}
+
+function drawToCanvas(w, h, scaleX, scaleY) {
+  return new Promise((resolve) => {
     const ctx = uni.createCanvasContext('stitchCanvas')
     ctx.setFillStyle('#fff')
-    ctx.fillRect(0, 0, canvasW.value, canvasH.value)
-    const scaleX = canvasW.value / outW
-    const scaleY = canvasH.value / outH
+    ctx.fillRect(0, 0, w, h)
     images.value.forEach((src, i) => {
       const p = placements[i]
       ctx.drawImage(src, p.x * scaleX, p.y * scaleY, p.w * scaleX, p.h * scaleY)
     })
-    ctx.draw(false, () => {
-      hideLoading()
-      showSuccess('拼接完成')
-    })
+    ctx.draw(false, () => resolve())
   })
 }
 
-function saveImage() {
+async function drawPreview() {
+  const dispRatio = outW / outH
+  let dw, dh
+  if (dispRatio >= 1) { dw = 300; dh = Math.round(300 / dispRatio) }
+  else { dh = 400; dw = Math.round(400 * dispRatio) }
+  await setCanvasSize(dw, dh)
+  await drawToCanvas(dw, dh, dw / outW, dh / outH)
+}
+
+async function saveImage() {
+  showLoading('导出中...')
+  await setCanvasSize(outW, outH)
+  await drawToCanvas(outW, outH, 1, 1)
   uni.canvasToTempFilePath({
     canvasId: 'stitchCanvas',
     destWidth: outW,
     destHeight: outH,
+    quality: 1,
     success: (res) => {
+      drawPreview()
       // #ifdef H5
       const link = document.createElement('a')
       link.href = res.tempFilePath
@@ -168,16 +191,18 @@ function saveImage() {
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+      hideLoading()
       showSuccess('已下载')
       // #endif
       // #ifdef MP-WEIXIN
       uni.saveImageToPhotosAlbum({
         filePath: res.tempFilePath,
-        success: () => showSuccess('已保存到相册'),
-        fail: () => showToast('保存失败')
+        success: () => { hideLoading(); showSuccess('已保存到相册') },
+        fail: () => { hideLoading(); showToast('保存失败') }
       })
       // #endif
-    }
+    },
+    fail: () => { hideLoading(); showToast('导出失败') }
   })
 }
 </script>
