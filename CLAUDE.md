@@ -46,7 +46,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 | 本地存储 | 待办/备忘/生理期/日历日程 | `uni.getStorageSync/setStorageSync`（独立 `lifetool_*` key） |
 | Canvas 图片 | 压缩/裁剪/滤镜/拼接/取色/表情包/证件照/水印/头像/九宫格切图/二维码/CT检查 | `uni.createCanvasContext` + `canvasToTempFilePath` 导出 |
 | 传感器/录音 | 计步/分贝 | `uni.onAccelerometerChange` / `uni.getRecorderManager`（尺子为 DPI 校准的虚拟直尺，非传感器） |
-| 外部 API | 天气/汇率/历史上的今天/古诗文 | `uni.request`，域名与 Key 可在 `utils/api-config.js` 配置 |
+| 外部 API | 天气/汇率/历史上的今天/诗泉 | `uni.request`，域名与 Key 可在 `utils/api-config.js` 配置 |
 | 娱乐模拟 | CT检查 | 多阶段流程（选部位→贴近提示→扫描→出片）+ canvas 绘制结果片 + 定时器动画 |
 
 ### 图片选图统一模式（共享组件）
@@ -60,7 +60,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 
 ### 外部 API 域名
 
-天气 `wttr.in`、汇率 `open.er-api.com`、历史上的今天 `v2.xxapi.cn`、古诗文 `poetry.palemoky.com`。**H5 直接可用**；微信小程序需在公众平台把域名加入 request 合法域名白名单，否则请求失败。各工具可通过「我的 → API 设置」页填写自己的 Key 替换免费接口（配置集中在 `src/utils/api-config.js`）。
+天气 `wttr.in`、汇率 `open.er-api.com`、历史上的今天 `v2.xxapi.cn`、诗泉 `poetry.palemoky.com`。**H5 直接可用**；微信小程序需在公众平台把域名加入 request 合法域名白名单，否则请求失败。各工具可通过「我的 → API 设置」页填写自己的 Key 替换免费接口（配置集中在 `src/utils/api-config.js`）。
 
 ### Canvas 工具要点（压缩/裁剪/滤镜/拼接/取色/表情包/证件照/水印/头像/九宫格/二维码/CT检查）
 

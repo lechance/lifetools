@@ -27,7 +27,7 @@ const DEFAULT_CONFIG = {
   },
   ancientPoetry: {
     apiKey: '',
-    label: '古诗文 API Key',
+    label: '诗泉 API Key',
     placeholder: '留空使用免费接口 poetry.palemoky.com',
   },
   exchangeRate: {

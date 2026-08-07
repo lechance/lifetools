@@ -24,7 +24,7 @@ const HOT_TOOLS = [
   { id: 'led-marquee', name: 'LED弹幕', icon: '💡', color: COLORS.hot },
   { id: 'decibel', name: '分贝测试', icon: '🔊', color: COLORS.hot },
   { id: 'altimeter', name: '海拔测量', icon: '⛰️', color: COLORS.hot },
-  { id: 'ancient-poetry', name: '古诗文', icon: '🖊️', color: COLORS.hot }
+  { id: 'ancient-poetry', name: '诗泉', icon: '🖊️', color: COLORS.hot }
 ]
 
 /** 生活工具 */

@@ -35,7 +35,7 @@
         </view>
       </view>
       <view class="settings__item">
-        <text class="settings__item-label">古诗文 API Key</text>
+        <text class="settings__item-label">诗泉 API Key</text>
         <view class="settings__input-wrap">
           <input
             class="settings__input"
