@@ -68,13 +68,14 @@ function startSensor() {
 }
 
 function stopSensor() {
+  uni.offAccelerometerChange(onAccelerate)
   uni.stopAccelerometer({
-    success: () => {
-      sensorOn.value = false
-      uni.offAccelerometerChange(onAccelerate)
-    }
+    success: () => { sensorOn.value = false },
+    fail: () => { sensorOn.value = false }
   })
 }
+
+let cooldownTimer = null
 
 function onAccelerate(res) {
   if (!res || res.x === undefined) return
@@ -82,7 +83,7 @@ function onAccelerate(res) {
   if (magnitude > threshold.value && !cooldown) {
     steps.value++
     cooldown = true
-    setTimeout(() => { cooldown = false }, 260)
+    cooldownTimer = setTimeout(() => { cooldown = false }, 260)
   }
 }
 
@@ -95,7 +96,9 @@ function resetSteps() {
 }
 
 onUnmounted(() => {
-  stopSensor()
+  if (cooldownTimer) clearTimeout(cooldownTimer)
+  uni.offAccelerometerChange(onAccelerate)
+  uni.stopAccelerometer()
 })
 </script>
 

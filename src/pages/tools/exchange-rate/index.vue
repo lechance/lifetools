@@ -43,6 +43,7 @@
 <script setup>
 import { ref } from 'vue'
 import { showToast } from '@/utils/helpers'
+import { cachedFetch } from '@/utils/api-cache'
 
 const currencies = ['CNY', 'USD', 'EUR', 'JPY', 'GBP', 'HKD', 'AUD', 'CAD', 'CHF', 'SGD', 'KRW', 'INR']
 const fromIdx = ref(1)   // USD
@@ -72,20 +73,18 @@ function swap() {
 function fetchRates() {
   loading.value = true
   const base = currencies[fromIdx.value]
-  uni.request({
-    url: `https://open.er-api.com/v6/latest/${base}`,
-    success: (res) => {
-      if (res.data && res.data.result === 'success') {
-        rates.value = res.data.rates || {}
+  cachedFetch(`https://open.er-api.com/v6/latest/${base}`, {}, 60 * 60 * 1000)
+    .then(data => {
+      if (data && data.result === 'success') {
+        rates.value = data.rates || {}
         ratesLoaded.value = true
         calc()
       } else {
         showToast('获取汇率失败')
       }
-    },
-    fail: () => showToast('网络请求失败'),
-    complete: () => { loading.value = false }
-  })
+    })
+    .catch(() => showToast('网络请求失败'))
+    .finally(() => { loading.value = false })
 }
 
 function calc() {

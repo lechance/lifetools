@@ -44,9 +44,11 @@ function load() {
   }
 }
 
-watch(memos, (val) => {
-  uni.setStorageSync(STORAGE_KEY, JSON.stringify(val))
-}, { deep: true })
+function save() {
+  try {
+    uni.setStorageSync(STORAGE_KEY, JSON.stringify(memos.value))
+  } catch (e) {}
+}
 
 function formatTime(ts) {
   const d = new Date(ts)

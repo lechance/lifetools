@@ -11,5 +11,5 @@ onLaunch(() => {
 </script>
 
 <style lang="scss">
-/* 全局样式已在 uni.scss 中定义 */
+@import '@/global-classes.scss';
 </style>

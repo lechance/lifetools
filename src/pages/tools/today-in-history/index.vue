@@ -88,6 +88,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { cachedFetch } from '@/utils/api-cache'
 
 // ==================================================================
 //  内置历史事件数据（200+ 条，覆盖全年）
@@ -333,12 +334,10 @@ const displayEvents = computed(() => {
 //  API 请求
 // ==================================================================
 function fetchApiEvents() {
-  uni.request({
-    url: 'https://v2.xxapi.cn/api/history',
-    timeout: 10000,
-    success: (res) => {
-      if (res.statusCode === 200 && res.data && res.data.code === 200 && Array.isArray(res.data.data)) {
-        const mapped = res.data.data.map(item => {
+  cachedFetch('https://v2.xxapi.cn/api/history', {}, 24 * 60 * 60 * 1000)
+    .then(data => {
+      if (data && data.code === 200 && Array.isArray(data.data)) {
+        const mapped = data.data.map(item => {
           const match = item.match(/^(\d{4})年\d{2}月\d{2}日\s*(.*)$/)
           if (!match) return null
           return {
@@ -351,11 +350,10 @@ function fetchApiEvents() {
         }).filter(e => e && e.year > 0 && e.title)
         apiEvents.value = mapped.slice(0, 30)
       }
-    },
-    fail: () => {
+    })
+    .catch(() => {
       apiError.value = '网络错误，请稍后重试'
-    },
-  })
+    })
 }
 
 // ==================================================================

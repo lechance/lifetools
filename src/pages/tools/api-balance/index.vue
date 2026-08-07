@@ -120,6 +120,24 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { showToast, showLoading, hideLoading } from '@/utils/helpers'
 
 const STORAGE_KEY = 'lifetool_api_balance_keys'
+const CACHE_KEY = 'lifetool_api_balance_cache'
+const CACHE_TTL = 5 * 60 * 1000
+const REQUEST_TIMEOUT = 10000
+
+const PLATFORM_ORDER = { deepseek: 0, moonshot: 1, minimax: 2, zhipu: 3 }
+
+const HANDLER_MAP = {
+  deepseek: queryDeepSeek,
+  moonshot: queryMoonshot,
+  minimax: queryMinimax,
+  zhipu: queryZhipu,
+}
+
+const PROGRESS_COLORS = [
+  [80, '#FF4D4F'],
+  [50, '#FAAD14'],
+  [0, '#52C41A'],
+]
 
 const platforms = ref([
   { id: 'deepseek', name: 'DeepSeek', enabled: false, apiKey: '', showKey: false, color: '#4D6BFE' },
@@ -138,7 +156,12 @@ onMounted(() => {
   loadKeys()
   nextTick(() => {
     if (hasEnabled.value) {
-      queryAll()
+      const cached = loadCache()
+      if (cached) {
+        results.value = cached
+      } else {
+        queryAll()
+      }
     }
   })
 })
@@ -171,9 +194,32 @@ function saveKeys() {
   }
 }
 
+function loadCache() {
+  try {
+    const raw = uni.getStorageSync(CACHE_KEY)
+    if (!raw) return null
+    const cache = JSON.parse(raw)
+    if (Date.now() - cache.ts > CACHE_TTL) return null
+    return cache.results
+  } catch (e) {
+    return null
+  }
+}
+
+function saveCache(list) {
+  try {
+    uni.setStorageSync(CACHE_KEY, JSON.stringify({ ts: Date.now(), results: list }))
+  } catch (e) {}
+}
+
+function clearCache() {
+  try { uni.removeStorageSync(CACHE_KEY) } catch (e) {}
+}
+
 function getProgressColor(usedPercent) {
-  if (usedPercent >= 80) return '#FF4D4F'
-  if (usedPercent >= 50) return '#FAAD14'
+  for (const [threshold, color] of PROGRESS_COLORS) {
+    if (usedPercent >= threshold) return color
+  }
   return '#52C41A'
 }
 
@@ -189,200 +235,149 @@ function formatTime(ms) {
   return `${mins}分钟后`
 }
 
-function queryAll() {
-  if (loading.value) return
-  loading.value = true
-  results.value = []
-  showLoading('查询中...')
-
-  const enabled = platforms.value.filter(p => p.enabled && p.apiKey.trim())
-  let done = 0
-
-  enabled.forEach(p => {
-    const handler = {
-      deepseek: queryDeepSeek,
-      moonshot: queryMoonshot,
-      minimax: queryMinimax,
-      zhipu: queryZhipu,
-    }[p.id]
-
-    if (!handler) {
-      results.value.push({ id: p.id, name: p.name, color: p.color, error: '暂不支持该平台' })
-      done++
-      checkDone()
-      return
-    }
-
-    handler(p.apiKey.trim(), p.name, p.color)
-      .then(r => { results.value.push(r) })
-      .catch(e => { results.value.push({ id: p.id, name: p.name, color: p.color, error: e.message || '查询失败' }) })
-      .finally(() => { done++; checkDone() })
-  })
-
-  function checkDone() {
-    if (done >= enabled.length) {
-      results.value.sort((a, b) => {
-        const order = { deepseek: 0, moonshot: 1, minimax: 2, zhipu: 3 }
-        return (order[a.id] ?? 99) - (order[b.id] ?? 99)
-      })
-      loading.value = false
-      hideLoading()
-    }
-  }
-}
-
-function queryDeepSeek(key, name, color) {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: 'https://api.deepseek.com/user/balance',
-      method: 'GET',
-      header: {
-        'Authorization': 'Bearer ' + key,
-        'Accept': 'application/json'
-      },
-      success: (res) => {
-        if (res.statusCode === 401 || res.statusCode === 403) {
-          reject(new Error('API Key 无效'))
-          return
-        }
-        const data = res.data
-        if (!data || !data.balance_infos || !data.balance_infos.length) {
-          reject(new Error('返回数据异常'))
-          return
-        }
-        const info = data.balance_infos[0]
-        resolve({
-          id: 'deepseek', name, color, type: 'balance',
-          currency: info.currency || '$',
-          total: info.total_balance || '0.00',
-          granted: (info.granted_balance || '0.00') + ' ' + (info.currency || '$'),
-          toppedUp: (info.topped_up_balance || '0.00') + ' ' + (info.currency || '$'),
-          time: formatNow()
-        })
-      },
-      fail: () => reject(new Error('网络请求失败'))
-    })
-  })
-}
-
-function queryMoonshot(key, name, color) {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: 'https://api.moonshot.cn/v1/users/me/balance',
-      method: 'GET',
-      header: {
-        'Authorization': 'Bearer ' + key,
-        'Accept': 'application/json'
-      },
-      success: (res) => {
-        if (res.statusCode === 401 || res.statusCode === 403) {
-          reject(new Error('API Key 无效'))
-          return
-        }
-        const data = res.data
-        if (!data || data.status === false || !data.data) {
-          reject(new Error(data?.error?.message || '返回数据异常'))
-          return
-        }
-        resolve({
-          id: 'moonshot', name, color, type: 'moonshot',
-          available: Number(data.data.available_balance || 0).toFixed(2),
-          voucher: Number(data.data.voucher_balance || 0).toFixed(2),
-          cash: Number(data.data.cash_balance || 0).toFixed(2),
-          time: formatNow()
-        })
-      },
-      fail: () => reject(new Error('网络请求失败'))
-    })
-  })
-}
-
-function queryMinimax(key, name, color) {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: 'https://www.minimaxi.com/v1/token_plan/remains',
-      method: 'GET',
-      header: {
-        'Authorization': 'Bearer ' + key,
-        'Accept': 'application/json'
-      },
-      success: (res) => {
-        if (res.statusCode === 401 || res.statusCode === 403) {
-          reject(new Error('API Key 无效'))
-          return
-        }
-        const data = res.data
-        if (!data || data.base_resp?.status_code !== 0) {
-          reject(new Error(data?.base_resp?.status_msg || '返回数据异常'))
-          return
-        }
-        const remains = data.model_remains
-        if (!remains || !remains.length) {
-          reject(new Error('无额度数据'))
-          return
-        }
-        const general = remains.find(m => m.model_name === 'general') || remains[0]
-        const fiveHour = general.current_interval_remaining_percent ?? null
-        const weekly = general.current_weekly_remaining_percent ?? null
-        let resetTime = ''
-        if (general.end_time) {
-          resetTime = formatTime(general.end_time)
-        }
-        resolve({
-          id: 'minimax', name, color, type: 'quota',
-          fiveHour, weekly, level: null, resetTime,
-          time: formatNow()
-        })
-      },
-      fail: () => reject(new Error('网络请求失败'))
-    })
-  })
-}
-
-function queryZhipu(key, name, color) {
-  return new Promise((resolve, reject) => {
-    uni.request({
-      url: 'https://open.bigmodel.cn/api/monitor/usage/quota/limit',
-      method: 'GET',
-      header: {
-        'Authorization': key,
-        'Content-Type': 'application/json'
-      },
-      success: (res) => {
-        if (res.statusCode === 401 || res.statusCode === 403) {
-          reject(new Error('API Key 无效'))
-          return
-        }
-        const data = res.data
-        if (!data || data.success === false || !data.data) {
-          reject(new Error(data?.msg || '返回数据异常'))
-          return
-        }
-        const limits = data.data.limits || []
-        const tokensLimits = limits.filter(l => l.type === 'TOKENS_LIMIT')
-        tokensLimits.sort((a, b) => {
-          if (!a.nextResetTime) return -1
-          if (!b.nextResetTime) return 1
-          return a.nextResetTime - b.nextResetTime
-        })
-        const fiveHour = tokensLimits[0]?.percentage ?? null
-        const weekly = tokensLimits[1]?.percentage ?? null
-        const resetTime = tokensLimits[0]?.nextResetTime ? formatTime(tokensLimits[0].nextResetTime) : ''
-        resolve({
-          id: 'zhipu', name, color, type: 'quota',
-          fiveHour, weekly, level: data.data.level || null, resetTime,
-          time: formatNow()
-        })
-      },
-      fail: () => reject(new Error('网络请求失败'))
-    })
-  })
-}
-
 function formatNow() {
   const d = new Date()
   const pad = n => String(n).padStart(2, '0')
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+}
+
+function queryAll() {
+  if (loading.value) return
+  loading.value = true
+  showLoading('查询中...')
+  clearCache()
+
+  const enabled = platforms.value.filter(p => p.enabled && p.apiKey.trim())
+  const collected = new Array(enabled.length)
+  let done = 0
+
+  enabled.forEach((p, i) => {
+    const handler = HANDLER_MAP[p.id]
+    if (!handler) {
+      collected[i] = { id: p.id, name: p.name, color: p.color, error: '暂不支持该平台' }
+      done++
+      checkDone()
+      return
+    }
+    handler(p.apiKey.trim(), p.name, p.color)
+      .then(r => { collected[i] = r })
+      .catch(e => { collected[i] = { id: p.id, name: p.name, color: p.color, error: e.message || '查询失败' } })
+      .finally(() => { done++; checkDone() })
+  })
+
+  function checkDone() {
+    if (done < enabled.length) return
+    const sorted = collected
+      .filter(Boolean)
+      .sort((a, b) => (PLATFORM_ORDER[a.id] ?? 99) - (PLATFORM_ORDER[b.id] ?? 99))
+    results.value = sorted
+    saveCache(sorted)
+    loading.value = false
+    hideLoading()
+  }
+}
+
+function request(url, header) {
+  return new Promise((resolve, reject) => {
+    uni.request({
+      url,
+      method: 'GET',
+      header,
+      timeout: REQUEST_TIMEOUT,
+      success: (res) => {
+        if (res.statusCode === 401 || res.statusCode === 403) {
+          reject(new Error('API Key 无效'))
+        } else {
+          resolve(res.data)
+        }
+      },
+      fail: () => reject(new Error('网络请求失败'))
+    })
+  })
+}
+
+function queryDeepSeek(key, name, color) {
+  return request('https://api.deepseek.com/user/balance', {
+    'Authorization': 'Bearer ' + key,
+    'Accept': 'application/json'
+  }).then(data => {
+    if (!data?.balance_infos?.length) throw new Error('返回数据异常')
+    const info = data.balance_infos[0]
+    return {
+      id: 'deepseek', name, color, type: 'balance',
+      currency: info.currency || '$',
+      total: info.total_balance || '0.00',
+      granted: (info.granted_balance || '0.00') + ' ' + (info.currency || '$'),
+      toppedUp: (info.topped_up_balance || '0.00') + ' ' + (info.currency || '$'),
+      time: formatNow()
+    }
+  })
+}
+
+function queryMoonshot(key, name, color) {
+  return request('https://api.moonshot.cn/v1/users/me/balance', {
+    'Authorization': 'Bearer ' + key,
+    'Accept': 'application/json'
+  }).then(data => {
+    if (!data || data.status === false || !data.data) {
+      throw new Error(data?.error?.message || '返回数据异常')
+    }
+    return {
+      id: 'moonshot', name, color, type: 'moonshot',
+      available: Number(data.data.available_balance || 0).toFixed(2),
+      voucher: Number(data.data.voucher_balance || 0).toFixed(2),
+      cash: Number(data.data.cash_balance || 0).toFixed(2),
+      time: formatNow()
+    }
+  })
+}
+
+function queryMinimax(key, name, color) {
+  return request('https://www.minimaxi.com/v1/token_plan/remains', {
+    'Authorization': 'Bearer ' + key,
+    'Accept': 'application/json'
+  }).then(data => {
+    if (!data || data.base_resp?.status_code !== 0) {
+      throw new Error(data?.base_resp?.status_msg || '返回数据异常')
+    }
+    const remains = data.model_remains
+    if (!remains?.length) throw new Error('无额度数据')
+    const general = remains.find(m => m.model_name === 'general') || remains[0]
+    return {
+      id: 'minimax', name, color, type: 'quota',
+      fiveHour: general.current_interval_remaining_percent ?? null,
+      weekly: general.current_weekly_remaining_percent ?? null,
+      level: null,
+      resetTime: general.end_time ? formatTime(general.end_time) : '',
+      time: formatNow()
+    }
+  })
+}
+
+function queryZhipu(key, name, color) {
+  return request('https://open.bigmodel.cn/api/monitor/usage/quota/limit', {
+    'Authorization': key,
+    'Content-Type': 'application/json'
+  }).then(data => {
+    if (!data || data.success === false || !data.data) {
+      throw new Error(data?.msg || '返回数据异常')
+    }
+    const tokensLimits = (data.data.limits || [])
+      .filter(l => l.type === 'TOKENS_LIMIT')
+      .sort((a, b) => {
+        if (!a.nextResetTime) return -1
+        if (!b.nextResetTime) return 1
+        return a.nextResetTime - b.nextResetTime
+      })
+    return {
+      id: 'zhipu', name, color, type: 'quota',
+      fiveHour: tokensLimits[0]?.percentage ?? null,
+      weekly: tokensLimits[1]?.percentage ?? null,
+      level: data.data.level || null,
+      resetTime: tokensLimits[0]?.nextResetTime ? formatTime(tokensLimits[0].nextResetTime) : '',
+      time: formatNow()
+    }
+  })
 }
 </script>
 

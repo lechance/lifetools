@@ -92,7 +92,7 @@ function calcCanvas(w, h) {
 function drawImage() {
   const ctx = uni.createCanvasContext('compressCanvas')
   ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
-  ctx.draw()
+  ctx.draw(false)
 }
 
 function onQuality(e) {
@@ -101,8 +101,9 @@ function onQuality(e) {
 
 function compress() {
   showLoading('压缩中...')
-  drawImage()
-  setTimeout(() => {
+  const ctx = uni.createCanvasContext('compressCanvas')
+  ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
+  ctx.draw(false, () => {
     uni.canvasToTempFilePath({
       canvasId: 'compressCanvas',
       fileType: 'jpg',
@@ -118,7 +119,6 @@ function compress() {
         })
         // #endif
         // #ifdef H5
-        // H5 端无 getFileSystemManager，无法直接取文件大小
         resultSize.value = 0
         // #endif
         result.value = true
@@ -129,32 +129,36 @@ function compress() {
         showToast('压缩失败')
       }
     })
-  }, 200)
+  })
 }
 
 function saveImage() {
-  uni.canvasToTempFilePath({
-    canvasId: 'compressCanvas',
-    fileType: 'jpg',
-    quality: quality.value / 100,
-    success: (res) => {
-      // #ifdef H5
-      const link = document.createElement('a')
-      link.href = res.tempFilePath
-      link.download = 'compressed.jpg'
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      showSuccess('已下载')
-      // #endif
-      // #ifdef MP-WEIXIN
-      uni.saveImageToPhotosAlbum({
-        filePath: res.tempFilePath,
-        success: () => showSuccess('已保存到相册'),
-        fail: () => showToast('保存失败')
-      })
-      // #endif
-    }
+  const ctx = uni.createCanvasContext('compressCanvas')
+  ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
+  ctx.draw(false, () => {
+    uni.canvasToTempFilePath({
+      canvasId: 'compressCanvas',
+      fileType: 'jpg',
+      quality: quality.value / 100,
+      success: (res) => {
+        // #ifdef H5
+        const link = document.createElement('a')
+        link.href = res.tempFilePath
+        link.download = 'compressed.jpg'
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        showSuccess('已下载')
+        // #endif
+        // #ifdef MP-WEIXIN
+        uni.saveImageToPhotosAlbum({
+          filePath: res.tempFilePath,
+          success: () => showSuccess('已保存到相册'),
+          fail: () => showToast('保存失败')
+        })
+        // #endif
+      }
+    })
   })
 }
 

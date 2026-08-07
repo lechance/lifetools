@@ -43,6 +43,7 @@
 <script setup>
 import { ref } from 'vue'
 import { showToast } from '@/utils/helpers'
+import { cachedFetch } from '@/utils/api-cache'
 
 const city = ref('')
 const cityName = ref('')
@@ -57,14 +58,9 @@ function search() {
   loading.value = true
   error.value = ''
 
-  uni.request({
-    url: `https://wttr.in/${encodeURIComponent(c)}?format=j1&lang=zh`,
-    success: (res) => {
-      if (res.statusCode !== 200 || !res.data) {
-        error.value = '查询失败，请检查城市名'
-        return
-      }
-      const data = res.data
+  const url = `https://wttr.in/${encodeURIComponent(c)}?format=j1&lang=zh`
+  cachedFetch(url, {}, 10 * 60 * 1000)
+    .then(data => {
       const cond = data.current_condition && data.current_condition[0]
       if (cond) {
         current.value = {
@@ -76,7 +72,6 @@ function search() {
         }
         cityName.value = (data.nearest_area && data.nearest_area[0] && data.nearest_area[0].areaName && data.nearest_area[0].areaName[0].value) || c
       } else {
-        // wttr.in 对不存在的城市仍返回 200，此时无 current_condition，需明确提示
         error.value = '未找到该城市，请检查城市名'
         current.value = null
         forecast.value = []
@@ -88,14 +83,13 @@ function search() {
         maxTemp: w.maxtempC,
         desc: (w.hourly && w.hourly[0] && w.hourly[0].weatherDesc && w.hourly[0].weatherDesc[0] && w.hourly[0].weatherDesc[0].value) || '--'
       }))
-    },
-    fail: () => {
+    })
+    .catch(() => {
       error.value = '网络请求失败，请检查网络或稍后重试'
-    },
-    complete: () => {
+    })
+    .finally(() => {
       loading.value = false
-    }
-  })
+    })
 }
 </script>
 

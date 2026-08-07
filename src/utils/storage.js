@@ -1,7 +1,61 @@
 /**
  * 本地存储工具函数
- * 封装 uni-app 的本地存储 API，管理收藏和使用记录
+ * 封装 uni-app 的本地存储 API，带模块级缓存避免重复读写
  */
+
+const _cache = {}
+
+/**
+ * 通用存储读取（带缓存）
+ * @param {string} key
+ * @param {*} defaultValue
+ * @returns {*}
+ */
+function get(key, defaultValue = null) {
+  if (_cache[key] !== undefined) return _cache[key]
+  try {
+    const raw = uni.getStorageSync(key)
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      _cache[key] = parsed
+      return parsed
+    }
+  } catch (e) {}
+  return defaultValue
+}
+
+/**
+ * 通用存储写入（自动失效缓存）
+ * @param {string} key
+ * @param {*} value
+ */
+function set(key, value) {
+  try {
+    uni.setStorageSync(key, JSON.stringify(value))
+    _cache[key] = value
+  } catch (e) {}
+}
+
+/**
+ * 通用存储删除（自动失效缓存）
+ * @param {string} key
+ */
+function remove(key) {
+  try {
+    uni.removeStorageSync(key)
+    delete _cache[key]
+  } catch (e) {}
+}
+
+/**
+ * 批量预热缓存（App 启动时调用一次）
+ * @param {string[]} keys
+ */
+function warmup(keys) {
+  keys.forEach(key => {
+    if (_cache[key] === undefined) get(key)
+  })
+}
 
 const STORAGE_KEYS = {
   FAVORITES: 'lifetool_favorites',
@@ -11,18 +65,10 @@ const STORAGE_KEYS = {
 
 /** ========== 收藏管理 ========== */
 
-/** 获取所有收藏的工具 ID 列表 */
 function getFavorites() {
-  try {
-    const data = uni.getStorageSync(STORAGE_KEYS.FAVORITES)
-    return data ? JSON.parse(data) : []
-  } catch (e) {
-    console.error('获取收藏失败:', e)
-    return []
-  }
+  return get(STORAGE_KEYS.FAVORITES, [])
 }
 
-/** 切换收藏状态（收藏/取消收藏） */
 function toggleFavorite(toolId) {
   const favorites = getFavorites()
   const index = favorites.indexOf(toolId)
@@ -31,100 +77,63 @@ function toggleFavorite(toolId) {
   } else {
     favorites.push(toolId)
   }
-  uni.setStorageSync(STORAGE_KEYS.FAVORITES, JSON.stringify(favorites))
+  set(STORAGE_KEYS.FAVORITES, favorites)
   return favorites.includes(toolId)
 }
 
-/** 检查工具是否已收藏 */
 function isFavorited(toolId) {
-  const favorites = getFavorites()
-  return favorites.includes(toolId)
+  return getFavorites().includes(toolId)
 }
 
 /** ========== 使用记录管理 ========== */
 
-/** 添加使用记录 */
 function addRecord(toolId, toolName) {
-  try {
-    const records = getRecords()
-    // 移除已有相同工具的记录（避免重复）
-    const filtered = records.filter(r => r.toolId !== toolId)
-    // 在最前面插入新记录
-    filtered.unshift({
-      id: `record_${Date.now()}`,
-      toolId,
-      toolName,
-      timestamp: Date.now()
-    })
-    // 只保留最近50条记录
-    const trimmed = filtered.slice(0, 50)
-    uni.setStorageSync(STORAGE_KEYS.RECORDS, JSON.stringify(trimmed))
-    return trimmed
-  } catch (e) {
-    console.error('添加使用记录失败:', e)
-    return []
-  }
+  const records = getRecords()
+  const filtered = records.filter(r => r.toolId !== toolId)
+  filtered.unshift({
+    id: `record_${Date.now()}`,
+    toolId,
+    toolName,
+    timestamp: Date.now()
+  })
+  const trimmed = filtered.slice(0, 50)
+  set(STORAGE_KEYS.RECORDS, trimmed)
+  return trimmed
 }
 
-/** 获取使用记录列表 */
 function getRecords() {
-  try {
-    const data = uni.getStorageSync(STORAGE_KEYS.RECORDS)
-    return data ? JSON.parse(data) : []
-  } catch (e) {
-    console.error('获取使用记录失败:', e)
-    return []
-  }
+  return get(STORAGE_KEYS.RECORDS, [])
 }
 
-/** 清空使用记录 */
 function clearRecords() {
-  try {
-    uni.setStorageSync(STORAGE_KEYS.RECORDS, JSON.stringify([]))
-    return true
-  } catch (e) {
-    console.error('清空记录失败:', e)
-    return false
-  }
+  set(STORAGE_KEYS.RECORDS, [])
+  return true
 }
 
 /** ========== 搜索历史管理 ========== */
 
-/** 添加搜索历史 */
 function addSearchHistory(keyword) {
   if (!keyword || !keyword.trim()) return
-  try {
-    const history = getSearchHistory()
-    const filtered = history.filter(h => h !== keyword.trim())
-    filtered.unshift(keyword.trim())
-    const trimmed = filtered.slice(0, 20)
-    uni.setStorageSync(STORAGE_KEYS.SEARCH_HISTORY, JSON.stringify(trimmed))
-  } catch (e) {
-    console.error('保存搜索历史失败:', e)
-  }
+  const history = getSearchHistory()
+  const filtered = history.filter(h => h !== keyword.trim())
+  filtered.unshift(keyword.trim())
+  set(STORAGE_KEYS.SEARCH_HISTORY, filtered.slice(0, 20))
 }
 
-/** 获取搜索历史 */
 function getSearchHistory() {
-  try {
-    const data = uni.getStorageSync(STORAGE_KEYS.SEARCH_HISTORY)
-    return data ? JSON.parse(data) : []
-  } catch (e) {
-    return []
-  }
+  return get(STORAGE_KEYS.SEARCH_HISTORY, [])
 }
 
-/** 清空搜索历史 */
 function clearSearchHistory() {
-  try {
-    uni.setStorageSync(STORAGE_KEYS.SEARCH_HISTORY, JSON.stringify([]))
-  } catch (e) {
-    console.error('清空搜索历史失败:', e)
-  }
+  set(STORAGE_KEYS.SEARCH_HISTORY, [])
 }
 
 export {
   STORAGE_KEYS,
+  get,
+  set,
+  remove,
+  warmup,
   getFavorites,
   toggleFavorite,
   isFavorited,
