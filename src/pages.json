@@ -405,6 +405,14 @@
       "style": {
         "navigationBarTitleText": "隐私政策"
       }
+    },
+    {
+      "path": "pages/tools/api-balance/index",
+      "style": {
+        "navigationBarTitleText": "模型余额",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
     }
   ],
   "globalStyle": {
