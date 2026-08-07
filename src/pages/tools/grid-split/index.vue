@@ -38,6 +38,7 @@ import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
+import { saveCheckedImage } from '@/utils/sec-check'
 
 const imagePath = ref('')
 const showSheet = ref(false)
@@ -155,16 +156,15 @@ function saveAll() {
   // #endif
 }
 
-/** mp-weixin 逐张保存到相册 */
+/** mp-weixin 逐张校验并保存到相册 */
 function saveToAlbum(index) {
   if (index >= pieces.value.length) {
     showSuccess('已全部保存到相册')
     return
   }
-  uni.saveImageToPhotosAlbum({
-    filePath: pieces.value[index],
-    success: () => saveToAlbum(index + 1),
-    fail: () => showToast('保存失败')
+  saveCheckedImage(pieces.value[index], {
+    onSuccess: () => saveToAlbum(index + 1),
+    onFail: () => showToast('保存失败')
   })
 }
 

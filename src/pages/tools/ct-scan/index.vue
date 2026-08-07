@@ -85,6 +85,7 @@
 <script setup>
 import { ref, computed, nextTick, onUnmounted } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
+import { saveCheckedImage } from '@/utils/sec-check'
 
 // ========== 画布尺寸 ==========
 const CANVAS_W = 340
@@ -396,10 +397,9 @@ function saveImage() {
       showSuccess('已下载')
       // #endif
       // #ifdef MP-WEIXIN
-      uni.saveImageToPhotosAlbum({
-        filePath: res.tempFilePath,
-        success: () => showSuccess('已保存到相册'),
-        fail: () => showToast('保存失败')
+      saveCheckedImage(res.tempFilePath, {
+        onSuccess: () => showSuccess('已保存到相册'),
+        onFail: () => showToast('保存失败')
       })
       // #endif
     },

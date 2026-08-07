@@ -32,6 +32,7 @@
 <script setup>
 import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
+import { saveCheckedImage } from '@/utils/sec-check'
 
 const content = ref('')
 const level = ref('M')
@@ -111,10 +112,9 @@ function saveQr() {
       showSuccess('已下载')
       // #endif
       // #ifdef MP-WEIXIN
-      uni.saveImageToPhotosAlbum({
-        filePath: res.tempFilePath,
-        success: () => showSuccess('已保存到相册'),
-        fail: () => showToast('保存失败，请检查相册权限')
+      saveCheckedImage(res.tempFilePath, {
+        onSuccess: () => showSuccess('已保存到相册'),
+        onFail: () => showToast('保存失败，请检查相册权限')
       })
       // #endif
     },

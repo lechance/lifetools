@@ -40,6 +40,7 @@ import { ref, nextTick, watch } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
+import { saveCheckedImage } from '@/utils/sec-check'
 
 const GAP = 2
 const MAX_OUT = 4096
@@ -253,10 +254,9 @@ async function saveImage() {
       showSuccess('已下载')
       // #endif
       // #ifdef MP-WEIXIN
-      uni.saveImageToPhotosAlbum({
-        filePath: res.tempFilePath,
-        success: () => { hideLoading(); showSuccess('已保存到相册') },
-        fail: () => { hideLoading(); showToast('保存失败') }
+      saveCheckedImage(res.tempFilePath, {
+        onSuccess: () => { hideLoading(); showSuccess('已保存到相册') },
+        onFail: () => { hideLoading(); showToast('保存失败') }
       })
       // #endif
     },

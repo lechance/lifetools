@@ -151,6 +151,7 @@ import { ref, nextTick, onUnmounted } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
+import { saveCheckedImage } from '@/utils/sec-check'
 
 // ========== 颜色方案 ==========
 const colors = [
@@ -360,12 +361,11 @@ function saveImage() {
       // #endif
 
       // #ifdef MP-WEIXIN
-      uni.saveImageToPhotosAlbum({
-        filePath: res.tempFilePath,
-        success: () => {
+      saveCheckedImage(res.tempFilePath, {
+        onSuccess: () => {
           showSuccess('已保存到相册')
         },
-        fail: (err) => {
+        onFail: (err) => {
           if (err.errMsg && err.errMsg.includes('auth deny')) {
             showToast('请授权相册权限')
           } else {

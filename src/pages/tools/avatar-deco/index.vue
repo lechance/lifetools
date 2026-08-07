@@ -41,6 +41,7 @@ import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
+import { saveCheckedImage } from '@/utils/sec-check'
 
 const decos = [
   { key: 'none', label: '无' },
@@ -169,10 +170,9 @@ function saveImage() {
         showSuccess('已下载')
         // #endif
         // #ifdef MP-WEIXIN
-        uni.saveImageToPhotosAlbum({
-          filePath: res.tempFilePath,
-          success: () => showSuccess('已保存到相册'),
-          fail: () => showToast('保存失败')
+        saveCheckedImage(res.tempFilePath, {
+          onSuccess: () => showSuccess('已保存到相册'),
+          onFail: () => showToast('保存失败')
         })
         // #endif
       },
