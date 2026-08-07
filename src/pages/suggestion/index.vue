@@ -69,18 +69,6 @@
       <view class="suggestion__count">{{ content.length }}/500</view>
     </view>
 
-    <!-- 联系方式（可选） -->
-    <view class="suggestion__card">
-      <text class="suggestion__label">联系方式 <text class="suggestion__optional">（选填）</text></text>
-      <input
-        v-model="contact"
-        class="suggestion__input"
-        type="text"
-        placeholder="微信 / 手机号，方便我们与您沟通"
-        placeholder-class="suggestion__placeholder"
-      />
-    </view>
-
     <!-- 提交按钮 -->
     <button class="suggestion__submit" @tap="onSubmit">
       {{ submitting ? '提交中...' : '提交建议' }}
@@ -100,7 +88,6 @@ import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helper
 
 const type = ref('improve')   // improve | new
 const content = ref('')
-const contact = ref('')
 
 // 工具选择
 const allTools = getAllTools()
@@ -134,7 +121,6 @@ function onSubmit() {
     toolId: type.value === 'improve' ? allTools[toolIndex.value].id : '',
     toolName: type.value === 'improve' ? allTools[toolIndex.value].name : '',
     content: text,
-    contact: contact.value.trim(),
     time: Date.now()
   }
 
@@ -150,7 +136,6 @@ function onSubmit() {
         showSuccess('提交成功，感谢您的建议')
         setTimeout(() => {
           content.value = ''
-          contact.value = ''
           toolIndex.value = -1
         }, 300)
       } else {
@@ -207,12 +192,6 @@ function onSubmit() {
 
   &__required {
     color: #FF3B30;
-  }
-
-  &__optional {
-    font-size: 24rpx;
-    font-weight: 400;
-    color: #C7C7CC;
   }
 
   // 类型选择
@@ -301,18 +280,6 @@ function onSubmit() {
     font-size: 22rpx;
     color: #C7C7CC;
     margin-top: 8rpx;
-  }
-
-  // 联系方式输入
-  &__input {
-    width: 100%;
-    height: 88rpx;
-    background: #F5F5F7;
-    border-radius: 12rpx;
-    padding: 0 20rpx;
-    font-size: 28rpx;
-    color: #1D1D1F;
-    box-sizing: border-box;
   }
 
   &__placeholder {
