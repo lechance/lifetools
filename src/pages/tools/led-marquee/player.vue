@@ -3,7 +3,11 @@
   <view class="player" @tap="goBack">
     <!-- ====== 横屏弹幕显示区 ====== -->
     <view class="player__marquee">
-      <view class="player__track" :style="trackStyle">
+      <view
+        class="player__track"
+        :class="{ 'player__track--running': isRunning && !isPaused }"
+        :style="trackStyle"
+      >
         <text class="player__text" :style="textStyle">{{ text || '请输入文字' }}</text>
       </view>
     </view>
@@ -25,6 +29,9 @@ const color = ref('#39FF14')
 const speed = ref(5)
 const direction = ref('left')
 const fontSizePx = ref(96)
+// 是否滚动：默认滚动，主页面传入停止/暂停状态时相应冻结
+const isRunning = ref(true)
+const isPaused = ref(false)
 
 // 动画持续时间映射（速度值 1-10 → 秒数 20-3），与主页面保持一致
 const speedMap = [20, 16, 13, 10, 8, 6.5, 5.5, 4.5, 3.5, 3]
@@ -46,6 +53,8 @@ onLoad((options) => {
     const pxPerRpx = sys.windowWidth / 750
     fontSizePx.value = Math.round(rpx * pxPerRpx * 1.8)
   }
+  if (options.running) isRunning.value = options.running === '1'
+  if (options.paused) isPaused.value = options.paused === '1'
 })
 
 // ========== 样式计算 ==========
@@ -108,13 +117,20 @@ function goBack() {
 
   // 文字轨道：宽度即文字宽度，translateX 百分比基于自身宽度，长文字完整滚动
   // will-change 提升合成层，滚动只做 GPU 平移，避免每帧重绘文字/阴影
+  // 仅在滚动状态下施加动画；停止/暂停时文字静止显示
   &__track {
     display: inline-block;
     white-space: nowrap;
     min-width: 100%;
     will-change: transform;
-    animation: marqueeScroll var(--duration, 8s) linear infinite;
-    animation-duration: var(--duration);
+
+    &--running {
+      animation: marqueeScroll var(--duration, 8s) linear infinite;
+      animation-duration: var(--duration);
+    }
+    &:not(&--running) {
+      transform: translateX(0);
+    }
   }
   &__text {
     display: inline-block;

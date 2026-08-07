@@ -267,7 +267,9 @@ function goToPlayer() {
     `color=${encodeURIComponent(colorKey.value === 'rainbow' ? '#FFFFFF' : textColor.value)}`,
     `speed=${speed.value}`,
     `direction=${direction.value}`,
-    `fontSize=${fontSize.value}`
+    `fontSize=${fontSize.value}`,
+    `running=${isRunning.value ? 1 : 0}`,
+    `paused=${isPaused.value ? 1 : 0}`
   ].join('&')
   uni.navigateTo({
     url: `/pages/tools/led-marquee/player?${query}`
