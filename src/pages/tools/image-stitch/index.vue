@@ -20,12 +20,12 @@
         <view class="dir-btn" :class="{ 'dir-btn--active': dir === 'horizontal' }" @tap="dir = 'horizontal'">左右拼接</view>
       </view>
 
-      <button class="btn" @tap="stitch">开始拼接</button>
-      <button class="btn btn--ghost" v-if="result" @tap="saveImage">保存图片</button>
+      <button class="btn" @tap="stitch" :disabled="busy">开始拼接</button>
+      <button class="btn btn--ghost" v-if="result" @tap="saveImage" :disabled="busy">保存图片</button>
     </view>
 
     <view v-if="result" class="card">
-      <view class="canvas-wrap">
+      <view class="canvas-wrap" :style="{ width: dispW + 'px', height: dispH + 'px' }">
         <canvas canvas-id="stitchCanvas" id="stitchCanvas" class="stitch-canvas"
           :style="{ width: canvasW + 'px', height: canvasH + 'px' }"></canvas>
       </view>
@@ -36,7 +36,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
@@ -48,17 +48,22 @@ const images = ref([])
 const showSheet = ref(false)
 const dir = ref('vertical')
 const result = ref(false)
+const busy = ref(false)
 const canvasW = ref(300)
 const canvasH = ref(300)
+const dispW = ref(300)
+const dispH = ref(300)
 let outW = 0
 let outH = 0
 let placements = []
+let drawToken = 0
 
 function chooseImages() {
   showSheet.value = true
 }
 
 async function onSourceSelect(source) {
+  if (busy.value) return
   showSheet.value = false
   try {
     const { paths } = await pickImage({ source, count: 9 })
@@ -68,15 +73,22 @@ async function onSourceSelect(source) {
 }
 
 function removeImage(i) {
+  if (busy.value) return
   images.value.splice(i, 1)
   result.value = false
 }
 
+watch(dir, () => {
+  result.value = false
+})
+
 function stitch() {
+  if (busy.value) return
   if (images.value.length < 2) {
     showToast('请选择至少 2 张图片')
     return
   }
+  busy.value = true
   showLoading('拼接中...')
   const count = images.value.length
   let loaded = 0
@@ -94,6 +106,7 @@ function stitch() {
       fail: () => {
         if (failed) return
         failed = true
+        busy.value = false
         hideLoading()
         showToast('图片加载失败')
       }
@@ -104,51 +117,86 @@ function stitch() {
 function computeAndDraw(sizes) {
   const gapCount = images.value.length - 1
   const totalGap = gapCount * GAP
-  placements = []
 
+  let natW, natH
   if (dir.value === 'vertical') {
-    const maxW = Math.max(...sizes.map(s => s.w))
-    const scale = Math.min(1, MAX_OUT / maxW)
-    const commonW = Math.round(maxW * scale)
-    const heights = sizes.map((s) => Math.round(s.h * commonW / s.w))
-    outW = commonW
-    outH = heights.reduce((a, b) => a + b, 0) + totalGap
+    const commonW = Math.max(...sizes.map(s => s.w))
+    natW = commonW
+    natH = sizes.reduce((a, s) => a + Math.round(s.h * commonW / s.w), 0) + totalGap
+  } else {
+    const commonH = Math.max(...sizes.map(s => s.h))
+    natH = commonH
+    natW = sizes.reduce((a, s) => a + Math.round(s.w * commonH / s.h), 0) + totalGap
+  }
+  const scale = Math.min(1, MAX_OUT / Math.max(natW, natH))
+
+  placements = []
+  if (dir.value === 'vertical') {
+    const commonW = Math.round(Math.max(...sizes.map(s => s.w)) * scale)
     let y = 0
     sizes.forEach((s, i) => {
-      const h = heights[i]
+      const h = Math.round(s.h * commonW / s.w)
       placements.push({ x: 0, y, w: commonW, h })
       y += h + GAP
     })
+    outW = commonW
+    outH = Math.max(1, y - GAP)
   } else {
-    const maxH = Math.max(...sizes.map(s => s.h))
-    const scale = Math.min(1, MAX_OUT / maxH)
-    const commonH = Math.round(maxH * scale)
-    const widths = sizes.map((s) => Math.round(s.w * commonH / s.h))
-    outH = commonH
-    outW = widths.reduce((a, b) => a + b, 0) + totalGap
+    const commonH = Math.round(Math.max(...sizes.map(s => s.h)) * scale)
     let x = 0
     sizes.forEach((s, i) => {
-      const w = widths[i]
+      const w = Math.round(s.w * commonH / s.h)
       placements.push({ x, y: 0, w, h: commonH })
       x += w + GAP
     })
+    outW = Math.max(1, x - GAP)
+    outH = commonH
   }
 
   result.value = true
   nextTick(async () => {
     await drawPreview()
+    busy.value = false
     hideLoading()
     showSuccess('拼接完成')
   })
 }
 
-/** 等待 canvas 缓冲区随 CSS 尺寸异步重建（H5 ResizeSensor / mp-weixin 原生层） */
-function setCanvasSize(w, h) {
+/** 读取 canvas 元素实际渲染尺寸（H5 的 uni-canvas 包装元素 / mp-weixin 原生节点） */
+function queryCanvasSize() {
   return new Promise((resolve) => {
-    canvasW.value = w
-    canvasH.value = h
-    nextTick(() => setTimeout(resolve, 150))
+    let settled = false
+    const finish = (r) => { if (!settled) { settled = true; resolve(r) } }
+    try {
+      uni.createSelectorQuery().select('#stitchCanvas').boundingClientRect((rect) => {
+        finish(rect ? { w: rect.width, h: rect.height } : null)
+      }).exec()
+    } catch (e) {
+      finish(null)
+    }
+    setTimeout(() => finish(null), 500)
   })
+}
+
+async function waitCanvasSize(w, h, timeout = 3000) {
+  const start = Date.now()
+  while (Date.now() - start < timeout) {
+    const r = await queryCanvasSize()
+    if (r && Math.abs(r.w - w) <= 1 && Math.abs(r.h - h) <= 1) {
+      await new Promise((rs) => setTimeout(rs, 80))
+      return true
+    }
+    await new Promise((rs) => setTimeout(rs, 100))
+  }
+  return false
+}
+
+/** 等待 canvas 缓冲区随尺寸变化异步重建后返回 */
+async function setCanvasSize(w, h) {
+  canvasW.value = w
+  canvasH.value = h
+  await nextTick()
+  await waitCanvasSize(w, h)
 }
 
 function drawToCanvas(w, h, scaleX, scaleY) {
@@ -164,16 +212,24 @@ function drawToCanvas(w, h, scaleX, scaleY) {
   })
 }
 
+function calcDisplaySize() {
+  const ratio = outW / outH
+  if (ratio >= 1) { dispW.value = 300; dispH.value = Math.round(300 / ratio) }
+  else { dispH.value = 400; dispW.value = Math.round(400 * ratio) }
+}
+
 async function drawPreview() {
-  const dispRatio = outW / outH
-  let dw, dh
-  if (dispRatio >= 1) { dw = 300; dh = Math.round(300 / dispRatio) }
-  else { dh = 400; dw = Math.round(400 * dispRatio) }
+  calcDisplaySize()
+  const dw = dispW.value
+  const dh = dispH.value
   await setCanvasSize(dw, dh)
   await drawToCanvas(dw, dh, dw / outW, dh / outH)
 }
 
 async function saveImage() {
+  if (busy.value) return
+  busy.value = true
+  const token = ++drawToken
   showLoading('导出中...')
   await setCanvasSize(outW, outH)
   await drawToCanvas(outW, outH, 1, 1)
@@ -182,8 +238,10 @@ async function saveImage() {
     destWidth: outW,
     destHeight: outH,
     quality: 1,
-    success: (res) => {
-      drawPreview()
+    success: async (res) => {
+      await drawPreview()
+      if (token !== drawToken) return
+      busy.value = false
       // #ifdef H5
       const link = document.createElement('a')
       link.href = res.tempFilePath
@@ -202,7 +260,7 @@ async function saveImage() {
       })
       // #endif
     },
-    fail: () => { hideLoading(); showToast('导出失败') }
+    fail: () => { busy.value = false; hideLoading(); showToast('导出失败') }
   })
 }
 </script>
@@ -213,7 +271,6 @@ async function saveImage() {
   background: #F5F5F7;
   padding: 24rpx;
 }
-.toolbar { margin-bottom: 24rpx; }
 .btn {
   width: 100%;
   margin-top: 20rpx;
@@ -224,7 +281,7 @@ async function saveImage() {
   padding: 20rpx 0;
   font-size: 30rpx;
   &:active { opacity: 0.8; }
-  &--primary { margin-top: 0; }
+  &[disabled] { opacity: 0.4; }
   &--ghost { background: #F5F5F7; color: #3A3A3C; }
 }
 .empty {
@@ -303,11 +360,16 @@ async function saveImage() {
   &--active { background: #1D1D1F; color: #fff; }
 }
 .canvas-wrap {
-  display: flex;
-  justify-content: center;
+  position: relative;
+  overflow: hidden;
   background: #fff;
+  margin: 0 auto;
+  border-radius: 8rpx;
 }
-.stitch-canvas { border-radius: 8rpx; }
+.stitch-canvas {
+  display: block;
+  flex-shrink: 0;
+}
 .replace-hint {
   display: block;
   text-align: center;
