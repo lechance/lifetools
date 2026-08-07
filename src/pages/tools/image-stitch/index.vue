@@ -41,18 +41,22 @@ import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helper
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
 
+const GAP = 2
+const MAX_OUT = 1500
+
 const images = ref([])
 const showSheet = ref(false)
 const dir = ref('vertical')
 const result = ref(false)
 const canvasW = ref(300)
 const canvasH = ref(300)
+let outW = 0
+let outH = 0
 
 function chooseImages() {
   showSheet.value = true
 }
 
-/** 选源弹窗回调：拍摄 / 相册 / 聊天记录（最多 9 张） */
 async function onSourceSelect(source) {
   showSheet.value = false
   try {
@@ -73,20 +77,22 @@ function stitch() {
     return
   }
   showLoading('拼接中...')
-  // 获取所有图片尺寸
+  const count = images.value.length
   let loaded = 0
+  let failed = false
   const sizes = []
   images.value.forEach((src, i) => {
     uni.getImageInfo({
       src,
       success: (info) => {
+        if (failed) return
         sizes[i] = { w: info.width, h: info.height }
         loaded++
-        if (loaded === images.value.length) {
-          computeAndDraw(sizes)
-        }
+        if (loaded === count) computeAndDraw(sizes)
       },
       fail: () => {
+        if (failed) return
+        failed = true
         hideLoading()
         showToast('图片加载失败')
       }
@@ -95,50 +101,47 @@ function stitch() {
 }
 
 function computeAndDraw(sizes) {
-  const MAX_OUT = 1500
-  let outW, outH, placements = []
+  const gapCount = images.value.length - 1
+  const totalGap = gapCount * GAP
+  let placements = []
 
   if (dir.value === 'vertical') {
-    // 公共宽 = 最大宽（限制）
     const maxW = Math.max(...sizes.map(s => s.w))
     const scale = Math.min(1, MAX_OUT / maxW)
     const commonW = Math.round(maxW * scale)
-    const heights = sizes.map((s, i) => {
-      const h = Math.round(s.h * commonW / s.w)
-      placements[i] = { x: 0, y: 0, w: commonW, h }
-      return h
-    })
+    const heights = sizes.map((s) => Math.round(s.h * commonW / s.w))
     outW = commonW
-    outH = heights.reduce((a, b) => a + b, 0)
+    outH = heights.reduce((a, b) => a + b, 0) + totalGap
     let y = 0
-    placements.forEach(p => { p.y = y; y += p.h })
+    sizes.forEach((s, i) => {
+      const h = heights[i]
+      placements.push({ x: 0, y, w: commonW, h })
+      y += h + GAP
+    })
   } else {
     const maxH = Math.max(...sizes.map(s => s.h))
     const scale = Math.min(1, MAX_OUT / maxH)
     const commonH = Math.round(maxH * scale)
-    const widths = sizes.map((s, i) => {
-      const w = Math.round(s.w * commonH / s.h)
-      placements[i] = { x: 0, y: 0, w, h: commonH }
-      return w
-    })
+    const widths = sizes.map((s) => Math.round(s.w * commonH / s.h))
     outH = commonH
-    outW = widths.reduce((a, b) => a + b, 0)
+    outW = widths.reduce((a, b) => a + b, 0) + totalGap
     let x = 0
-    placements.forEach(p => { p.x = x; x += p.w })
+    sizes.forEach((s, i) => {
+      const w = widths[i]
+      placements.push({ x, y: 0, w, h: commonH })
+      x += w + GAP
+    })
   }
 
-  // 显示尺寸
   const dispRatio = outW / outH
   if (dispRatio >= 1) { canvasW.value = 300; canvasH.value = Math.round(300 / dispRatio) }
   else { canvasH.value = 400; canvasW.value = Math.round(400 * dispRatio) }
 
-  // 先让结果画布挂载（v-if="result"），再在 nextTick 后绘制
   result.value = true
   nextTick(() => {
     const ctx = uni.createCanvasContext('stitchCanvas')
     ctx.setFillStyle('#fff')
     ctx.fillRect(0, 0, canvasW.value, canvasH.value)
-    // 绘制（缩放至显示尺寸）
     const scaleX = canvasW.value / outW
     const scaleY = canvasH.value / outH
     images.value.forEach((src, i) => {
@@ -155,6 +158,8 @@ function computeAndDraw(sizes) {
 function saveImage() {
   uni.canvasToTempFilePath({
     canvasId: 'stitchCanvas',
+    destWidth: outW,
+    destHeight: outH,
     success: (res) => {
       // #ifdef H5
       const link = document.createElement('a')
