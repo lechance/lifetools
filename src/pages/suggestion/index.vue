@@ -75,7 +75,7 @@
     </button>
 
     <view class="suggestion__tip">
-      <text class="suggestion__tip-text">提交后建议将通过接口发送给开发者。若接口未配置，可在「我的 → API 设置」中填写提交地址。</text>
+      <text class="suggestion__tip-text">提交后建议将通过接口发送给开发者。提交地址由开发者在代码中配置（src/utils/api-config.js 的 SUGGESTION_URL）。</text>
     </view>
   </view>
 </template>

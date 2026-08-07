@@ -7,6 +7,18 @@
 const STORAGE_KEY = 'lifetool_api_config'
 
 /**
+ * 内容安全校验后端地址
+ * 在代码中直接配置（勿通过页面设置）。为空则图片保存前跳过校验。
+ */
+export const SEC_CHECK_URL = ''
+
+/**
+ * 工具建议提交后端地址
+ * 在代码中直接配置（勿通过页面设置）。为空则建议页提示未配置。
+ */
+export const SUGGESTION_URL = ''
+
+/**
  * 生日倒计时 - 微信订阅消息模板 ID
  * 在微信公众平台「订阅消息」申请模板后，将模板 ID 填入此处。
  * 注意：本仓库为纯前端，requestSubscribeMessage 仅完成用户订阅授权；
@@ -34,11 +46,6 @@ const DEFAULT_CONFIG = {
     apiKey: '',
     label: '汇率 API Key',
     placeholder: '留空使用免费接口 er-api.com',
-  },
-  suggestion: {
-    url: '',
-    label: '工具建议提交地址',
-    placeholder: '填写接收建议的接口地址（POST）',
   },
 }
 
@@ -81,7 +88,11 @@ function getConfig() {
 }
 
 function getSuggestionUrl() {
-  return loadConfig().suggestion?.url || ''
+  return SUGGESTION_URL
+}
+
+function getSecCheckUrl() {
+  return SEC_CHECK_URL
 }
 
 function resetConfig() {
@@ -95,5 +106,6 @@ export {
   getApiKey,
   setApiKey,
   getSuggestionUrl,
+  getSecCheckUrl,
   resetConfig,
 }
