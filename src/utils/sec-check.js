@@ -8,6 +8,7 @@
  * 检测结果仅提示「含违规信息」，不透传具体违规细节。
  */
 import { getSecCheckUrl } from '@/utils/api-config'
+import { showLoading, hideLoading } from '@/utils/helpers'
 
 /** 违规提示（微信要求的安全说明） */
 export const SEC_CHECK_RISKY_MSG = '您发布的图片包含违规内容'
@@ -84,6 +85,11 @@ export function checkImage(tempFilePath) {
       resolve({ safe: true, error: '' })
       return
     }
+    showLoading('正在验证...')
+    const done = (result) => {
+      hideLoading()
+      resolve(result)
+    }
     getLoginCode().then((code) => {
       uni.uploadFile({
         url: `${baseUrl}/api/sec-check/image`,
@@ -96,21 +102,21 @@ export function checkImage(tempFilePath) {
             const data = JSON.parse(res.data)
             if (data && typeof data.safe === 'boolean') {
               // 后端同步放行的场景（如服务端走同步检测）
-              resolve({ safe: data.safe, error: data.safe ? '' : 'RISKY' })
+              done({ safe: data.safe, error: data.safe ? '' : 'RISKY' })
               return
             }
             if (data && data.trace_id) {
-              pollResult(baseUrl, data.trace_id).then(resolve)
+              pollResult(baseUrl, data.trace_id).then(done)
               return
             }
-            resolve({ safe: false, error: 'BAD_RESPONSE' })
+            done({ safe: false, error: 'BAD_RESPONSE' })
           } catch (e) {
-            resolve({ safe: false, error: 'BAD_RESPONSE' })
+            done({ safe: false, error: 'BAD_RESPONSE' })
           }
         },
-        fail: () => resolve({ safe: false, error: 'NETWORK' })
+        fail: () => done({ safe: false, error: 'NETWORK' })
       })
-    }).catch(() => resolve({ safe: false, error: 'LOGIN_FAIL' }))
+    }).catch(() => done({ safe: false, error: 'LOGIN_FAIL' }))
   })
 }
 
