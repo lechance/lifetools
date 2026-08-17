@@ -7,10 +7,12 @@
 const STORAGE_KEY = 'lifetool_api_config'
 
 /**
- * 内容安全校验后端地址
- * 在代码中直接配置（勿通过页面设置）。为空则图片保存前跳过校验。
+ * 内容安全校验后端基础地址（不含 /api/sec-check/* 路径）
+ * 在代码中直接配置（勿通过页面设置）。为空则图片保存前跳过校验（fail-open）。
+ * 流程：uni.login 取 code → POST /api/sec-check/image（media + code）→
+ *      拿到 trace_id → 轮询 GET /api/sec-check/result?trace_id=... 直到拿到 safe。
  */
-export const SEC_CHECK_URL = ''
+export const SEC_CHECK_URL = 'https://mps.zedot.cn'
 
 /**
  * 工具建议提交后端地址

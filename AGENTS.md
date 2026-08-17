@@ -1,14 +1,14 @@
 # AGENTS.md
 
-微信小程序「治点工具箱」，uni-app 3.x (Vue 3 + Vite)。编译目标：mp-weixin 与 H5。Vuex 状态管理。54 个工具页面，全部已实现。
+微信小程序「治点工具箱」，uni-app 3.x (Vue 3 + Vite)。编译目标：mp-weixin 与 H5。Vuex 状态管理。55 个工具页面，全部已实现（工具总数由 `TOTAL_TOOL_COUNT = getAllTools().length` 自动计算，加工具无需手动改计数）。
 
 ## Commands
 
 ```bash
 npm run dev:h5            # 浏览器预览（HTTPS，需 certs/ 下自签证书）
-npm run build:h5          # H5 产物 → dist/
-npm run dev:mp-weixin     # 微信开发者工具热更新
-npm run build:mp-weixin   # 产物 → unpackage/dist/dev|build/mp-weixin
+npm run build:h5          # H5 产物 → dist/build/h5
+npm run dev:mp-weixin     # 微信开发者工具热更新 → dist/dev/mp-weixin
+npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 ```
 
 无 lint / test / typecheck 脚本。提交前 `npm run build:h5` 验证。
@@ -31,7 +31,7 @@ npm run build:mp-weixin   # 产物 → unpackage/dist/dev|build/mp-weixin
 
 子页面（如 `led-marquee/player`、`photo-filter/fullscreen`）需额外在 `pages.json` 配置 `pageOrientation`/`navigationStyle`。
 
-## Canvas 工具（压缩/裁剪/滤镜/拼接/取色/表情包/证件照/水印/头像/九宫格/二维码/CT检查）
+## Canvas 工具（压缩/裁剪/滤镜/拼接/取色/表情包/证件照/水印/头像/九宫格/二维码/搞怪检查，id 为 `ct-scan`）
 
 **DPR（设备像素比）处理** — 这是最容易出错的点：
 
@@ -61,6 +61,10 @@ npm run build:mp-weixin   # 产物 → unpackage/dist/dev|build/mp-weixin
 
 各页接入模式：点击预览区 → `chooseImage()` 设置 `showSheet = true` 打开弹窗 → `onSourceSelect(source)` 用 `pickImage` 选图 → 走该页原有 `getImageInfo` + 画布绘制逻辑。空态占位（`.empty`）点击添加、有图时 `.canvas-wrap` 点击更换。**例外**：`color-picker` 画布用于取色，换图走画布下方「更换图片」链接；`image-stitch` 多图，点缩略图区 `.thumbs` 重新选择。**新增图片工具应复用这两个文件**。
 
+## 图片保存：内容安全校验
+
+会导出图片的 11 个图片工具（压缩/裁剪/滤镜/拼接/表情包/证件照/水印/头像/九宫格/二维码/CT检查，`ct-scan` 已改名搞怪检查）在 **mp-weixin** 存相册前统一走 `src/utils/sec-check.js` 的 `saveCheckedImage(tempFilePath, { onSuccess, onFail })`，**不要**裸用 `uni.saveImageToPhotosAlbum`。该后端走**异步检测**（微信 `mediaCheckAsync`），`checkImage` 流程：`uni.login` 取 code → `uni.uploadFile` 到 `<base>/api/sec-check/image`（字段 `media` + `code`）→ 拿 `trace_id` → 轮询 `GET <base>/api/sec-check/result?trace_id=...`（每 2s，上限 30s）直到拿到 `safe`。违规或校验失败（含超时/网络/登录失败）都中止保存并 toast（fail-closed）；`SEC_CHECK_URL` 为空则跳过校验直接保存（fail-open）。`SEC_CHECK_URL` 是**基础地址**（不含路径），在 `api-config.js` **代码配置**（不在设置页）。mp-weixin 需把域名加入 `uploadFile` 与 `request` 两类合法域名；后端为 `code2Session` 校验，用户近两小时未访问小程序会报 61010（非前端问题）。**H5 不走此逻辑**：仍用 `#ifdef H5` 内 `document.createElement('a')` 直接下载（见 watermark `index.vue` 约 353 行）。新增图片工具沿用此模式，`#ifdef` 分支结构照抄 watermark。
+
 ## 架构
 
 - **TabBar**：自定义 `TabBar.vue`（非原生 tabBar），`uni.reLaunch()` 切页清栈。
@@ -69,13 +73,20 @@ npm run build:mp-weixin   # 产物 → unpackage/dist/dev|build/mp-weixin
 - **样式**：`vite.config.js` 的 `additionalData` 自动 `@import src/uni.scss` 到所有 scss。全局 SCSS 变量在 `src/uni.scss`（`$bg-color`、`$text-primary` 等），CSS 变量（`--primary-color`）也可用。工具卡片纯白简约，不用背景色。工具页面类名前缀用工具缩写（如 `rd__`、`led__`），避免跨页面类名冲突。
 - **构建**：`vite.config.js` 配置了 `@` 别名指向 `src/`、`vue-vendor` 手动分包（vue + vuex）。
 
+## 外部 API 与例外
+
+- **外部 API 工具**：天气 `wttr.in`、汇率 `open.er-api.com`、历史上的今天 `v2.xxapi.cn`、诗泉 `poetry.palemoky.com`。H5 直接可用；**mp-weixin 需在公众平台把域名加入 request 合法域名白名单**。Key 在「我的 → API 设置」页填写，配置集中在 `utils/api-config.js`。
+- **例外 `api-balance`**：不走 API 设置页，在工具页内按厂商（DeepSeek/Kimi/MiniMax/GLM）配置 Key 并本地缓存余额（独立 storage key `lifetool_api_balance_keys`），改它时勿套用 api-config。
+- **`birthday-countdown`**：仅支持阳历生日（不支持农历），微信订阅提醒仅完成授权，模板 ID 在 `api-config.js` 的 `BIRTHDAY_TEMPLATE_ID` 代码配置。
+
 ## 目录速查
 
 - `src/pages/tools/*/index.vue` — 各工具页面
 - `src/components/ImageSourceSheet.vue` — 图片选源弹窗（共享）
 - `src/utils/image-picker.js` — 图片选择统一封装（共享）
+- `src/utils/sec-check.js` — mp-weixin 图片保存前内容安全校验（`saveCheckedImage`）
 - `src/pages/favorites/index.vue` — 收藏页（复用 `ToolGrid`）
-- `src/pages/settings/index.vue` — API Key 设置页（含工具建议提交地址）
+- `src/pages/settings/index.vue` — API Key 设置页（仅天气/历史/诗泉/汇率四个 Key；校验地址 `SEC_CHECK_URL` 与建议地址 `SUGGESTION_URL` 均为 `api-config.js` 代码配置，不在页面）
 - `src/pages/suggestion/index.vue` — 工具建议提交页（POST 至 api-config 配置的接口）
 - `src/pages/about/index.vue` — 关于我们（在线客服/用户协议/隐私政策入口）
 - `src/pages/agreement/index.vue`、`src/pages/privacy/index.vue` — 用户协议 / 隐私政策
@@ -86,4 +97,4 @@ npm run build:mp-weixin   # 产物 → unpackage/dist/dev|build/mp-weixin
 - `src/utils/qrcode.js` — 内联的 QR 编码源码（零依赖，不要改为 npm 依赖）
 - `src/manifest.json` — 平台/AppID 配置
 - `src/pages.json` — 页面路由 + 全局导航栏样式
-- 产物：`unpackage/`（uni）、`dist/`（H5），均在 `.gitignore`
+- 产物：`dist/`（H5 与 mp-weixin 均输出到 `dist/build|dev/<platform>`），`unpackage/` 亦在 `.gitignore`

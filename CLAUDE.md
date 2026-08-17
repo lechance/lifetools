@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 「治点工具箱」— 微信小程序，集合日常生活常用工具。uni-app 3.x (Vue 3 + Vite) 构建，编译到微信小程序（mp-weixin）和 H5。纯前端实现，Vuex 状态管理。
 
-**54 个工具已全部实现**（无占位页面），覆盖热门、生活、娱乐、图片、计算、实用六大分类。分类 key 与色值见 `src/utils/tools-data.js` 顶部的 `COLORS` 映射。
+**55 个工具已全部实现**（无占位页面），覆盖热门、生活、娱乐、图片、计算、实用六大分类。分类 key 与色值见 `src/utils/tools-data.js` 顶部的 `COLORS` 映射；工具总数由 `TOTAL_TOOL_COUNT = getAllTools().length` 自动计算，改分类数组时无需手动更新。
 
 > 仓库中 `AGENTS.md` 为同一项目的旧版说明，其顶部"本文件为准"标注已过时（其中"工具页大多数为纯 Web 写法"的论断与现状不符，见下方"两种页面写法"）。本 CLAUDE.md 已合并其有效要点并修正过时数据；两者冲突一律以本文档为准。
 
@@ -24,7 +24,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 - 构建微信小程序前需在 `src/manifest.json` 配置 `mp-weixin.appid` 为真实 AppID（当前为占位 `wx0000000000000000`）。
 - H5 dev server 走 HTTPS（`vite.config.js` 读 `certs/` 下自签证书），首次访问需信任自签证书；H5 路由已配 `router.mode = "history"`（`src/manifest.json`）。
 - 微信小程序产物 `dist/build/mp-weixin/` 用微信开发者工具打开。
-- 依赖极少：无外部二维码库（`src/utils/qrcode.js` 为内联源码），仅 4 个工具用外部 API。
+- 依赖极少：无外部二维码库（`src/utils/qrcode.js` 为内联源码），仅 5 个工具用外部 API（天气/汇率/历史上的今天/诗泉/模型余额）。
 
 ## Architecture
 
@@ -58,9 +58,13 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 
 各页接入模式（无「选择图片」按钮，参照 watermark 交互）：点击预览区 → `chooseImage()` 设置 `showSheet = true` 打开弹窗 → `onSourceSelect(source)` 用 `pickImage` 选图 → 走该页原有 `getImageInfo` + 画布绘制逻辑。空态占位（`.empty`）点击添加、有图时 `.canvas-wrap` 点击更换，均带 `.empty-sub` / `.replace-hint` 提示。**例外**：`color-picker` 画布用于取色，换图走画布下方「更换图片」链接；`image-stitch` 多图，点缩略图区 `.thumbs` 重新选择（删除按钮需 `@tap.stop`）。**新增图片工具应复用这两个文件**，参照 watermark 的实现。
 
+### 图片保存：内容安全校验（共享工具）
+
+会导出图片的 11 个图片工具（压缩/裁剪/滤镜/拼接/表情包/证件照/水印/头像/九宫格/二维码/CT检查）在 **mp-weixin** 把图片存相册前统一走 `src/utils/sec-check.js` 的 `saveCheckedImage(tempFilePath, { onSuccess, onFail })`，替代裸 `uni.saveImageToPhotosAlbum`。该后端走**异步检测**（微信 `mediaCheckAsync`），`checkImage` 流程：`uni.login` 取 code → `uni.uploadFile` 到 `<base>/api/sec-check/image`（字段 `media` + `code`）→ 拿 `trace_id` → 轮询 `GET <base>/api/sec-check/result?trace_id=...`（每 2s，上限 30s）直到拿到 `safe`。违规或校验失败（含超时/网络/登录失败）都中止保存并 toast（fail-closed，`SEC_CHECK_RISKY_MSG`/`SEC_CHECK_ERROR_MSG`）；`SEC_CHECK_URL` 为空则跳过校验直接保存（fail-open）。`SEC_CHECK_URL` 是**基础地址**（不含路径），在 `api-config.js` **代码配置**（设置页不放）。mp-weixin 需把域名加入 `uploadFile` 与 `request` 两类合法域名；后端为 `code2Session` 校验，用户近两小时未访问小程序会报 61010（非前端问题）。**H5 不走此逻辑**：仍用 `#ifdef H5` 内 `document.createElement('a')` 直接下载（见 watermark `index.vue` 约 353 行）。新增图片工具沿用此模式，`#ifdef` 分支结构照抄 watermark。
+
 ### 外部 API 域名
 
-天气 `wttr.in`、汇率 `open.er-api.com`、历史上的今天 `v2.xxapi.cn`、诗泉 `poetry.palemoky.com`。**H5 直接可用**；微信小程序需在公众平台把域名加入 request 合法域名白名单，否则请求失败。各工具可通过「我的 → API 设置」页填写自己的 Key 替换免费接口（配置集中在 `src/utils/api-config.js`）。
+天气 `wttr.in`、汇率 `open.er-api.com`、历史上的今天 `v2.xxapi.cn`、诗泉 `poetry.palemoky.com`。**H5 直接可用**；微信小程序需在公众平台把域名加入 request 合法域名白名单，否则请求失败。各工具可通过「我的 → API 设置」页填写自己的 Key 替换免费接口（配置集中在 `src/utils/api-config.js`）。**例外**：模型余额 `api-balance` 不走 API 设置页，在工具页内按厂商（DeepSeek/Kimi/MiniMax/GLM）配置 Key 并本地缓存余额（独立 storage key），改它时勿套用 api-config。
 
 ### Canvas 工具要点（压缩/裁剪/滤镜/拼接/取色/表情包/证件照/水印/头像/九宫格/二维码/CT检查）
 
@@ -116,7 +120,7 @@ qr-code 工具用 `src/utils/qrcode.js` 生成矩阵。**该文件是内联的�
 
 ## 页面速查
 
-- `src/pages/settings/index.vue` — API Key 设置页（含工具建议提交地址）
+- `src/pages/settings/index.vue` — API Key 设置页（仅各工具的 Key：天气/历史/诗泉/汇率；内容校验地址 `SEC_CHECK_URL` 与工具建议地址 `SUGGESTION_URL` 均为 `api-config.js` 代码配置，不在页面）
 - `src/pages/suggestion/index.vue` — 工具建议提交页（POST 至 `api-config.js` 配置的接口）
 - `src/pages/about/index.vue` — 关于我们（在线客服/用户协议/隐私政策入口）
 - `src/pages/agreement/index.vue`、`src/pages/privacy/index.vue` — 用户协议 / 隐私政策
