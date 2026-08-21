@@ -44,9 +44,10 @@ function getLoginCode() {
 }
 
 /** 轮询异步检测结果，直到拿到 safe 或超时 */
-function pollResult(baseUrl, traceId) {
+function pollResult(baseUrl, traceId, token) {
   return new Promise((resolve) => {
-    const url = `${baseUrl}/api/sec-check/result?trace_id=${encodeURIComponent(traceId)}`
+    let url = `${baseUrl}/api/sec-check/result?trace_id=${encodeURIComponent(traceId)}`
+    if (token) url += `&token=${encodeURIComponent(token)}`
     const startTime = Date.now()
     const tick = () => {
       uni.request({
@@ -112,6 +113,10 @@ export function secCheck(tempFilePath) {
         formData: { code },
         timeout: 15000,
         success: (res) => {
+          if (res.statusCode !== 200) {
+            done({ safe: false, error: 'BAD_RESPONSE' })
+            return
+          }
           try {
             const data = JSON.parse(res.data)
             if (data && typeof data.safe === 'boolean') {
@@ -119,7 +124,7 @@ export function secCheck(tempFilePath) {
               return
             }
             if (data && data.trace_id) {
-              pollResult(baseUrl, data.trace_id).then(done)
+              pollResult(baseUrl, data.trace_id, data.token).then(done)
               return
             }
             done({ safe: false, error: 'BAD_RESPONSE' })
