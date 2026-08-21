@@ -41,7 +41,7 @@ import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck } from '@/utils/sec-check'
 
 const colors = ['#FFFFFF', '#000000', '#FF1744', '#FFD600', '#00E676', '#2979FF']
 
@@ -52,6 +52,7 @@ const canvasH = ref(300)
 const topText = ref('')
 const bottomText = ref('')
 const textColor = ref('#FFFFFF')
+const secCheckResult = ref(null)
 
 function chooseImage() {
   showSheet.value = true
@@ -63,6 +64,8 @@ async function onSourceSelect(source) {
   try {
     const { paths } = await pickImage({ source, count: 1 })
     imagePath.value = paths[0]
+    secCheckResult.value = null
+    secCheck(paths[0]).then((r) => { secCheckResult.value = r })
     uni.getImageInfo({
       src: imagePath.value,
       success: (info) => {
@@ -127,7 +130,7 @@ function saveImage() {
         saveCheckedImage(res.tempFilePath, {
           onSuccess: () => showSuccess('已保存到相册'),
           onFail: () => showToast('保存失败')
-        })
+        }, secCheckResult.value)
         // #endif
       },
       fail: () => { hideLoading(); showToast('导出失败') }

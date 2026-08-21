@@ -40,7 +40,7 @@ import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck } from '@/utils/sec-check'
 
 // 一寸 295x413，二寸 413x579
 const SIZES = {
@@ -61,6 +61,7 @@ const canvasW = ref(240)
 const canvasH = ref(336)
 const imgW = ref(0)
 const imgH = ref(0)
+const secCheckResult = ref(null)
 
 function chooseImage() {
   showSheet.value = true
@@ -72,6 +73,8 @@ async function onSourceSelect(source) {
   try {
     const { paths } = await pickImage({ source, count: 1 })
     imagePath.value = paths[0]
+    secCheckResult.value = null
+    secCheck(paths[0]).then((r) => { secCheckResult.value = r })
     uni.getImageInfo({
       src: imagePath.value,
       success: (info) => {
@@ -160,7 +163,7 @@ function saveImage() {
         saveCheckedImage(res.tempFilePath, {
           onSuccess: () => showSuccess('已保存到相册'),
           onFail: () => showToast('保存失败')
-        })
+        }, secCheckResult.value)
         // #endif
       },
       fail: () => { hideLoading(); showToast('生成失败') }

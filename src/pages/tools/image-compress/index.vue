@@ -34,7 +34,7 @@ import { ref, computed, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck } from '@/utils/sec-check'
 
 const imagePath = ref('')
 const showSheet = ref(false)
@@ -46,6 +46,7 @@ const resultSize = ref(0)
 const result = ref(false)
 const originalW = ref(0)
 const originalH = ref(0)
+const secCheckResult = ref(null)
 
 function formatSize(bytes) {
   if (!bytes) return '0 KB'
@@ -63,7 +64,9 @@ async function onSourceSelect(source) {
     const { paths, tempFiles } = await pickImage({ source, count: 1 })
     const path = paths[0]
     imagePath.value = path
+    secCheckResult.value = null
     result.value = false
+    secCheck(path).then((r) => { secCheckResult.value = r })
     originalSize.value = tempFiles && tempFiles[0] ? tempFiles[0].size : 0
     uni.getImageInfo({
       src: path,
@@ -155,7 +158,7 @@ function saveImage() {
         saveCheckedImage(res.tempFilePath, {
           onSuccess: () => showSuccess('已保存到相册'),
           onFail: () => showToast('保存失败')
-        })
+        }, secCheckResult.value)
         // #endif
       }
     })

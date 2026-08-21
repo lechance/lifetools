@@ -151,7 +151,7 @@ import { ref, nextTick, onUnmounted } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck } from '@/utils/sec-check'
 
 // ========== 颜色方案 ==========
 const colors = [
@@ -218,6 +218,7 @@ function calcCanvasSize(imgW, imgH) {
 
 // ========== 选择图片 ==========
 const showSourceSheet = ref(false)
+const secCheckResult = ref(null)
 
 function chooseImage() {
   showSourceSheet.value = true
@@ -232,7 +233,11 @@ async function onSourceSelect(source) {
   showSourceSheet.value = false
   try {
     const { paths } = await pickImage({ source, count: 1 })
-    if (paths[0]) loadImage(paths[0])
+    if (paths[0]) {
+      secCheckResult.value = null
+      secCheck(paths[0]).then((r) => { secCheckResult.value = r })
+      loadImage(paths[0])
+    }
   } catch (e) {}
 }
 
@@ -372,7 +377,7 @@ function saveImage() {
             showToast('保存失败')
           }
         }
-      })
+      }, secCheckResult.value)
       // #endif
     },
     fail: () => {

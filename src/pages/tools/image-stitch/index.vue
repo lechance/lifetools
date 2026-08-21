@@ -40,7 +40,7 @@ import { ref, nextTick, watch } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck } from '@/utils/sec-check'
 
 const GAP = 2
 const MAX_OUT = 4096
@@ -54,6 +54,7 @@ const canvasW = ref(300)
 const canvasH = ref(300)
 const dispW = ref(300)
 const dispH = ref(300)
+const secCheckResult = ref(null)
 let outW = 0
 let outH = 0
 let placements = []
@@ -70,6 +71,8 @@ async function onSourceSelect(source) {
     const { paths } = await pickImage({ source, count: 9 })
     images.value = paths
     result.value = false
+    secCheckResult.value = null
+    if (paths[0]) secCheck(paths[0]).then((r) => { secCheckResult.value = r })
   } catch (e) {}
 }
 
@@ -257,7 +260,7 @@ async function saveImage() {
       saveCheckedImage(res.tempFilePath, {
         onSuccess: () => { hideLoading(); showSuccess('已保存到相册') },
         onFail: () => { hideLoading(); showToast('保存失败') }
-      })
+      }, secCheckResult.value)
       // #endif
     },
     fail: () => { busy.value = false; hideLoading(); showToast('导出失败') }

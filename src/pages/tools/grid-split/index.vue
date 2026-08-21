@@ -38,7 +38,7 @@ import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck } from '@/utils/sec-check'
 
 const imagePath = ref('')
 const showSheet = ref(false)
@@ -46,6 +46,7 @@ const canvasW = ref(300)
 const canvasH = ref(300)
 const split = ref(false)
 const pieces = ref([])
+const secCheckResult = ref(null)
 
 let imgW = 0
 let imgH = 0
@@ -66,6 +67,8 @@ async function onSourceSelect(source) {
     imagePath.value = paths[0]
     split.value = false
     pieces.value = []
+    secCheckResult.value = null
+    secCheck(paths[0]).then((r) => { secCheckResult.value = r })
     uni.getImageInfo({
       src: imagePath.value,
       success: (info) => {
@@ -165,7 +168,7 @@ function saveToAlbum(index) {
   saveCheckedImage(pieces.value[index], {
     onSuccess: () => saveToAlbum(index + 1),
     onFail: () => showToast('保存失败')
-  })
+  }, secCheckResult.value)
 }
 
 function reset() {
