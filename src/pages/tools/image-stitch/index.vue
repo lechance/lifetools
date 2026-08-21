@@ -40,7 +40,7 @@ import { ref, nextTick, watch } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage, secCheck } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck, showSecCheckFailToast } from '@/utils/sec-check'
 
 const GAP = 2
 const MAX_OUT = 4096
@@ -69,10 +69,17 @@ async function onSourceSelect(source) {
   showSheet.value = false
   try {
     const { paths } = await pickImage({ source, count: 9 })
+    // 安全校验通过后才加载显示；失败则保留原状态
+    if (paths[0]) {
+      const checkResult = await secCheck(paths[0])
+      if (!checkResult.safe) {
+        showSecCheckFailToast(checkResult.error)
+        return
+      }
+      secCheckResult.value = checkResult
+    }
     images.value = paths
     result.value = false
-    secCheckResult.value = null
-    if (paths[0]) secCheck(paths[0]).then((r) => { secCheckResult.value = r })
   } catch (e) {}
 }
 

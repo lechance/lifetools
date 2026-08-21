@@ -34,7 +34,7 @@ import { ref, computed, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage, secCheck } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck, showSecCheckFailToast } from '@/utils/sec-check'
 
 const imagePath = ref('')
 const showSheet = ref(false)
@@ -63,10 +63,15 @@ async function onSourceSelect(source) {
   try {
     const { paths, tempFiles } = await pickImage({ source, count: 1 })
     const path = paths[0]
+    // 安全校验通过后才加载显示；失败则保留原状态
+    const checkResult = await secCheck(path)
+    if (!checkResult.safe) {
+      showSecCheckFailToast(checkResult.error)
+      return
+    }
+    secCheckResult.value = checkResult
     imagePath.value = path
-    secCheckResult.value = null
     result.value = false
-    secCheck(path).then((r) => { secCheckResult.value = r })
     originalSize.value = tempFiles && tempFiles[0] ? tempFiles[0].size : 0
     uni.getImageInfo({
       src: path,

@@ -32,7 +32,7 @@ import { ref, nextTick } from 'vue'
 import { showToast, showSuccess, showLoading, hideLoading } from '@/utils/helpers'
 import ImageSourceSheet from '@/components/ImageSourceSheet.vue'
 import { pickImage } from '@/utils/image-picker'
-import { saveCheckedImage, secCheck } from '@/utils/sec-check'
+import { saveCheckedImage, secCheck, showSecCheckFailToast } from '@/utils/sec-check'
 
 const ratios = [
   { key: '1:1', label: '1:1' },
@@ -61,10 +61,15 @@ async function onSourceSelect(source) {
   showSheet.value = false
   try {
     const { paths } = await pickImage({ source, count: 1 })
+    // 安全校验通过后才加载显示；失败则保留原状态
+    const checkResult = await secCheck(paths[0])
+    if (!checkResult.safe) {
+      showSecCheckFailToast(checkResult.error)
+      return
+    }
+    secCheckResult.value = checkResult
     imagePath.value = paths[0]
-    secCheckResult.value = null
     cropped.value = false
-    secCheck(paths[0]).then((r) => { secCheckResult.value = r })
     uni.getImageInfo({
       src: imagePath.value,
       success: (info) => {

@@ -19,6 +19,14 @@ export const SEC_CHECK_RISKY_MSG = '您发布的图片包含违规内容'
 /** 检测失败提示 */
 export const SEC_CHECK_ERROR_MSG = '内容检测失败，请重试'
 
+/** 按校验结果弹出失败提示（RISKY → 违规；其它 → 检测失败） */
+export function showSecCheckFailToast(error) {
+  uni.showToast({
+    title: error === 'RISKY' ? SEC_CHECK_RISKY_MSG : SEC_CHECK_ERROR_MSG,
+    icon: 'none'
+  })
+}
+
 /** 结果轮询间隔（ms） */
 const POLL_INTERVAL = 2000
 /** 结果轮询总超时（ms） */
@@ -81,6 +89,11 @@ function pollResult(baseUrl, traceId) {
  */
 export function secCheck(tempFilePath) {
   return new Promise((resolve) => {
+    // #ifdef H5
+    // H5 无 wx.login 能力，且内容安全校验仅 mp-weixin 需要，直接放行
+    resolve({ safe: true, error: '' })
+    // #endif
+    // #ifndef H5
     const baseUrl = getSecCheckUrl()
     if (!baseUrl) {
       resolve({ safe: true, error: '' })
@@ -117,6 +130,7 @@ export function secCheck(tempFilePath) {
         fail: () => done({ safe: false, error: 'NETWORK' })
       })
     }).catch(() => done({ safe: false, error: 'LOGIN_FAIL' }))
+    // #endif
   })
 }
 
@@ -142,19 +156,13 @@ export function saveCheckedImage(tempFilePath, { onSuccess, onFail } = {}, preCh
   }
 
   if (preCheck && !preCheck.safe) {
-    uni.showToast({
-      title: preCheck.error === 'RISKY' ? SEC_CHECK_RISKY_MSG : SEC_CHECK_ERROR_MSG,
-      icon: 'none'
-    })
+    showSecCheckFailToast(preCheck.error)
     return
   }
 
   secCheck(tempFilePath).then(({ safe, error }) => {
     if (!safe) {
-      uni.showToast({
-        title: error === 'RISKY' ? SEC_CHECK_RISKY_MSG : SEC_CHECK_ERROR_MSG,
-        icon: 'none'
-      })
+      showSecCheckFailToast(error)
       return
     }
     doSave()
