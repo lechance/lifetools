@@ -65,7 +65,9 @@ function pollResult(baseUrl, traceId, token) {
             return
           }
           try {
-            const data = JSON.parse(res.data)
+            // uni.request 在 mp-weixin 遇 application/json 会把 res.data 解析成对象，
+            // 字符串时（如 text/plain）需手动 parse，二者兼容处理
+            const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
             if (data && typeof data.safe === 'boolean') {
               resolve({ safe: data.safe, error: data.safe ? '' : 'RISKY' })
               return
@@ -132,7 +134,8 @@ export function secCheck(tempFilePath) {
             return
           }
           try {
-            const data = JSON.parse(res.data)
+            // uploadFile 在 mp-weixin 返回字符串；兼容后端改返回 JSON 对象的情况
+            const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data
             if (data && typeof data.safe === 'boolean') {
               done({ safe: data.safe, error: data.safe ? '' : 'RISKY' })
               return
