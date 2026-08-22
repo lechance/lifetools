@@ -31,6 +31,8 @@ export function showSecCheckFailToast(error) {
 const POLL_INTERVAL = 2000
 /** 结果轮询总超时（ms） */
 const POLL_TIMEOUT = 30000
+/** 首次轮询延迟（ms）— mediaCheckAsync 需要数秒处理 */
+const INITIAL_DELAY = 3000
 
 /** 获取 wx.login 临时凭证 */
 function getLoginCode() {
@@ -54,6 +56,14 @@ function pollResult(baseUrl, traceId, token) {
         url,
         timeout: 10000,
         success: (res) => {
+          if (res.statusCode !== 200) {
+            if (Date.now() - startTime >= POLL_TIMEOUT) {
+              resolve({ safe: false, error: 'TIMEOUT' })
+              return
+            }
+            setTimeout(tick, POLL_INTERVAL)
+            return
+          }
           try {
             const data = JSON.parse(res.data)
             if (data && typeof data.safe === 'boolean') {
@@ -66,7 +76,11 @@ function pollResult(baseUrl, traceId, token) {
             }
             setTimeout(tick, POLL_INTERVAL)
           } catch (e) {
-            resolve({ safe: false, error: 'BAD_RESPONSE' })
+            if (Date.now() - startTime >= POLL_TIMEOUT) {
+              resolve({ safe: false, error: 'TIMEOUT' })
+              return
+            }
+            setTimeout(tick, POLL_INTERVAL)
           }
         },
         fail: () => {
@@ -78,7 +92,7 @@ function pollResult(baseUrl, traceId, token) {
         }
       })
     }
-    tick()
+    setTimeout(tick, INITIAL_DELAY)
   })
 }
 
