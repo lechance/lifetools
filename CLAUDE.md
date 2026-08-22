@@ -60,7 +60,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 
 ### 图片保存：内容安全校验（共享工具）
 
-会导出图片的 11 个图片工具（压缩/裁剪/滤镜/拼接/表情包/证件照/水印/头像/九宫格/二维码/CT检查）在 **mp-weixin** 把图片存相册前统一走 `src/utils/sec-check.js` 的 `saveCheckedImage(tempFilePath, { onSuccess, onFail })`，替代裸 `uni.saveImageToPhotosAlbum`。该后端走**异步检测**（微信 `mediaCheckAsync`），`checkImage` 流程：`uni.login` 取 code → `uni.uploadFile` 到 `<base>/api/sec-check/image`（字段 `media` + `code`）→ 拿 `trace_id` → 轮询 `GET <base>/api/sec-check/result?trace_id=...&token=...`（首次延迟 3s，每 2s，上限 30s）直到拿到 `safe`。违规或校验失败（含超时/网络/登录失败）都中止保存并 toast（fail-closed，`SEC_CHECK_RISKY_MSG`/`SEC_CHECK_ERROR_MSG`）；`SEC_CHECK_URL` 为空则跳过校验直接保存（fail-open）。`SEC_CHECK_URL` 是**基础地址**（不含路径），在 `api-config.js` **代码配置**（设置页不放）。mp-weixin 需把域名加入 `uploadFile` 与 `request` 两类合法域名；后端为 `code2Session` 校验，用户近两小时未访问小程序会报 61010（非前端问题）。**H5 不走此逻辑**：仍用 `#ifdef H5` 内 `document.createElement('a')` 直接下载（见 watermark `index.vue` 约 353 行）。新增图片工具沿用此模式，`#ifdef` 分支结构照抄 watermark。
+会导出图片的 9 个图片工具（压缩/裁剪/滤镜/拼接/表情包/证件照/水印/头像/九宫格）在 **mp-weixin** 把图片存相册前统一走 `src/utils/sec-check.js` 的 `saveCheckedImage(tempFilePath, { onSuccess, onFail })`，替代裸 `uni.saveImageToPhotosAlbum`。**尚未迁移**：`qr-code`、`ct-scan` 两个工具目前仍用裸 `uni.saveImageToPhotosAlbum`（`saveCheckedImage` 的存量引用见各页 `grep`，迁移时参照 watermark）。该后端走**异步检测**（微信 `mediaCheckAsync`），`checkImage` 流程：`uni.login` 取 code → `uni.uploadFile` 到 `<base>/api/sec-check/image`（字段 `media` + `code`）→ 拿 `trace_id` → 轮询 `GET <base>/api/sec-check/result?trace_id=...&token=...`（首次延迟 3s，每 2s，上限 30s）直到拿到 `safe`。违规或校验失败（含超时/网络/登录失败）都中止保存并 toast（fail-closed，`SEC_CHECK_RISKY_MSG`/`SEC_CHECK_ERROR_MSG`）；`SEC_CHECK_URL` 为空则跳过校验直接保存（fail-open）。`SEC_CHECK_URL` 是**基础地址**（不含路径），在 `api-config.js` **代码配置**（设置页不放）。mp-weixin 需把域名加入 `uploadFile` 与 `request` 两类合法域名；后端为 `code2Session` 校验，用户近两小时未访问小程序会报 61010（非前端问题）。**H5 不走此逻辑**：仍用 `#ifdef H5` 内 `document.createElement('a')` 直接下载（见 watermark `index.vue` 约 353 行）。新增图片工具沿用此模式，`#ifdef` 分支结构照抄 watermark。
 
 ### 外部 API 域名
 
@@ -95,6 +95,7 @@ qr-code 工具用 `src/utils/qrcode.js` 生成矩阵。**该文件是内联的�
 
 - **工具数据**：`src/utils/tools-data.js` 定义所有工具元数据（名称、emoji 图标、分类），导出 `getAllTools()` / `getToolById()` / `getToolsByCategory()` / `searchTools()`。
 - **持久化**：`src/utils/storage.js` 封装 `uni.getStorageSync/setStorageSync`，管理收藏 ID 列表、使用记录（最近 50 条）、搜索历史；工具页面自用数据（待办/备忘/日历）用独立的 `lifetool_*` key。
+- **API 缓存**：`src/utils/api-cache.js` 提供 `cachedFetch(url, options, ttl)`，基于 storage 持久化（`lifetool_api_cache_` 前缀），默认 TTL 10 分钟，供外部 API 工具复用，避免重复请求。
 - **状态管理**：`src/store/index.js` 为 Vuex store（`currentCategory`/`searchQuery`/`favorites`/`records`/`searchHistory`），`main.js` 用 `createSSRApp` + `app.use(store)`，`hydrate()` action 从 storage 加载；页面通过 `useStore()` 访问。
 
 ## Tab Switching
@@ -114,6 +115,7 @@ qr-code 工具用 `src/utils/qrcode.js` 生成矩阵。**该文件是内联的�
 ## Styling
 
 - 全局 SCSS 变量在 `src/uni.scss`（中性灰 `#F5F5F7` 背景、`#1D1D1F` 主色、`#007AFF` 链接色），`vite.config.js` 的 `additionalData` 自动 `@import` 到所有 scss，页面内直接使用变量名即可。
+- `src/global-classes.scss` — 通用工具类（`.card`、`$card-bg`/`$radius-md` 等卡片样式变量）仅 `App.vue` 引入一次，**不**像 uni.scss 那样自动注入每个组件；页面直接写 `.card` 类名依赖此文件。
 - 所有页面用 `<style lang="scss" scoped>`，工具页面统一浅灰背景 + 白色圆角卡片。
 - 工具页面类名前缀用工具缩写（如 `rd__`、`led__`、`shelf__`），避免跨页面类名冲突。
 - `vite.config.js` 还配置了 `@` 别名指向 `src/`、`vue-vendor` 手动分包。
