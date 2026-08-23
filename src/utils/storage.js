@@ -60,7 +60,8 @@ function warmup(keys) {
 const STORAGE_KEYS = {
   FAVORITES: 'lifetool_favorites',
   RECORDS: 'lifetool_records',
-  SEARCH_HISTORY: 'lifetool_search_history'
+  SEARCH_HISTORY: 'lifetool_search_history',
+  USER_PROFILE: 'lifetool_user_profile'
 }
 
 /** ========== 收藏管理 ========== */
@@ -110,6 +111,22 @@ function clearRecords() {
   return true
 }
 
+/** ========== 用户资料管理 ========== */
+
+function getUserProfile() {
+  return get(STORAGE_KEYS.USER_PROFILE, null)
+}
+
+function saveUserProfile(profile) {
+  set(STORAGE_KEYS.USER_PROFILE, profile)
+  return profile
+}
+
+function clearUserProfile() {
+  remove(STORAGE_KEYS.USER_PROFILE)
+  return true
+}
+
 /** ========== 搜索历史管理 ========== */
 
 function addSearchHistory(keyword) {
@@ -140,6 +157,9 @@ export {
   addRecord,
   getRecords,
   clearRecords,
+  getUserProfile,
+  saveUserProfile,
+  clearUserProfile,
   addSearchHistory,
   getSearchHistory,
   clearSearchHistory
