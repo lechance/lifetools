@@ -14,7 +14,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 npm run dev:h5            # 浏览器预览（HTTPS，需 certs/ 下自签证书 key.pem/cert.pem）
-npm run build:h5          # H5 产物 → dist/
+npm run build:h5          # H5 产物 → dist/build/h5/
 npm run dev:mp-weixin     # 微信开发者工具热更新
 npm run build:mp-weixin   # 产物 → dist/build/mp-weixin/
 ```
