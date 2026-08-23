@@ -17,28 +17,23 @@
       </view>
     </view>
 
-    <!-- ====== 订阅设置 ====== -->
+    <!-- ====== 提醒设置 ====== -->
     <view class="bd__subscribe">
       <view class="bd__subscribe-row">
         <text class="bd__subscribe-label">提前提醒</text>
-        <picker :range="remindDaysOptions" :value="remindIdx" @change="onRemindChange">
-          <view class="bd__subscribe-picker">
-            <text>{{ settings.remindDays === 0 ? '生日当天' : settings.remindDays + ' 天前' }}</text>
-            <text class="bd__arrow">›</text>
-          </view>
-        </picker>
-      </view>
-      <view class="bd__subscribe-row">
-        <text class="bd__subscribe-label">微信订阅</text>
-        <view
-          class="bd__subscribe-btn"
-          :class="{ 'bd__subscribe-btn--on': settings.subscribed }"
-          @tap="requestSubscribe"
-        >
-          <text>{{ settings.subscribed ? '已开启' : '开启微信订阅提醒' }}</text>
+        <view class="bd__subscribe-picker">
+          <input
+            class="bd__remind-input"
+            type="number"
+            :value="remindDaysText"
+            @input="onRemindInput"
+            @blur="onRemindBlur"
+          />
+          <text class="bd__remind-unit">天前</text>
+          <text v-if="settings.remindDays === 0" class="bd__remind-today">（生日当天）</text>
         </view>
       </view>
-      <text class="bd__subscribe-tip">小程序端仅完成订阅授权；实际推送需服务端下发（见「API 设置」配置模板 ID）</text>
+      <text class="bd__subscribe-tip">可自定义提前天数（0-365，0 表示生日当天）。在人员卡片点 📅 添加到手机系统日历，按此提前量提醒（仅微信小程序支持）</text>
     </view>
 
     <!-- ====== Tab 切换 ====== -->
@@ -73,33 +68,44 @@
           :class="urgencyClass(p.days)"
           :style="{ animationDelay: idx * 0.04 + 's' }"
         >
-          <view class="bd__card-left">
-            <view class="bd__avatar"><text>🥳</text></view>
-            <view class="bd__card-info">
-              <view class="bd__card-name-row">
-                <text class="bd__card-name">{{ p.name }}</text>
-                <text v-if="p.age !== null" class="bd__card-age">{{ p.age }}岁</text>
-              </view>
-              <text class="bd__card-birth">{{ p.birthLabel }}</text>
-              <view v-if="p.constellation" class="bd__badges">
-                <text class="bd__badge">♈ {{ p.constellation }}</text>
+          <view class="bd__card-main">
+            <view class="bd__card-left">
+              <view class="bd__avatar"><text>🥳</text></view>
+              <view class="bd__card-info">
+                <view class="bd__card-name-row">
+                  <text class="bd__card-name">{{ p.name }}</text>
+                  <text v-if="p.age !== null" class="bd__card-age">{{ p.age }}岁</text>
+                </view>
+                <text class="bd__card-birth">{{ p.birthLabel }}</text>
+                <view v-if="p.constellation" class="bd__badges">
+                  <text class="bd__badge">♈ {{ p.constellation }}</text>
+                </view>
               </view>
             </view>
+            <view class="bd__card-right">
+              <template v-if="p.days !== null">
+                <view class="bd__card-days">
+                  <text class="bd__card-number">{{ p.days }}</text>
+                  <text class="bd__card-unit">天</text>
+                </view>
+                <text class="bd__card-label">{{ daysLabel(p.days) }}</text>
+                <text class="bd__card-next">{{ p.nextLabel }}</text>
+              </template>
+              <text v-else class="bd__card-label">日期无效</text>
+            </view>
+            <view class="bd__card-actions">
+              <text class="bd__card-action" @tap="editItem(p)">✎</text>
+              <text class="bd__card-action bd__card-action--del" @tap="removeItem(p.id)">✕</text>
+            </view>
           </view>
-          <view class="bd__card-right">
-            <template v-if="p.days !== null">
-              <view class="bd__card-days">
-                <text class="bd__card-number">{{ p.days }}</text>
-                <text class="bd__card-unit">天</text>
-              </view>
-              <text class="bd__card-label">{{ daysLabel(p.days) }}</text>
-              <text class="bd__card-next">{{ p.nextLabel }}</text>
-            </template>
-            <text v-else class="bd__card-label">日期无效</text>
-          </view>
-          <view class="bd__card-actions">
-            <text class="bd__card-action" @tap="editItem(p)">✎</text>
-            <text class="bd__card-action bd__card-action--del" @tap="removeItem(p.id)">✕</text>
+          <view
+            class="bd__card-cal"
+            :class="{ 'bd__card-cal--added': p.calendarAdded }"
+            @tap="addCalendarReminder(p)"
+          >
+            <text>📅</text>
+            <text class="bd__card-cal-text">{{ p.calendarAdded ? '已添加日历提醒' : '添加日历提醒' }}</text>
+            <text v-if="p.calendarAdded" class="bd__card-cal-sub">（可点击重新添加）</text>
           </view>
         </view>
       </view>
@@ -221,14 +227,12 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
-import { generateId, showToast } from '@/utils/helpers'
-import { BIRTHDAY_TEMPLATE_ID } from '@/utils/api-config'
+import { generateId, showToast, showSuccess } from '@/utils/helpers'
 
 // ====== 常量 ======
 const PEOPLE_KEY = 'lifetool_birthdays'
 const SETTINGS_KEY = 'lifetool_birthday_settings'
 const tabs = ['倒计时', '日历']
-const remindDaysOptions = [0, 1, 3, 7, 14, 30]
 const WEEKDAYS = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
 // 头像点颜色池（日历标记用）
 const DOT_COLORS = ['#FF9500', '#007AFF', '#FF3B30', '#34C759', '#AF52DE', '#5AC8FA']
@@ -258,9 +262,9 @@ function savePeople() {
 }
 function loadSettings() {
   try {
-    return Object.assign({ remindDays: 7, subscribed: false }, JSON.parse(uni.getStorageSync(SETTINGS_KEY) || '{}'))
+    return Object.assign({ remindDays: 7 }, JSON.parse(uni.getStorageSync(SETTINGS_KEY) || '{}'))
   } catch (e) {
-    return { remindDays: 7, subscribed: false }
+    return { remindDays: 7 }
   }
 }
 function saveSettings() {
@@ -272,6 +276,8 @@ function saveSettings() {
 // ====== 状态 ======
 const people = ref(loadPeople())
 const settings = ref(loadSettings())
+// 提前提醒天数输入框文本（受控，blur 时归一化/校验）
+const remindDaysText = ref(String(settings.value.remindDays))
 const tab = ref(0)
 const editingId = ref('')
 const showForm = ref(false)
@@ -297,11 +303,6 @@ function emptyForm() {
 const todayStr = computed(() => {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-})
-
-const remindIdx = computed(() => {
-  const i = remindDaysOptions.indexOf(settings.value.remindDays)
-  return i === -1 ? 3 : i
 })
 
 /** 每条人员记录附加倒计时/星座/展示字段 */
@@ -542,40 +543,113 @@ function nextMonth() {
   selectDay(1)
 }
 
-// ====== 订阅提醒 ======
+// ====== 日历提醒 ======
 
-function onRemindChange(e) {
-  settings.value.remindDays = remindDaysOptions[Number(e.detail.value)]
-  saveSettings()
+function onRemindInput(e) {
+  remindDaysText.value = e.detail.value || ''
+  const days = parseInt(remindDaysText.value, 10)
+  if (remindDaysText.value !== '' && !Number.isNaN(days) && days >= 0 && days <= 365) {
+    settings.value.remindDays = days
+    saveSettings()
+  }
 }
 
-async function requestSubscribe() {
+function onRemindBlur() {
+  const days = parseInt(remindDaysText.value, 10)
+  if (remindDaysText.value === '' || Number.isNaN(days) || days < 0 || days > 365) {
+    remindDaysText.value = String(settings.value.remindDays)
+    showToast('提前天数需为 0-365 的整数')
+  } else {
+    remindDaysText.value = String(days)
+  }
+}
+
+/** 添加日历提醒（每人独立，仅微信小程序支持） */
+function addCalendarReminder(p) {
   // #ifdef MP-WEIXIN
-  if (!BIRTHDAY_TEMPLATE_ID) {
-    showToast('请先在「API 设置」配置订阅消息模板 ID')
+  if (!wx.canIUse('addPhoneRepeatCalendar')) {
+    showToast('当前微信版本不支持日历提醒')
     return
   }
-  try {
-    const res = await uni.requestSubscribeMessage({ tmplIds: [BIRTHDAY_TEMPLATE_ID] })
-    const granted = res && res[BIRTHDAY_TEMPLATE_ID] === 'accept'
-    settings.value.subscribed = granted
-    saveSettings()
-    if (granted) {
-      uni.showModal({
-        title: '已授权订阅',
-        content: '已获得一次性订阅授权。实际推送需在服务端调用 subscribeMessage.send（需部署后端并配置模板 ID），小程序端仅完成授权。',
-        showCancel: false,
-      })
-    } else {
-      showToast('未开启订阅提醒')
-    }
-  } catch (e) {
-    showToast('订阅失败：' + (e.errMsg || ''))
+  if (p.calendarAdded) {
+    uni.showModal({
+      title: '已添加日历提醒',
+      content: '该人员已添加到手机系统日历（按年重复）。微信暂不支持删除日历事件，如需取消请在手机系统日历中删除。要再次添加吗？',
+      confirmText: '再次添加',
+      success: (res) => {
+        if (res.confirm) doAddToCalendar(p)
+      },
+    })
+    return
   }
+  doAddToCalendar(p)
   // #endif
   // #ifndef MP-WEIXIN
-  showToast('订阅提醒仅微信小程序支持')
+  showToast('日历提醒仅微信小程序支持')
   // #endif
+}
+
+function doAddToCalendar(p) {
+  if (!p.solarMonth || !p.solarDay) {
+    showToast('生日日期无效，无法添加')
+    return
+  }
+  // 下次生日当天 09:00 开始，按年重复
+  const next = nextSolarBirthday(p.solarMonth, p.solarDay)
+  const start = new Date(next.getFullYear(), next.getMonth(), next.getDate(), 9, 0, 0)
+  const offset = (settings.value.remindDays || 0) * 86400
+  const option = {
+    title: `${p.name}的生日${p.relation ? '（' + p.relation + '）' : ''}`,
+    startTime: Math.floor(start.getTime() / 1000),
+    allDay: false,
+    repeatInterval: 'year',
+    alarm: true,
+    alarmOffset: offset,
+    description: '治点工具箱 · 生日提醒',
+  }
+  wx.addPhoneRepeatCalendar({
+    ...option,
+    success: () => {
+      markCalendarAdded(p)
+      showSuccess('已添加到系统日历')
+    },
+    fail: () => {
+      // iOS 对非预设提前量（如 3/14/30 天）可能拒绝，回退为生日当天提醒
+      if (offset > 0) {
+        wx.addPhoneRepeatCalendar({
+          ...option,
+          alarmOffset: 0,
+          success: () => {
+            markCalendarAdded(p)
+            showToast('已添加（提醒调整为生日当天）')
+          },
+          fail: () => showCalendarFail(),
+        })
+        return
+      }
+      showCalendarFail()
+    },
+  })
+}
+
+/** 在底层人员记录写入 calendarAdded 并持久化（enriched 是 spread 副本，不能直接改） */
+function markCalendarAdded(p) {
+  const idx = people.value.findIndex(x => x.id === p.id)
+  if (idx === -1) return
+  people.value[idx] = { ...people.value[idx], calendarAdded: true }
+  savePeople()
+}
+
+function showCalendarFail() {
+  uni.showModal({
+    title: '添加失败',
+    content: '未能添加到系统日历，可能未授权日历权限。可前往设置开启「添加日历事件」权限后重试。',
+    confirmText: '去设置',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) uni.openSetting()
+    },
+  })
 }
 
 // ====== 生命周期 ======
@@ -583,6 +657,7 @@ onShow(() => {
   // 幂等重载：进入页面时刷新数据与倒计时
   people.value = loadPeople()
   settings.value = loadSettings()
+  remindDaysText.value = String(settings.value.remindDays)
 })
 </script>
 
@@ -667,19 +742,26 @@ onShow(() => {
   color: #007AFF;
   font-size: 26rpx;
 }
+.bd__remind-input {
+  width: 96rpx;
+  text-align: right;
+  color: #007AFF;
+  font-size: 26rpx;
+  padding: 4rpx 8rpx;
+  border-bottom: 1rpx solid #E5E5EA;
+  margin-right: 8rpx;
+}
+.bd__remind-unit {
+  color: #007AFF;
+}
+.bd__remind-today {
+  font-size: 20rpx;
+  color: #86868B;
+  margin-left: 8rpx;
+}
 .bd__arrow {
   margin-left: 8rpx;
   color: #C7C7CC;
-}
-.bd__subscribe-btn {
-  background: #1D1D1F;
-  color: #FFFFFF;
-  font-size: 24rpx;
-  padding: 12rpx 24rpx;
-  border-radius: 40rpx;
-}
-.bd__subscribe-btn--on {
-  background: #34C759;
 }
 .bd__subscribe-tip {
   display: block;
@@ -806,13 +888,18 @@ onShow(() => {
 /* ====== 人员卡片 ====== */
 .bd__card {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   background: #FFFFFF;
   border-radius: 16rpx;
   padding: 24rpx;
   margin-bottom: 16rpx;
   box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.04);
   border-left: 6rpx solid #E9E9ED;
+}
+.bd__card-main {
+  display: flex;
+  align-items: center;
+  width: 100%;
 }
 .bd__card--today {
   border-left-color: #FF3B30;
@@ -932,6 +1019,31 @@ onShow(() => {
 }
 .bd__card-action--del {
   color: #FF3B30;
+}
+.bd__card-cal {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #F0F0F2;
+  font-size: 24rpx;
+
+  &:active {
+    opacity: 0.6;
+  }
+}
+.bd__card-cal-text {
+  color: #007AFF;
+}
+.bd__card-cal--added {
+  .bd__card-cal-text {
+    color: #34C759;
+  }
+}
+.bd__card-cal-sub {
+  font-size: 20rpx;
+  color: #C7C7CC;
 }
 
 /* ====== 日历 ====== */
