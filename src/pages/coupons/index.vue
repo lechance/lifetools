@@ -49,9 +49,11 @@
 
 <script setup>
 import { ref } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import CouponCard from '@/components/CouponCard.vue'
 import TabBar from '@/components/TabBar.vue'
 import { showSuccess, showToast } from '@/utils/helpers'
+import { switchToTab, hideNativeTabBar } from '@/utils/tab-nav'
 
 // 卡券数据（第一阶段静态数据）
 const couponList = ref([
@@ -70,17 +72,15 @@ function handleClaim(coupon) {
   showSuccess('领取成功！')
 }
 
-/** 底部Tab切换 - 使用 reLaunch 清除页面栈 */
+/** 底部Tab切换 - 微信原生 tabBar 保活，H5 reLaunch */
 function handleTabChange(key) {
   if (key === 'coupons') return
-  if (key === 'tools') {
-    uni.reLaunch({ url: '/pages/index/index' })
-  } else if (key === 'favorites') {
-    uni.reLaunch({ url: '/pages/favorites/index' })
-  } else if (key === 'profile') {
-    uni.reLaunch({ url: '/pages/profile/index' })
-  }
+  switchToTab(key)
 }
+
+onShow(() => {
+  hideNativeTabBar()
+})
 </script>
 
 <style lang="scss" scoped>

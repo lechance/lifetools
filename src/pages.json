@@ -415,6 +415,20 @@
       }
     }
   ],
+  // #ifdef MP-WEIXIN
+  "tabBar": {
+    "color": "#C7C7CC",
+    "selectedColor": "#1D1D1F",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      { "pagePath": "pages/index/index", "text": "工具" },
+      { "pagePath": "pages/favorites/index", "text": "收藏" },
+      { "pagePath": "pages/coupons/index", "text": "卡券" },
+      { "pagePath": "pages/profile/index", "text": "我的" }
+    ]
+  },
+  // #endif
   "globalStyle": {
     "navigationBarTextStyle": "black",
     "navigationBarTitleText": "治点工具箱",

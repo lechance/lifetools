@@ -52,6 +52,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { onShow } from '@dcloudio/uni-app'
 import { useStore } from 'vuex'
 import SearchBar from '@/components/SearchBar.vue'
 import CategoryNav from '@/components/CategoryNav.vue'
@@ -63,6 +64,7 @@ import {
   searchTools
 } from '@/utils/tools-data'
 import { showToast } from '@/utils/helpers'
+import { switchToTab, hideNativeTabBar } from '@/utils/tab-nav'
 
 const store = useStore()
 
@@ -148,17 +150,15 @@ function handleFavorite(tool) {
   showToast(isFav ? '已收藏' : '已取消收藏', 'none')
 }
 
-/** 底部Tab切换 - 使用 reLaunch 清除页面栈 */
+/** 底部Tab切换 - 微信原生 tabBar 保活，H5 reLaunch */
 function handleTabChange(key) {
   if (key === 'tools') return
-  if (key === 'favorites') {
-    uni.reLaunch({ url: '/pages/favorites/index' })
-  } else if (key === 'coupons') {
-    uni.reLaunch({ url: '/pages/coupons/index' })
-  } else if (key === 'profile') {
-    uni.reLaunch({ url: '/pages/profile/index' })
-  }
+  switchToTab(key)
 }
+
+onShow(() => {
+  hideNativeTabBar()
+})
 
 onMounted(() => {
   // 初始化时从 store 同步当前分类与 swiper 索引
