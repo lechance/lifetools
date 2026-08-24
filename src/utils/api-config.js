@@ -15,10 +15,10 @@ const STORAGE_KEY = 'lifetool_api_config'
 export const SEC_CHECK_URL = 'https://mps.zedot.cn'
 
 /**
- * 工具建议提交后端地址
+ * 工具建议提交地址（mpserver POST /api/suggestion）
  * 在代码中直接配置（勿通过页面设置）。为空则建议页提示未配置。
  */
-export const SUGGESTION_URL = ''
+export const SUGGESTION_URL = 'https://mps.zedot.cn/api/suggestion'
 
 const DEFAULT_CONFIG = {
   weather: {
