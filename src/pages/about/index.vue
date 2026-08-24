@@ -1,6 +1,6 @@
 /**
  * 关于我们子页面
- * 展示：在线客服、用户协议、隐私政策 三个选项
+ * 展示：用户协议、隐私政策 两个选项
  */
 <template>
   <view class="page-about">
@@ -14,11 +14,6 @@
 
     <!-- 选项列表 -->
     <view class="page-about__menu">
-      <view class="page-about__menu-item" @tap="handleContact">
-        <text class="page-about__menu-icon">💬</text>
-        <text class="page-about__menu-label">在线客服</text>
-        <text class="page-about__menu-arrow">›</text>
-      </view>
       <view class="page-about__menu-item" @tap="handleAgreement">
         <text class="page-about__menu-icon">📄</text>
         <text class="page-about__menu-label">用户协议</text>
@@ -36,13 +31,6 @@
 </template>
 
 <script setup>
-import { showToast } from '@/utils/helpers'
-
-/** 在线客服 */
-function handleContact() {
-  showToast('客服功能开发中，敬请期待')
-}
-
 /** 用户协议 */
 function handleAgreement() {
   uni.navigateTo({ url: '/pages/agreement/index' })

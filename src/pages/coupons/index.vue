@@ -34,7 +34,7 @@
           4. 卡券有效期请查看具体卡券说明
         </text>
         <text class="page-coupons__notice-text">
-          5. 如有任何问题，请联系在线客服
+          5. 如有任何问题，欢迎通过「我的 → 工具建议」反馈
         </text>
       </view>
     </view>

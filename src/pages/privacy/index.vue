@@ -93,7 +93,7 @@
     <view class="doc-page__section">
       <view class="doc-page__heading">九、联系我们</view>
       <view class="doc-page__para">
-        如您对本政策或个人信息保护有任何疑问、意见或建议，欢迎通过「关于我们 → 在线客服」与我们联系。我们将在收到反馈后尽快予以回复。
+        如您对本政策或个人信息保护有任何疑问、意见或建议，欢迎通过「我的 → 工具建议」与我们联系。我们将在收到反馈后尽快予以回复。
       </view>
     </view>
 
