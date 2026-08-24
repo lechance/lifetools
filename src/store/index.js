@@ -56,6 +56,13 @@ export function createStore() {
         commit('SET_FAVORITES', getFavorites())
       },
 
+      /** 云同步合并后强制重载全部本地数据（忽略懒加载标记） */
+      reloadUserData({ commit }) {
+        commit('SET_FAVORITES', getFavorites())
+        commit('SET_RECORDS', getRecords())
+        commit('SET_SEARCH_HISTORY', getSearchHistory())
+      },
+
       /** 延迟加载使用记录（进入"我的"页面时调用） */
       loadRecords({ commit, state }) {
         if (!state._recordsLoaded) {

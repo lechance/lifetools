@@ -65,6 +65,10 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 
 会导出图片的 11 个图片工具（压缩/裁剪/滤镜/拼接/表情包/证件照/水印/头像/九宫格/二维码/CT检查，`ct-scan` 已改名搞怪检查）在 **mp-weixin** 存相册前统一走 `src/utils/sec-check.js` 的 `saveCheckedImage(tempFilePath, { onSuccess, onFail })`，**不要**裸用 `uni.saveImageToPhotosAlbum`。该后端走**异步检测**（微信 `mediaCheckAsync`），`checkImage` 流程：`uni.login` 取 code → `uni.uploadFile` 到 `<base>/api/sec-check/image`（字段 `media` + `code`）→ 拿 `trace_id` → 轮询 `GET <base>/api/sec-check/result?trace_id=...&token=...`（首次延迟 3s，每 2s，上限 30s）直到拿到 `safe`。违规或校验失败（含超时/网络/登录失败）都中止保存并 toast（fail-closed）；`SEC_CHECK_URL` 为空则跳过校验直接保存（fail-open）。`SEC_CHECK_URL` 是**基础地址**（不含路径），在 `api-config.js` **代码配置**（不在设置页）。mp-weixin 需把域名加入 `uploadFile` 与 `request` 两类合法域名；后端为 `code2Session` 校验，用户近两小时未访问小程序会报 61010（非前端问题）。**H5 不走此逻辑**：仍用 `#ifdef H5` 内 `document.createElement('a')` 直接下载（见 watermark `index.vue` 约 353 行）。新增图片工具沿用此模式，`#ifdef` 分支结构照抄 watermark。
 
+## 用户数据云同步
+
+`src/utils/sync.js`（**仅 mp-weixin**，H5 全部 no-op）+ 设置页 `pages/settings/sync/index`。会话级同步：App 启动 `pullSync()` 合并、`onHide` `pushSync()` 推送（钩子在 App.vue）；后端 `/api/sync/*` 复用 `SEC_CHECK_URL` 基础地址。身份为每请求 `wx.login` code 换 openid；冲突 last-write-wins 按 `(scope, data_type)` 行比较 `updated_at`，本地内容未变化时沿用旧时间戳（行哈希探测变化，防旧设备覆盖新设备数据）。范围：全局行（`_global` 收藏/记录/搜索历史、`_profile` 资料、`_sync/config` 勾选配置）+ 按工具勾选的独立存储数据，映射表 `TOOL_DATA_KEYS` 在 sync.js 中维护 —— **给工具加新的本地存储 key 且需要云同步时必须同步更新该表**。合并后需 `store.dispatch('reloadUserData')` 刷新 Vuex（sync.js 不直接碰 store）。总开关默认关闭（用户显式开启），工具原始值按 raw 字符串读写以保持各工具自身序列化格式。
+
 ## 架构
 
 - **TabBar**：自定义 `TabBar.vue`（非原生 tabBar），`uni.reLaunch()` 切页清栈。
@@ -87,6 +91,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 - `src/utils/sec-check.js` — mp-weixin 图片保存前内容安全校验（`saveCheckedImage`）
 - `src/pages/favorites/index.vue` — 收藏页（复用 `ToolGrid`）
 - `src/pages/settings/index.vue` — API Key 设置页（仅天气/历史/诗泉/汇率四个 Key；校验地址 `SEC_CHECK_URL` 与建议地址 `SUGGESTION_URL` 均为 `api-config.js` 代码配置，不在页面）
+- `src/pages/settings/sync/index.vue` — 数据同步设置页（总开关 + 按工具勾选；仅 mp-weixin）
 - `src/pages/suggestion/index.vue` — 工具建议提交页（POST 至 api-config 配置的接口）
 - `src/pages/about/index.vue` — 关于我们（在线客服/用户协议/隐私政策入口）
 - `src/pages/agreement/index.vue`、`src/pages/privacy/index.vue` — 用户协议 / 隐私政策

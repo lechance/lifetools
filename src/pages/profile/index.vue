@@ -47,6 +47,11 @@
     <view class="page-profile__menu-group">
       <view class="page-profile__menu-title">设置</view>
       <view class="page-profile__menu-list">
+        <view class="page-profile__menu-item" @tap="handleSyncSettings">
+          <text class="page-profile__menu-icon">☁️</text>
+          <text class="page-profile__menu-label">数据同步</text>
+          <text class="page-profile__menu-arrow">›</text>
+        </view>
         <view class="page-profile__menu-item" @tap="handleApiSettings">
           <text class="page-profile__menu-icon">🔑</text>
           <text class="page-profile__menu-label">API 设置</text>
@@ -311,6 +316,16 @@ function handleSuggestion() {
 /** API 设置 */
 function handleApiSettings() {
   uni.navigateTo({ url: '/pages/settings/index' })
+}
+
+/** 数据同步设置 */
+function handleSyncSettings() {
+  // #ifdef MP-WEIXIN
+  uni.navigateTo({ url: '/pages/settings/sync/index' })
+  // #endif
+  // #ifndef MP-WEIXIN
+  showToast('数据同步仅微信小程序支持')
+  // #endif
 }
 </script>
 
