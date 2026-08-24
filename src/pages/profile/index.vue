@@ -1,6 +1,6 @@
 /**
  * 我的页面
- * 展示用户信息、小程序相关内容
+ * 展示用户信息、使用统计、设置与关于入口
  */
 <template>
   <view class="page-profile">
@@ -16,26 +16,30 @@
         <!-- #endif -->
       </view>
       <view class="page-profile__user-info">
-        <text class="page-profile__user-name">{{ user ? user.nickname : '治点工具箱用户' }}</text>
-        <text class="page-profile__user-id">{{ user ? 'ID: ' + user.id : '点击登录' }}</text>
+        <view class="page-profile__user-name-row">
+          <text class="page-profile__user-name">{{ user ? user.nickname : '治点工具箱用户' }}</text>
+          <text class="page-profile__user-edit">✎</text>
+        </view>
+        <text v-if="user" class="page-profile__user-id">ID: {{ user.id }}</text>
+        <text v-else class="page-profile__user-id">点击登录</text>
+        <text v-if="user" class="page-profile__user-time">{{ formatTimestamp(user.loginTime, 'MM-DD HH:mm') }} 登录</text>
       </view>
-      <!-- 已登录：展示登录时间 -->
-      <view v-if="user" class="page-profile__user-extra">
-        <text class="page-profile__user-time">{{ formatTimestamp(user.loginTime, 'MM-DD HH:mm') }} 登录</text>
-      </view>
-      <!-- 未登录：箭头提示 -->
-      <text v-else class="page-profile__user-arrow">›</text>
+      <text v-if="!user" class="page-profile__user-arrow">›</text>
     </view>
 
-    <!-- 账号（已登录时显示） -->
-    <view v-if="isLoggedIn" class="page-profile__menu-group">
-      <view class="page-profile__menu-title">账号</view>
-      <view class="page-profile__menu-list">
-        <view class="page-profile__menu-item page-profile__menu-item--danger" @tap="handleLogout">
-          <text class="page-profile__menu-icon">🚪</text>
-          <text class="page-profile__menu-label">退出登录</text>
-          <text class="page-profile__menu-arrow">›</text>
-        </view>
+    <!-- 使用统计 -->
+    <view class="page-profile__stats">
+      <view class="page-profile__stat" @tap="handleStatsTap('favorites')">
+        <text class="page-profile__stat-value">{{ favoritesCount }}</text>
+        <text class="page-profile__stat-label">⭐ 收藏</text>
+      </view>
+      <view class="page-profile__stat" @tap="handleStatsTap('records')">
+        <text class="page-profile__stat-value">{{ recordsCount }}</text>
+        <text class="page-profile__stat-label">📊 使用</text>
+      </view>
+      <view class="page-profile__stat" @tap="handleStatsTap('tools')">
+        <text class="page-profile__stat-value">{{ TOTAL_TOOL_COUNT }}</text>
+        <text class="page-profile__stat-label">🛠️ 工具</text>
       </view>
     </view>
 
@@ -48,26 +52,23 @@
           <text class="page-profile__menu-label">API 设置</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
-      </view>
-    </view>
-
-    <!-- 关于小程序 -->
-    <view class="page-profile__menu-group">
-      <view class="page-profile__menu-title">关于小程序</view>
-      <view class="page-profile__menu-list">
-        <!-- 鼓励我们 -->
-        <view class="page-profile__menu-item" @tap="handleEncourage">
-          <text class="page-profile__menu-icon">⭐</text>
-          <text class="page-profile__menu-label">鼓励我们</text>
-          <text class="page-profile__menu-arrow">›</text>
-        </view>
-        <!-- 工具建议 -->
         <view class="page-profile__menu-item" @tap="handleSuggestion">
           <text class="page-profile__menu-icon">💡</text>
           <text class="page-profile__menu-label">工具建议</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
-        <!-- 关于我们 -->
+        <view class="page-profile__menu-item" @tap="handleClearCache">
+          <text class="page-profile__menu-icon">🗑️</text>
+          <text class="page-profile__menu-label">清除缓存</text>
+          <text class="page-profile__menu-arrow">›</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- 关于小程序 -->
+    <view class="page-profile__menu-group">
+      <view class="page-profile__menu-title">关于</view>
+      <view class="page-profile__menu-list">
         <view class="page-profile__menu-item" @tap="handleAbout">
           <text class="page-profile__menu-icon">📋</text>
           <text class="page-profile__menu-label">关于我们</text>
@@ -75,6 +76,12 @@
         </view>
       </view>
     </view>
+
+    <!-- 退出登录 -->
+    <view v-if="isLoggedIn" class="page-profile__logout" @tap="handleLogout">退出登录</view>
+
+    <!-- 底部标语 -->
+    <view class="page-profile__footer">治点工具箱 · 用心做好每一个工具</view>
 
     <!-- 登录弹窗 -->
     <view v-if="showLogin" class="page-profile__popup">
@@ -122,6 +129,27 @@
       </view>
     </view>
 
+    <!-- 最近使用弹窗 -->
+    <view v-if="showRecordsModal" class="page-profile__popup">
+      <view class="page-profile__popup-mask" @tap="closeRecordsModal" />
+      <view class="page-profile__popup-body">
+        <view class="page-profile__popup-header">
+          <text class="page-profile__popup-title">最近使用</text>
+          <text class="page-profile__popup-close" @tap="closeRecordsModal">✕</text>
+        </view>
+        <view v-if="recentRecords.length === 0" class="page-profile__records-empty">
+          <text class="page-profile__records-empty-icon">📭</text>
+          <text class="page-profile__records-empty-text">暂无使用记录</text>
+        </view>
+        <view v-else class="page-profile__records-list">
+          <view v-for="record in recentRecords" :key="record.id" class="page-profile__record-item">
+            <text class="page-profile__record-name">{{ record.toolName }}</text>
+            <text class="page-profile__record-time">{{ formatTimestamp(record.timestamp, 'MM-DD HH:mm') }}</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
     <!-- 底部菜单栏 -->
     <TabBar current="profile" @change="handleTabChange" />
 
@@ -133,16 +161,27 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { onShow } from '@dcloudio/uni-app'
+import { useStore } from 'vuex'
 import TabBar from '@/components/TabBar.vue'
 import { getUserProfile, saveUserProfile, clearUserProfile } from '@/utils/storage'
 import { showToast, showModal, generateId, formatTimestamp } from '@/utils/helpers'
 import { switchToTab, hideNativeTabBar } from '@/utils/tab-nav'
+import { TOTAL_TOOL_COUNT } from '@/utils/tools-data'
+
+const store = useStore()
 
 // ====== 登录状态 ======
 const user = ref(getUserProfile())
 const isLoggedIn = computed(() => !!user.value)
 const showLogin = ref(false)
 const form = ref({ nickname: '', avatarPath: '' })
+
+// ====== 使用统计 ======
+const favoritesCount = computed(() => store.getters.favoritesCount)
+const records = computed(() => store.state.records)
+const recordsCount = computed(() => records.value.length)
+const recentRecords = computed(() => records.value.slice(0, 5))
+const showRecordsModal = ref(false)
 
 /** 打开登录/编辑弹窗（编辑态回填已有资料） */
 function openLogin() {
@@ -158,9 +197,30 @@ function closeLogin() {
   showLogin.value = false
 }
 
-/** 点击用户卡片：未登录时打开登录弹窗 */
+/** 点击用户卡片：打开登录/编辑弹窗 */
 function handleUserCardTap() {
-  if (!user.value) openLogin()
+  openLogin()
+}
+
+/** 统计卡点击：收藏/使用/工具 */
+function handleStatsTap(type) {
+  if (type === 'favorites') {
+    switchToTab('favorites')
+    return
+  }
+  if (type === 'records') {
+    store.dispatch('loadRecords')
+    showRecordsModal.value = true
+    return
+  }
+  if (type === 'tools') {
+    switchToTab('tools')
+  }
+}
+
+/** 关闭最近使用弹窗 */
+function closeRecordsModal() {
+  showRecordsModal.value = false
 }
 
 /** 选择微信头像（仅微信小程序） */
@@ -194,10 +254,11 @@ function handleConfirm() {
     avatarPath: form.value.avatarPath || '',
     loginTime: Date.now()
   }
+  const isEdit = !!user.value
   saveUserProfile(profile)
   user.value = profile
   closeLogin()
-  showToast('登录成功')
+  showToast(isEdit ? '已保存' : '登录成功')
 }
 
 /** 退出登录 */
@@ -213,6 +274,19 @@ function handleLogout() {
   })
 }
 
+/** 清除缓存：使用记录 + 搜索历史（保留收藏与登录信息） */
+function handleClearCache() {
+  showModal({
+    title: '清除缓存',
+    content: '将清除使用记录与搜索历史，收藏和登录信息不受影响'
+  }).then((confirmed) => {
+    if (!confirmed) return
+    store.dispatch('clearRecords')
+    store.dispatch('clearSearchHistory')
+    showToast('已清除')
+  })
+}
+
 /** 底部Tab切换 - 微信原生 tabBar 保活，H5 reLaunch */
 function handleTabChange(key) {
   if (key === 'profile') return
@@ -221,16 +295,12 @@ function handleTabChange(key) {
 
 onShow(() => {
   hideNativeTabBar()
+  store.dispatch('loadRecords')
 })
 
 /** 关于我们 */
 function handleAbout() {
   uni.navigateTo({ url: '/pages/about/index' })
-}
-
-/** 鼓励我们 */
-function handleEncourage() {
-  showToast('感谢您的鼓励！我们会继续努力 💪')
 }
 
 /** 工具建议 */
@@ -253,25 +323,28 @@ function handleApiSettings() {
   &__user-card {
     display: flex;
     align-items: center;
-    padding: 40rpx 32rpx 32rpx;
+    padding: 48rpx 32rpx 40rpx;
     background: $card-bg;
     margin-bottom: 24rpx;
   }
 
   &__user-avatar {
-    width: 120rpx;
+    width: 140rpx;
     height: 140rpx;
     border-radius: 50%;
     background: $primary-bg;
+    border: 6rpx solid #FFFFFF;
+    box-shadow: $shadow-sm;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-right: 24rpx;
+    margin-right: 28rpx;
     overflow: hidden;
+    flex-shrink: 0;
   }
 
   &__avatar-text {
-    font-size: 56rpx;
+    font-size: 60rpx;
   }
 
   &__avatar-img {
@@ -285,37 +358,87 @@ function handleApiSettings() {
     min-width: 0;
   }
 
+  &__user-name-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8rpx;
+  }
+
   &__user-name {
-    font-size: $font-size-lg;
+    font-size: 40rpx;
     font-weight: 700;
     color: $text-primary;
-    display: block;
-    margin-bottom: 6rpx;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
   }
 
-  &__user-id {
-    font-size: $font-size-sm;
-    color: $text-secondary;
-    display: block;
-  }
-
-  &__user-extra {
-    margin-left: 16rpx;
+  &__user-edit {
+    font-size: $font-size-base;
+    color: $text-light;
+    margin-left: 14rpx;
     flex-shrink: 0;
   }
 
+  &__user-id {
+    display: inline-block;
+    font-size: $font-size-xs;
+    color: $text-secondary;
+    background: $primary-bg;
+    padding: 4rpx 16rpx;
+    border-radius: $radius-round;
+    margin-bottom: 8rpx;
+  }
+
   &__user-time {
-    font-size: $font-size-sm;
+    display: block;
+    font-size: $font-size-xs;
     color: $text-light;
   }
 
   &__user-arrow {
-    font-size: 36rpx;
+    font-size: 40rpx;
     color: $text-light;
     margin-left: 16rpx;
+    flex-shrink: 0;
+  }
+
+  // 使用统计
+  &__stats {
+    display: flex;
+    background: $card-bg;
+    border-radius: $radius-md;
+    box-shadow: $shadow-sm;
+    margin: 0 24rpx 24rpx;
+    padding: 28rpx 0;
+  }
+
+  &__stat {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    &:not(:last-child) {
+      border-right: 1rpx solid $border-color;
+    }
+
+    &:active {
+      opacity: 0.6;
+    }
+  }
+
+  &__stat-value {
+    font-size: 40rpx;
+    font-weight: 700;
+    color: $text-primary;
+    margin-bottom: 8rpx;
+  }
+
+  &__stat-label {
+    font-size: $font-size-sm;
+    color: $text-secondary;
   }
 
   // 菜单组
@@ -368,10 +491,25 @@ function handleApiSettings() {
     color: $text-light;
   }
 
-  &__menu-item--danger {
-    .page-profile__menu-label {
-      color: $danger;
+  // 退出登录
+  &__logout {
+    text-align: center;
+    font-size: $font-size-base;
+    color: $danger;
+    padding: 24rpx;
+    margin: 16rpx 24rpx 0;
+
+    &:active {
+      opacity: 0.6;
     }
+  }
+
+  // 底部标语
+  &__footer {
+    text-align: center;
+    font-size: $font-size-sm;
+    color: $text-light;
+    margin-top: 32rpx;
   }
 
   // 底部占位
@@ -379,7 +517,7 @@ function handleApiSettings() {
     height: 140rpx;
   }
 
-  // ====== 登录弹窗 ======
+  // ====== 弹窗（登录 / 最近使用） ======
   &__popup {
     position: fixed;
     left: 0;
@@ -511,6 +649,51 @@ function handleApiSettings() {
   &__btn--confirm {
     background: $primary-color;
     color: $card-bg;
+  }
+
+  // ====== 最近使用列表 ======
+  &__records-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 60rpx 0 40rpx;
+  }
+
+  &__records-empty-icon {
+    font-size: 72rpx;
+    margin-bottom: 16rpx;
+  }
+
+  &__records-empty-text {
+    font-size: $font-size-base;
+    color: $text-secondary;
+  }
+
+  &__records-list {
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+
+  &__record-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 26rpx 8rpx;
+    border-bottom: 1rpx solid $border-color;
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__record-name {
+    font-size: $font-size-base;
+    color: $text-primary;
+  }
+
+  &__record-time {
+    font-size: $font-size-sm;
+    color: $text-light;
   }
 }
 
