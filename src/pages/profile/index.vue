@@ -87,17 +87,11 @@
     <!-- 底部标语 -->
     <view class="page-profile__footer">治点工具箱 · 用心做好每一个工具</view>
 
-    <!-- 登录弹窗 -->
+    <!-- 微信一键登录遮罩（仅 mp-weixin，未登录时显示） -->
+    <!-- #ifdef MP-WEIXIN -->
     <view v-if="showLogin" class="page-profile__popup">
       <view class="page-profile__popup-mask" @tap="closeLogin" />
       <view class="page-profile__popup-body">
-        <view class="page-profile__popup-header">
-          <text class="page-profile__popup-title">登录</text>
-          <text class="page-profile__popup-close" @tap="closeLogin">✕</text>
-        </view>
-
-        <!-- 头像选择（仅微信小程序） -->
-        <!-- #ifdef MP-WEIXIN -->
         <button class="page-profile__avatar-btn" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
           <view class="page-profile__avatar-box">
             <image v-if="form.avatarPath" class="page-profile__avatar-img" :src="form.avatarPath" mode="aspectFill" />
@@ -105,37 +99,15 @@
           </view>
           <text class="page-profile__avatar-hint">点击选择微信头像</text>
         </button>
-        <!-- #endif -->
-        <!-- #ifndef MP-WEIXIN -->
-        <view class="page-profile__avatar-box">
-          <text class="page-profile__avatar-text">👤</text>
-        </view>
-        <!-- #endif -->
-
-        <!-- 隐藏 nickname input：触发微信授权并自动填入昵称（仅 mp-weixin） -->
-        <!-- #ifdef MP-WEIXIN -->
         <input
           type="nickname"
           class="page-profile__hidden-nickname"
-          @input="form.nickname = $event.detail.value"
+          :focus="nicknameInputFocus"
+          @input="onNicknameInput"
         />
-        <!-- #endif -->
-
-        <!-- 昵称展示（read-only，仅 mp-weixin） -->
-        <!-- #ifdef MP-WEIXIN -->
-        <view v-if="form.nickname" class="page-profile__name-display">
-          <text class="page-profile__name-label">昵称</text>
-          <text class="page-profile__name-value">{{ form.nickname }}</text>
-        </view>
-        <!-- #endif -->
-
-        <!-- 操作按钮 -->
-        <view class="page-profile__actions">
-          <view class="page-profile__btn page-profile__btn--cancel" @tap="closeLogin">取消</view>
-          <view class="page-profile__btn page-profile__btn--confirm" @tap="handleConfirm">{{ user ? '保存' : '登录' }}</view>
-        </view>
       </view>
     </view>
+    <!-- #endif -->
 
     <!-- 最近使用弹窗 -->
     <view v-if="showRecordsModal" class="page-profile__popup">
@@ -183,6 +155,7 @@ const user = ref(getUserProfile())
 const isLoggedIn = computed(() => !!user.value)
 const showLogin = ref(false)
 const form = ref({ nickname: '', avatarPath: '' })
+const nicknameInputFocus = ref(false)
 
 // ====== 使用统计 ======
 const favoritesCount = computed(() => store.getters.favoritesCount)
@@ -191,23 +164,41 @@ const recordsCount = computed(() => records.value.length)
 const recentRecords = computed(() => records.value.slice(0, 5))
 const showRecordsModal = ref(false)
 
-/** 打开登录/编辑弹窗（编辑态回填已有资料） */
+/** 打开微信登录遮罩 */
 function openLogin() {
-  form.value = {
-    nickname: user.value?.nickname || '',
-    avatarPath: user.value?.avatarPath || ''
-  }
+  form.value = { nickname: '', avatarPath: '' }
+  nicknameInputFocus.value = false
   showLogin.value = true
 }
 
-/** 关闭登录弹窗 */
+/** 关闭登录遮罩 */
 function closeLogin() {
   showLogin.value = false
+  nicknameInputFocus.value = false
 }
 
-/** 点击用户卡片：打开登录/编辑弹窗 */
+/** 点击用户卡片 */
 function handleUserCardTap() {
+  if (user.value) return
+  // #ifdef MP-WEIXIN
   openLogin()
+  // #endif
+  // #ifndef MP-WEIXIN
+  autoLoginH5()
+  // #endif
+}
+
+/** H5 自动登录（本地，无微信授权） */
+function autoLoginH5() {
+  const profile = {
+    id: generateId().slice(-8),
+    nickname: '治点工具箱用户',
+    avatarPath: '',
+    loginTime: Date.now()
+  }
+  saveUserProfile(profile)
+  user.value = profile
+  showToast('登录成功')
 }
 
 /** 统计卡点击：收藏/使用/工具 */
@@ -231,25 +222,30 @@ function closeRecordsModal() {
   showRecordsModal.value = false
 }
 
-/** 选择微信头像（仅微信小程序） */
+/** 选择微信头像后自动触发昵称授权 */
 // #ifdef MP-WEIXIN
 function onChooseAvatar(e) {
   const tempPath = e.detail.avatarUrl
-  // chooseAvatar 返回临时路径，保存到本地文件避免被回收
   uni.saveFile({
     tempFilePath: tempPath,
     success: (res) => {
       form.value.avatarPath = res.savedFilePath
     },
     fail: () => {
-      // saveFile 失败（配额/基库限制）回退临时路径，本次会话可用
       form.value.avatarPath = tempPath
     }
   })
+  nicknameInputFocus.value = true
 }
 // #endif
 
-/** 确认登录/保存资料 */
+/** 昵称授权完成 → 自动保存并关闭 */
+function onNicknameInput(e) {
+  form.value.nickname = e.detail.value || ''
+  handleConfirm()
+}
+
+/** 保存资料 */
 function handleConfirm() {
   const nickname = (form.value.nickname || '').trim() || '治点工具箱用户'
   const profile = {
@@ -258,11 +254,10 @@ function handleConfirm() {
     avatarPath: form.value.avatarPath || '',
     loginTime: Date.now()
   }
-  const isEdit = !!user.value
   saveUserProfile(profile)
   user.value = profile
   closeLogin()
-  showToast(isEdit ? '已保存' : '登录成功')
+  showToast('登录成功')
 }
 
 /** 退出登录 */
@@ -524,7 +519,7 @@ function handleSyncSettings() {
     height: 140rpx;
   }
 
-  // ====== 弹窗（登录 / 最近使用） ======
+  // ====== 微信登录遮罩 ======
   &__popup {
     position: fixed;
     left: 0;
@@ -553,25 +548,6 @@ function handleSyncSettings() {
     border-radius: $radius-lg $radius-lg 0 0;
     padding: 32rpx 32rpx 60rpx;
     animation: ppSlideUp 0.25s ease-out;
-  }
-
-  &__popup-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24rpx;
-  }
-
-  &__popup-title {
-    font-size: $font-size-md;
-    font-weight: 600;
-    color: $text-primary;
-  }
-
-  &__popup-close {
-    font-size: $font-size-md;
-    color: $text-light;
-    padding: 8rpx;
   }
 
   &__avatar-btn {
@@ -613,53 +589,6 @@ function handleSyncSettings() {
     width: 0;
     height: 0;
     opacity: 0;
-  }
-
-  &__name-display {
-    display: flex;
-    align-items: center;
-    padding: 28rpx 8rpx;
-    margin-top: 32rpx;
-    border-bottom: 1rpx solid $border-color;
-  }
-
-  &__name-label {
-    font-size: $font-size-base;
-    color: $text-primary;
-    margin-right: 24rpx;
-  }
-
-  &__name-value {
-    flex: 1;
-    font-size: $font-size-base;
-    color: $text-secondary;
-  }
-
-  &__actions {
-    display: flex;
-    margin-top: 48rpx;
-  }
-
-  &__btn {
-    flex: 1;
-    padding: 24rpx 0;
-    border-radius: $radius-md;
-    font-size: $font-size-base;
-    text-align: center;
-
-    & + & {
-      margin-left: 24rpx;
-    }
-  }
-
-  &__btn--cancel {
-    background: $primary-bg;
-    color: $text-primary;
-  }
-
-  &__btn--confirm {
-    background: $primary-color;
-    color: $card-bg;
   }
 
   // ====== 最近使用列表 ======
