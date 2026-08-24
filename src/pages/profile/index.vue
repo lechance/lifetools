@@ -17,8 +17,7 @@
       </view>
       <view class="page-profile__user-info">
         <view class="page-profile__user-name-row">
-          <text class="page-profile__user-name">{{ user ? user.nickname : '治点工具箱用户' }}</text>
-          <text class="page-profile__user-edit">✎</text>
+          <text class="page-profile__user-name">{{ user ? user.nickname : '登录' }}</text>
         </view>
         <text v-if="user" class="page-profile__user-id">ID: {{ user.id }}</text>
         <text v-else class="page-profile__user-id">点击登录</text>
@@ -93,7 +92,7 @@
       <view class="page-profile__popup-mask" @tap="closeLogin" />
       <view class="page-profile__popup-body">
         <view class="page-profile__popup-header">
-          <text class="page-profile__popup-title">{{ user ? '编辑资料' : '登录' }}</text>
+          <text class="page-profile__popup-title">登录</text>
           <text class="page-profile__popup-close" @tap="closeLogin">✕</text>
         </view>
 
@@ -113,18 +112,22 @@
         </view>
         <!-- #endif -->
 
-        <!-- 昵称输入 -->
-        <view class="page-profile__field">
-          <text class="page-profile__field-label">昵称</text>
-          <input
-            v-model="form.nickname"
-            class="page-profile__field-input"
-            type="nickname"
-            placeholder="请输入昵称"
-            placeholder-class="page-profile__placeholder"
-            maxlength="12"
-          />
+        <!-- 隐藏 nickname input：触发微信授权并自动填入昵称（仅 mp-weixin） -->
+        <!-- #ifdef MP-WEIXIN -->
+        <input
+          type="nickname"
+          class="page-profile__hidden-nickname"
+          @input="form.nickname = $event.detail.value"
+        />
+        <!-- #endif -->
+
+        <!-- 昵称展示（read-only，仅 mp-weixin） -->
+        <!-- #ifdef MP-WEIXIN -->
+        <view v-if="form.nickname" class="page-profile__name-display">
+          <text class="page-profile__name-label">昵称</text>
+          <text class="page-profile__name-value">{{ form.nickname }}</text>
         </view>
+        <!-- #endif -->
 
         <!-- 操作按钮 -->
         <view class="page-profile__actions">
@@ -248,11 +251,7 @@ function onChooseAvatar(e) {
 
 /** 确认登录/保存资料 */
 function handleConfirm() {
-  const nickname = (form.value.nickname || '').trim()
-  if (!nickname) {
-    showToast('请输入昵称')
-    return
-  }
+  const nickname = (form.value.nickname || '').trim() || '治点工具箱用户'
   const profile = {
     id: generateId().slice(-8),
     nickname,
@@ -387,13 +386,6 @@ function handleSyncSettings() {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
-  }
-
-  &__user-edit {
-    font-size: $font-size-base;
-    color: $text-light;
-    margin-left: 14rpx;
-    flex-shrink: 0;
   }
 
   &__user-id {
@@ -615,7 +607,15 @@ function handleSyncSettings() {
     text-align: center;
   }
 
-  &__field {
+  &__hidden-nickname {
+    position: absolute;
+    left: -9999px;
+    width: 0;
+    height: 0;
+    opacity: 0;
+  }
+
+  &__name-display {
     display: flex;
     align-items: center;
     padding: 28rpx 8rpx;
@@ -623,20 +623,16 @@ function handleSyncSettings() {
     border-bottom: 1rpx solid $border-color;
   }
 
-  &__field-label {
+  &__name-label {
     font-size: $font-size-base;
     color: $text-primary;
     margin-right: 24rpx;
   }
 
-  &__field-input {
+  &__name-value {
     flex: 1;
     font-size: $font-size-base;
-    color: $text-primary;
-  }
-
-  &__placeholder {
-    color: $text-light;
+    color: $text-secondary;
   }
 
   &__actions {
