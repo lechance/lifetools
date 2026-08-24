@@ -1,0 +1,9 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "references": {
+    "mpserver": {
+      "path": "/home/deon/projects/ai/mpserver",
+      "description": "Backend service (Node.js) for this frontend; use when checking API endpoints, request/response shapes, sec-check flow, or cross-project changes"
+    }
+  }
+}
