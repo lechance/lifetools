@@ -43,7 +43,13 @@
     {
       "path": "pages/tools/flashlight/index",
       "style": {
-        "navigationBarTitleText": "SOS手电筒"
+        "navigationBarTitleText": "屏幕警报"
+      }
+    },
+    {
+      "path": "pages/tools/phone-flashlight/index",
+      "style": {
+        "navigationBarTitleText": "手机闪光灯"
       }
     },
     {
@@ -429,6 +435,14 @@
       }
     },
     {
+      "path": "pages/tools/fart-simulator/index",
+      "style": {
+        "navigationBarTitleText": "放屁模拟器",
+        "navigationBarBackgroundColor": "#1A1A1A",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
       "path": "pages/tools/anniversary/index",
       "style": {
         "navigationBarTitleText": "纪念日",
@@ -450,6 +464,18 @@
         "navigationBarTitleText": "国际实时金价",
         "navigationBarBackgroundColor": "#FFFFFF",
         "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/tools/retirement-calc/index",
+      "style": {
+        "navigationBarTitleText": "退休年龄计算"
+      }
+    },
+    {
+      "path": "pages/tools/payment-voice/index",
+      "style": {
+        "navigationBarTitleText": "模拟到帐语音"
       }
     }
   ],

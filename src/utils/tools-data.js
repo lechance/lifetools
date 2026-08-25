@@ -17,7 +17,8 @@ const COLORS = {
 /** 热门工具 */
 const HOT_TOOLS = [
   { id: 'calculator', name: '科学计算器', icon: '🔢', color: COLORS.hot },
-  { id: 'flashlight', name: 'SOS手电筒', icon: '🔦', color: COLORS.hot },
+  { id: 'flashlight', name: '屏幕警报', icon: '📱', color: COLORS.hot },
+  { id: 'phone-flashlight', name: '手机闪光灯', icon: '🔦', color: COLORS.hot },
   { id: 'countdown', name: '节日倒计时', icon: '⏰', color: COLORS.hot },
   { id: 'today-in-history', name: '历史上的今天', icon: '📜', color: COLORS.hot },
   { id: 'pomodoro', name: '番茄专注', icon: '🍅', color: COLORS.hot },
@@ -50,7 +51,8 @@ const FUN_TOOLS = [
   { id: 'guess-number', name: '猜数字', icon: '❓', color: COLORS.fun },
   { id: 'rock-scissors', name: '石头剪刀布', icon: '✊', color: COLORS.fun },
   { id: 'ct-scan', name: '搞怪检查', icon: '🩻', color: COLORS.fun },
-  { id: 'wooden-fish', name: '敲木鱼', icon: '🪵', color: COLORS.fun }
+  { id: 'wooden-fish', name: '敲木鱼', icon: '🪵', color: COLORS.fun },
+  { id: 'fart-simulator', name: '放屁模拟器', icon: '💨', color: COLORS.fun }
 ]
 
 /** 图片工具 */
@@ -77,7 +79,8 @@ const CALC_TOOLS = [
   { id: 'base-convert', name: '进制转换', icon: '💻', color: COLORS.calc },
   { id: 'amount-upper', name: '金额转大写', icon: '💵', color: COLORS.calc },
   { id: 'date-calc', name: '日期计算器', icon: '📆', color: COLORS.calc },
-  { id: 'random', name: '随机数生成', icon: '🎲', color: COLORS.calc }
+  { id: 'random', name: '随机数生成', icon: '🎲', color: COLORS.calc },
+  { id: 'retirement-calc', name: '退休年龄计算', icon: '🧓', color: COLORS.calc }
 ]
 
 /** 实用工具 */
@@ -94,7 +97,8 @@ const UTILITY_TOOLS = [
   { id: 'photo-filter', name: '拍照滤镜', icon: '📸', color: COLORS.utility },
   { id: 'unit-convert', name: '单位换算', icon: '🔄', color: COLORS.utility },
   { id: 'api-balance', name: '模型余额', icon: '💰', color: COLORS.utility },
-  { id: 'gold-price', name: '国际实时金价', icon: '🥇', color: COLORS.utility }
+  { id: 'gold-price', name: '国际实时金价', icon: '🥇', color: COLORS.utility },
+  { id: 'payment-voice', name: '模拟到帐语音', icon: '🔊', color: COLORS.utility }
 ]
 
 /** 分类定义 */
