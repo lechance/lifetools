@@ -419,6 +419,38 @@
         "navigationBarBackgroundColor": "#FFFFFF",
         "navigationBarTextStyle": "black"
       }
+    },
+    {
+      "path": "pages/tools/wooden-fish/index",
+      "style": {
+        "navigationBarTitleText": "敲木鱼",
+        "navigationBarBackgroundColor": "#1D1D1F",
+        "navigationBarTextStyle": "white"
+      }
+    },
+    {
+      "path": "pages/tools/anniversary/index",
+      "style": {
+        "navigationBarTitleText": "纪念日",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/tools/watermark-remove/index",
+      "style": {
+        "navigationBarTitleText": "去水印",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
+    },
+    {
+      "path": "pages/tools/gold-price/index",
+      "style": {
+        "navigationBarTitleText": "国际实时金价",
+        "navigationBarBackgroundColor": "#FFFFFF",
+        "navigationBarTextStyle": "black"
+      }
     }
   ],
   // #ifdef MP-WEIXIN

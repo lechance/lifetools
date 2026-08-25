@@ -37,7 +37,8 @@ const LIFE_TOOLS = [
   { id: 'garbage-classify', name: '垃圾分类查询', icon: '♻️', color: COLORS.life },
   { id: 'safe-period', name: '安全期计算', icon: '🩺', color: COLORS.life },
   { id: 'shelf-life', name: '保质期计算', icon: '⏳', color: COLORS.life },
-  { id: 'birthday-countdown', name: '生日倒计时', icon: '🥳', color: COLORS.life }
+  { id: 'birthday-countdown', name: '生日倒计时', icon: '🥳', color: COLORS.life },
+  { id: 'anniversary', name: '纪念日', icon: '📅', color: COLORS.life }
 ]
 
 /** 娱乐工具 */
@@ -48,7 +49,8 @@ const FUN_TOOLS = [
   { id: 'idiom-chain', name: '成语接龙', icon: '📖', color: COLORS.fun },
   { id: 'guess-number', name: '猜数字', icon: '❓', color: COLORS.fun },
   { id: 'rock-scissors', name: '石头剪刀布', icon: '✊', color: COLORS.fun },
-  { id: 'ct-scan', name: '搞怪检查', icon: '🩻', color: COLORS.fun }
+  { id: 'ct-scan', name: '搞怪检查', icon: '🩻', color: COLORS.fun },
+  { id: 'wooden-fish', name: '敲木鱼', icon: '🪵', color: COLORS.fun }
 ]
 
 /** 图片工具 */
@@ -62,7 +64,8 @@ const IMAGE_TOOLS = [
   { id: 'id-photo', name: '证件照制作', icon: '📷', color: COLORS.image },
   { id: 'watermark', name: '图片水印', icon: '💧', color: COLORS.image },
   { id: 'avatar-deco', name: '头像加装饰', icon: '👤', color: COLORS.image },
-  { id: 'grid-split', name: '九宫格切图', icon: '🔲', color: COLORS.image }
+  { id: 'grid-split', name: '九宫格切图', icon: '🔲', color: COLORS.image },
+  { id: 'watermark-remove', name: '去水印', icon: '🧹', color: COLORS.image }
 ]
 
 /** 计算工具 */
@@ -90,7 +93,8 @@ const UTILITY_TOOLS = [
   { id: 'qr-code', name: '二维码工具', icon: '📱', color: COLORS.utility },
   { id: 'photo-filter', name: '拍照滤镜', icon: '📸', color: COLORS.utility },
   { id: 'unit-convert', name: '单位换算', icon: '🔄', color: COLORS.utility },
-  { id: 'api-balance', name: '模型余额', icon: '💰', color: COLORS.utility }
+  { id: 'api-balance', name: '模型余额', icon: '💰', color: COLORS.utility },
+  { id: 'gold-price', name: '国际实时金价', icon: '🥇', color: COLORS.utility }
 ]
 
 /** 分类定义 */

@@ -35,6 +35,7 @@ export const TOOL_DATA_KEYS = {
   countdown: ['lifetool_custom_dates'],
   decibel: ['lifetool_decibel_records'],
   'birthday-countdown': ['lifetool_birthdays', 'lifetool_birthday_settings'],
+  'anniversary': ['lifetool_anniversaries'],
 }
 
 // #ifdef MP-WEIXIN
