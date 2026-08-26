@@ -395,12 +395,6 @@
       }
     },
     {
-      "path": "pages/settings/ad/index",
-      "style": {
-        "navigationBarTitleText": "工具广告"
-      }
-    },
-    {
       "path": "pages/about/index",
       "style": {
         "navigationBarTitleText": "关于我们"

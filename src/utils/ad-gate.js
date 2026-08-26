@@ -5,26 +5,6 @@ import { addRecord } from './storage'
 /** 会话级解锁记录（冷启动后每个工具只需看一次广告） */
 const unlocked = new Set()
 
-/** 获取当前会话已解锁的工具数 */
-export function getUnlockedCount() {
-  return unlocked.size
-}
-
-/** 获取当前会话已解锁的工具 ID 列表 */
-export function getUnlockedIds() {
-  return [...unlocked]
-}
-
-/** 重置所有会话级广告解锁记录 */
-export function resetAdUnlocks() {
-  unlocked.clear()
-}
-
-/** 当前广告功能是否启用（AD_UNIT_ID 非空） */
-export function isAdEnabled() {
-  return !!AD_UNIT_ID
-}
-
 /** 每个页面缓存独立的广告实例（微信页面内单例限制） */
 const adInstances = {}
 
