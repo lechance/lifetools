@@ -28,6 +28,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 1. `utils/tools-data.js` — 对应分类数组加 `{ id, name, icon, color }`（icon 用 emoji）。
 2. `pages/tools/{id}/index.vue` — 页面实现。
 3. `pages.json` — `pages` 数组加路由 `pages/tools/{id}/index`。
+4. **运行 `node scripts/export-tools-catalog.mjs`** 同步工具目录到 mpserver（后台广告勾选列表依赖此文件）。
 
 子页面（如 `led-marquee/player`、`photo-filter/fullscreen`）需额外在 `pages.json` 配置 `pageOrientation`/`navigationStyle`。
 
