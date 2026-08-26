@@ -61,6 +61,11 @@
           <text class="page-profile__menu-label">工具建议</text>
           <text class="page-profile__menu-arrow">›</text>
         </view>
+        <view class="page-profile__menu-item" @tap="handleAdSettings">
+          <text class="page-profile__menu-icon">📺</text>
+          <text class="page-profile__menu-label">工具广告</text>
+          <text class="page-profile__menu-arrow">›</text>
+        </view>
         <view class="page-profile__menu-item" @tap="handleClearCache">
           <text class="page-profile__menu-icon">🗑️</text>
           <text class="page-profile__menu-label">清除缓存</text>
@@ -305,6 +310,11 @@ function handleAbout() {
 /** 工具建议 */
 function handleSuggestion() {
   uni.navigateTo({ url: '/pages/suggestion/index' })
+}
+
+/** 工具广告设置 */
+function handleAdSettings() {
+  uni.navigateTo({ url: '/pages/settings/ad/index' })
 }
 
 /** API 设置 */
