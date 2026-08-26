@@ -59,6 +59,7 @@ import TabBar from '@/components/TabBar.vue'
 import { getToolById } from '@/utils/tools-data'
 import { showToast } from '@/utils/helpers'
 import { switchToTab, hideNativeTabBar } from '@/utils/tab-nav'
+import { openTool } from '@/utils/ad-gate'
 
 const store = useStore()
 
@@ -97,15 +98,7 @@ function handleToolTap(tool) {
     showToast('工具数据异常，请重试')
     return
   }
-  // 记录使用
-  store.dispatch('recordUsage', {
-    toolId: tool.id,
-    toolName: tool.name
-  })
-  // 跳转到工具页面
-  uni.navigateTo({
-    url: tool.path
-  })
+  openTool(tool, 'pages/favorites/index')
 }
 
 /** 长按取消收藏 */

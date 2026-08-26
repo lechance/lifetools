@@ -20,6 +20,13 @@ export const SEC_CHECK_URL = 'https://mps.zedot.cn'
  */
 export const SUGGESTION_URL = 'https://mps.zedot.cn/api/suggestion'
 
+/**
+ * 微信激励视频广告位 ID（从 mp 流量主后台获取）
+ * 为空时广告功能完全关闭（安全联锁：即使云端配置了 adTools 也不生效）
+ * 填入有效 adUnitId 后，云端标记的工具会在首次使用时触发激励视频广告
+ */
+export const AD_UNIT_ID = ''
+
 const DEFAULT_CONFIG = {
   weather: {
     apiKey: '',

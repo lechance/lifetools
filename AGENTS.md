@@ -69,6 +69,22 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 
 `src/utils/sync.js`（**仅 mp-weixin**，H5 全部 no-op）+ 设置页 `pages/settings/sync/index`。会话级同步：App 启动 `pullSync()` 合并、`onHide` `pushSync()` 推送（钩子在 App.vue）；后端 `/api/sync/*` 复用 `SEC_CHECK_URL` 基础地址。身份为每请求 `wx.login` code 换 openid；冲突 last-write-wins 按 `(scope, data_type)` 行比较 `updated_at`，本地内容未变化时沿用旧时间戳（行哈希探测变化，防旧设备覆盖新设备数据）。范围：全局行（`_global` 收藏/记录/搜索历史、`_profile` 资料、`_sync/config` 勾选配置）+ 按工具勾选的独立存储数据，映射表 `TOOL_DATA_KEYS` 在 sync.js 中维护 —— **给工具加新的本地存储 key 且需要云同步时必须同步更新该表**。合并后需 `store.dispatch('reloadUserData')` 刷新 Vuex（sync.js 不直接碰 store）。总开关默认关闭（用户显式开启），工具原始值按 raw 字符串读写以保持各工具自身序列化格式。
 
+## 工具广告（激励视频）
+
+`src/utils/ad-gate.js` — 云端控制的工具广告拦截系统，仅 mp-weixin 生效，H5 全部放行。
+
+**工作流程**：点击工具 → `openTool(tool, pageRoute)` → recordUsage → 若需广告且未解锁 → showModal 确认 → 播放激励视频 → `isEnded` 则记解锁并 navigateTo，中途退出 toast 提示；广告加载失败/超时 → fail-open 直接放行。
+
+**关键约束**：
+- `AD_UNIT_ID`（`api-config.js`）为空时整个广告功能关闭（安全联锁）
+- 解锁记录为模块级 `Set`（会话级，冷启动后每工具首次需看广告）
+- `wx.createRewardedVideoAd` 页面内单例不可跨页 → `pageRoute` 参数隔离实例
+- `onClose` 的 `res.isEnded` 判断完整观看；`res === undefined` 为旧基础库兼容，视为完整观看
+
+**新增/修改广告工具**：后台「功能开关」→「广告工具」textarea 填写工具 id（每行一个），保存后 `GET /api/app-config` 的 `adTools` 字段更新。前端 `toolRequiresAd(toolId)` 自动匹配。
+
+**工具入口**：`openTool()` 是唯一入口，`index.vue` 和 `favorites/index.vue` 的 `handleToolTap` 均调用此函数（ToolGrid 组件 emit 事件，父组件处理导航）。
+
 ## 架构
 
 - **TabBar**：自定义 `TabBar.vue`（非原生 tabBar），`uni.reLaunch()` 切页清栈。
@@ -99,6 +115,7 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 - `src/utils/storage.js` — 本地存储封装（收藏、记录、搜索历史）
 - `src/utils/api-config.js` — API Key 与自定义配置（含建议提交地址 `getSuggestionUrl`）
 - `src/utils/helpers.js` — 通用函数（`debounce`/`throttle`/`formatTimestamp`/`generateId`/`showToast`/`showModal` 等）
+- `src/utils/ad-gate.js` — 工具广告拦截（`openTool()` 唯一入口；仅 mp-weixin）
 - `src/utils/qrcode.js` — 内联的 QR 编码源码（零依赖，不要改为 npm 依赖）
 - `src/manifest.json` — 平台/AppID 配置
 - `src/pages.json` — 页面路由 + 全局导航栏样式
