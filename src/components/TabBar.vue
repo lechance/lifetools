@@ -23,6 +23,9 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { isTabHidden } from '@/utils/app-config'
+
 defineProps({
   current: {
     type: String,
@@ -32,13 +35,16 @@ defineProps({
 
 const emit = defineEmits(['change'])
 
-// 底部菜单项定义
-const tabs = [
+// 底部菜单项定义（全部）
+const ALL_TABS = [
   { key: 'tools', name: '工具', icon: '🧰' },
   { key: 'favorites', name: '收藏', icon: '⭐' },
   { key: 'coupons', name: '卡券', icon: '🎫' },
   { key: 'profile', name: '我的', icon: '👤' }
 ]
+
+// 根据云端配置过滤
+const tabs = computed(() => ALL_TABS.filter(t => !isTabHidden(t.key)))
 
 function handleChange(key) {
   emit('change', key)

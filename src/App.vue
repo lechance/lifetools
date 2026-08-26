@@ -4,11 +4,14 @@
 import { onLaunch, onHide } from '@dcloudio/uni-app'
 import { useStore } from 'vuex'
 import { pullSync, pushSync } from '@/utils/sync'
+import { initAppConfig } from '@/utils/app-config'
 
 const store = useStore()
 
 onLaunch(() => {
   store.dispatch('hydrate')
+  // 云端功能开关（静默，fail-open）
+  initAppConfig()
   // 云同步：启动拉取合并（静默失败，离线优先）
   pullSync().then((res) => {
     if (res && res.changed) store.dispatch('reloadUserData')
