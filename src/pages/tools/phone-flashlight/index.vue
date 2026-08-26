@@ -1,40 +1,43 @@
 <template>
   <view class="pf">
+    <!-- 隐藏的 camera 仅用于控制 LED 闪光灯 -->
     <camera
       v-if="isMpWeixin"
       device-position="back"
       :flash="cameraFlash"
       class="pf__camera"
-    >
-      <cover-view class="pf__overlay">
-        <cover-view class="pf__top" @tap="togglePower">
-          <cover-view class="pf__power-ring" :style="isOn ? 'border-color: #D4AF37; box-shadow: 0 0 40rpx rgba(212,175,55,0.5)' : ''">
-            <cover-view class="pf__power-inner" :style="isOn ? 'background: rgba(212,175,55,0.15)' : ''">
-              <cover-view class="pf__power-dot" :style="isOn ? 'background: #D4AF37' : ''" />
-            </cover-view>
-          </cover-view>
-          <cover-view class="pf__power-label" :style="isOn ? 'color: #D4AF37' : ''">{{ isOn ? '已开启' : '点击开启' }}</cover-view>
-        </cover-view>
+    />
 
-        <cover-view class="pf__bottom">
-          <cover-view class="pf__modes">
-            <cover-view
-              v-for="m in modes"
-              :key="m.key"
-              class="pf__mode"
-              :style="mode === m.key ? 'background: rgba(212,175,55,0.2); border: 1rpx solid #D4AF37' : ''"
-              @tap="setMode(m.key)"
-            >
-              <cover-view class="pf__mode-name" :style="mode === m.key ? 'color: #D4AF37' : ''">{{ m.name }}</cover-view>
-            </cover-view>
-          </cover-view>
-          <cover-view class="pf__status">
-            <cover-view class="pf__status-text">{{ isOn ? '已开启 · ' + modeLabel : 'LED闪光灯' }}</cover-view>
-          </cover-view>
-        </cover-view>
-      </cover-view>
-    </camera>
+    <!-- UI 覆盖层（普通 view，不使用 cover-view） -->
+    <view v-if="isMpWeixin" class="pf__overlay">
+      <view class="pf__top" @tap="togglePower">
+        <view class="pf__power-ring" :style="isOn ? 'border-color: #D4AF37; box-shadow: 0 0 40rpx rgba(212,175,55,0.5)' : ''">
+          <view class="pf__power-inner" :style="isOn ? 'background: rgba(212,175,55,0.15)' : ''">
+            <view class="pf__power-dot" :style="isOn ? 'background: #D4AF37' : ''" />
+          </view>
+        </view>
+        <text class="pf__power-label" :style="isOn ? 'color: #D4AF37' : ''">{{ isOn ? '已开启' : '点击开启' }}</text>
+      </view>
 
+      <view class="pf__bottom">
+        <view class="pf__modes">
+          <view
+            v-for="m in modes"
+            :key="m.key"
+            class="pf__mode"
+            :style="mode === m.key ? 'background: rgba(212,175,55,0.2); border: 1rpx solid #D4AF37' : ''"
+            @tap="setMode(m.key)"
+          >
+            <text class="pf__mode-name" :style="mode === m.key ? 'color: #D4AF37' : ''">{{ m.name }}</text>
+          </view>
+        </view>
+        <view class="pf__status">
+          <text class="pf__status-text">{{ isOn ? '已开启 · ' + modeLabel : 'LED闪光灯' }}</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- H5 兜底 -->
     <view v-else class="pf__h5">
       <text class="pf__h5-icon">🔦</text>
       <text class="pf__h5-text">闪光灯功能仅支持微信小程序</text>
@@ -111,8 +114,11 @@ onUnmounted(() => { stopFlash(); uni.setKeepScreenOn({ keepScreenOn: false }) })
 
   &__camera {
     position: fixed;
-    left: 0; top: 0; right: 0; bottom: 0;
-    z-index: 0;
+    left: -9999px;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
   }
 
   &__overlay {
