@@ -1,14 +1,12 @@
 <template>
   <view class="wr">
-    <!-- 空态 -->
     <view v-if="!imagePath" class="wr__empty" @tap="openPicker">
       <text class="wr__empty-icon">🧹</text>
-      <text class="wr__empty-text">点击选择图片</text>
-      <text class="wr__empty-sub">支持拍摄或从相册选择</text>
+      <text class="wr__empty-text">选择一张图片去除水印</text>
+      <text class="wr__empty-sub">点击添加，支持相册与拍照</text>
     </view>
 
-    <!-- 图片已加载 -->
-    <view v-else class="wr__editor">
+    <view v-else class="wr__card">
       <!-- 模式切换 -->
       <view class="wr__tabs">
         <view class="wr__tab" :class="{ 'wr__tab--active': mode === 'crop' }" @tap="mode = 'crop'">
@@ -29,7 +27,6 @@
           @touchmove="onTouchMove"
           @touchend="onTouchEnd"
         />
-        <!-- 裁剪模式：选择框覆盖层 -->
         <view
           v-if="mode === 'crop' && cropReady"
           class="wr__crop-box"
@@ -43,36 +40,35 @@
       </view>
 
       <!-- 涂抹模式：画笔大小 -->
-      <view v-if="mode === 'mosaic'" class="wr__brush">
-        <text class="wr__brush-label">画笔大小 {{ brushSize }}</text>
+      <view v-if="mode === 'mosaic'" class="wr__brush-row">
+        <text class="wr__brush-label">画笔大小</text>
         <slider
           class="wr__brush-slider"
           :value="brushSize"
           :min="10"
           :max="80"
           :step="5"
-          activeColor="#E91E63"
+          activeColor="#1D1D1F"
+          backgroundColor="#E5E5EA"
+          block-size="16"
           @change="e => brushSize = e.detail.value"
         />
+        <text class="wr__brush-val">{{ brushSize }}</text>
       </view>
 
-      <!-- 操作栏 -->
-      <view class="wr__actions">
-        <view class="wr__action" @tap="undo" :class="{ 'wr__action--disabled': !canUndo }">
+      <!-- 按钮：撤销 + 重选 -->
+      <view class="wr__secondary-btns">
+        <view class="wr__btn-secondary" :class="{ 'wr__btn-secondary--disabled': !canUndo }" @tap="undo">
           <text>↩ 撤销</text>
         </view>
-        <view class="wr__action" @tap="resetImage">
+        <view class="wr__btn-secondary" @tap="resetImage">
           <text>🔄 重选</text>
-        </view>
-        <view class="wr__action wr__action--primary" @tap="applyAction">
-          <text>{{ loading ? '处理中...' : '✅ 应用' }}</text>
         </view>
       </view>
 
-      <!-- 保存 -->
-      <view class="wr__save" @tap="saveImage">
-        <text>{{ saving ? '保存中...' : '💾 保存图片' }}</text>
-      </view>
+      <!-- 主操作 -->
+      <button class="wr__btn" @tap="applyAction">{{ loading ? '处理中...' : '应用处理' }}</button>
+      <button class="wr__btn wr__btn--ghost" @tap="saveImage">{{ saving ? '保存中...' : '保存图片' }}</button>
     </view>
 
     <!-- 选图弹窗 -->
@@ -135,7 +131,6 @@ function loadImage(path) {
   uni.getImageInfo({
     src: path,
     success(info) {
-      // 计算画布尺寸，保持比例
       const maxW = uni.getSystemInfoSync().windowWidth - 48
       const ratio = info.width / info.height
       let w = maxW
@@ -148,7 +143,6 @@ function loadImage(path) {
       cropReady.value = true
       strokes.value = []
 
-      // sec-check
       secCheck(path).then(r => { secCheckResult.value = r })
 
       setTimeout(() => {
@@ -177,7 +171,6 @@ function onTouchMove(e) {
   if (mode.value !== 'mosaic' || !currentStroke.value) return
   const touch = e.touches[0]
   currentStroke.value.push({ x: touch.x, y: touch.y })
-  // 绘制半透明涂抹轨迹
   drawMosaicPreview()
 }
 
@@ -191,9 +184,7 @@ function drawMosaicPreview() {
   if (!ctx || !currentStroke.value) return
   ctx.clearRect(0, 0, canvasW.value, canvasH.value)
   ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
-  // 绘制已保存的笔画
   strokes.value.forEach(drawStroke)
-  // 绘制当前笔画
   drawStroke(currentStroke.value)
   ctx.draw(false)
 }
@@ -202,7 +193,7 @@ function drawStroke(stroke) {
   if (!stroke || stroke.length < 2) return
   ctx.save()
   ctx.setGlobalAlpha(0.5)
-  ctx.setFillStyle('#E91E63')
+  ctx.setFillStyle('rgba(29,29,31,0.5)')
   stroke.forEach(p => {
     ctx.beginPath()
     ctx.arc(p.x, p.y, brushSize.value / 2, 0, Math.PI * 2)
@@ -211,7 +202,6 @@ function drawStroke(stroke) {
   ctx.restore()
 }
 
-// 裁剪模式拖拽
 const cropBoxStyle = computed(() => ({
   left: crop.value.x + 'px',
   top: crop.value.y + 'px',
@@ -226,14 +216,11 @@ function startResize(e, corner) {
     y: e.touches[0].clientY,
     crop: { ...crop.value }
   }
-  // 注册全局触摸移动和结束
-  const sysInfo = uni.getSystemInfoSync()
-  // 简化：用 page 的 touchmove/touchend 模拟
   uni.$once('wr-resize-move', onResizeMove)
   uni.$once('wr-resize-end', onResizeEnd)
 }
 
-function onResizeMove() {} // placeholder
+function onResizeMove() {}
 function onResizeEnd() { resizing.value = null }
 
 function undo() {
@@ -260,13 +247,11 @@ function applyAction() {
     ctx.clearRect(0, 0, canvasW.value, canvasH.value)
 
     if (mode.value === 'crop') {
-      // 裁剪模式：从原图裁剪选中区域
       const imgInfo = uni.getImageInfo({ src: imagePath.value, success(info) {
         const sx = (crop.value.x / canvasW.value) * info.width
         const sy = (crop.value.y / canvasH.value) * info.height
         const sw = (crop.value.w / canvasW.value) * info.width
         const sh = (crop.value.h / canvasH.value) * info.height
-        // 输出尺寸保持选区比例
         const outW = canvasW.value
         const outH = canvasH.value
         canvasW.value = Math.floor(outW)
@@ -281,7 +266,6 @@ function applyAction() {
         }, 50)
       }})
     } else {
-      // 涂抹模式：对笔画区域做马赛克
       applyMosaic()
     }
   }, 50)
@@ -292,7 +276,6 @@ function applyMosaic() {
   ctx.clearRect(0, 0, canvasW.value, canvasH.value)
   ctx.drawImage(imagePath.value, 0, 0, canvasW.value, canvasH.value)
 
-  // mp-weixin 用 canvasGetImageData，H5 用 getImageData
   // #ifdef MP-WEIXIN
   uni.canvasGetImageData({
     canvasId,
@@ -303,7 +286,6 @@ function applyMosaic() {
       const data = res.data
       const bs = brushSize.value
       strokes.value.forEach(stroke => {
-        // 找到笔画包围盒
         let minX = canvasW.value, minY = canvasH.value, maxX = 0, maxY = 0
         stroke.forEach(p => {
           if (p.x < minX) minX = p.x
@@ -318,7 +300,6 @@ function applyMosaic() {
         const regionW = maxX - minX
         if (regionW <= 0) return
 
-        // NxN 块平均
         const blockSize = Math.max(8, Math.floor(bs / 2))
         for (let by = minY; by < maxY; by += blockSize) {
           for (let bx = minX; bx < maxX; bx += blockSize) {
@@ -327,7 +308,6 @@ function applyMosaic() {
               for (let dx = 0; dx < blockSize && bx + dx < maxX; dx++) {
                 const px = bx + dx
                 const py = by + dy
-                // 检查是否在笔画范围内
                 const inStroke = stroke.some(p =>
                   Math.abs(p.x - px) < bs / 2 && Math.abs(p.y - py) < bs / 2
                 )
@@ -342,7 +322,6 @@ function applyMosaic() {
               r = Math.round(r / count)
               g = Math.round(g / count)
               b = Math.round(b / count)
-              // 填充块
               for (let dy = 0; dy < blockSize && by + dy < maxY; dy++) {
                 for (let dx = 0; dx < blockSize && bx + dx < maxX; dx++) {
                   const px = bx + dx
@@ -377,7 +356,6 @@ function applyMosaic() {
   })
   // #endif
   // #ifndef MP-WEIXIN
-  // H5: 使用原生 getImageData
   try {
     const canvas = document.querySelector(`canvas[canvas-id="${canvasId}"]`)
     if (!canvas) { loading.value = false; return }
@@ -438,7 +416,6 @@ function saveImage() {
   if (saving.value) return
   saving.value = true
   ctx = uni.createCanvasContext(canvasId)
-  // 重新绘制最终结果（apply 后画布已有内容，直接导出）
   uni.canvasToTempFilePath({
     canvasId,
     fileType: 'png',
@@ -469,30 +446,44 @@ function saveImage() {
 .wr {
   min-height: 100vh;
   background: $bg-color;
+  padding: 24rpx;
 
+  // 空状态
   &__empty {
+    background: $card-bg;
+    border-radius: 20rpx;
+    padding: 120rpx 40rpx;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 200rpx 0;
+    gap: 12rpx;
     &:active { opacity: 0.7; }
   }
-  &__empty-icon { font-size: 80rpx; margin-bottom: 16rpx; }
-  &__empty-text { font-size: 32rpx; color: $text-secondary; }
-  &__empty-sub { font-size: 24rpx; color: $text-light; margin-top: 8rpx; }
+  &__empty-icon { font-size: 80rpx; }
+  &__empty-text { font-size: 30rpx; font-weight: 600; color: $text-primary; }
+  &__empty-sub { font-size: 24rpx; color: $text-light; margin-top: 4rpx; }
 
+  // 编辑器卡片
+  &__card {
+    background: $card-bg;
+    border-radius: 20rpx;
+    padding: 28rpx;
+    box-shadow: $shadow-base;
+  }
+
+  // 模式切换
   &__tabs {
     display: flex;
-    background: $card-bg;
-    border-radius: $radius-md;
-    margin: 24rpx;
+    background: #F5F5F7;
+    border-radius: 12rpx;
+    margin-bottom: 24rpx;
     overflow: hidden;
   }
   &__tab {
     flex: 1;
-    padding: 20rpx 0;
+    padding: 18rpx 0;
     text-align: center;
-    font-size: 28rpx;
+    font-size: 26rpx;
     color: $text-secondary;
     &--active {
       background: $primary-color;
@@ -501,17 +492,19 @@ function saveImage() {
     }
   }
 
+  // 画布
   &__canvas-wrap {
     position: relative;
     margin: 0 auto;
-    border-radius: $radius-md;
+    border-radius: $radius-sm;
     overflow: hidden;
-    box-shadow: $shadow-sm;
   }
   &__canvas {
     display: block;
+    border-radius: $radius-sm;
   }
 
+  // 裁剪框
   &__crop-box {
     position: absolute;
     border: 3rpx dashed rgba(255,255,255,0.8);
@@ -531,46 +524,60 @@ function saveImage() {
     &--br { bottom: -12rpx; right: -12rpx; }
   }
 
-  &__brush {
-    padding: 16rpx 32rpx;
+  // 画笔滑块
+  &__brush-row {
+    display: flex;
+    align-items: center;
+    gap: 16rpx;
+    margin-top: 20rpx;
   }
   &__brush-label {
     font-size: 24rpx;
     color: $text-secondary;
-    display: block;
-    text-align: center;
-    margin-bottom: 8rpx;
+    white-space: nowrap;
   }
-  &__brush-slider { width: 100%; }
+  &__brush-slider { flex: 1; }
+  &__brush-val {
+    font-size: 22rpx;
+    color: $text-primary;
+    min-width: 48rpx;
+    text-align: right;
+    font-family: monospace;
+  }
 
-  &__actions {
+  // 次要按钮行
+  &__secondary-btns {
     display: flex;
     gap: 16rpx;
-    padding: 16rpx 24rpx;
+    margin-top: 24rpx;
   }
-  &__action {
+  &__btn-secondary {
     flex: 1;
-    padding: 20rpx 0;
+    padding: 18rpx 0;
     text-align: center;
-    background: $card-bg;
-    border-radius: $radius-md;
-    font-size: 28rpx;
+    background: #F5F5F7;
+    border-radius: 12rpx;
+    font-size: 26rpx;
     color: $text-primary;
-    box-shadow: $shadow-sm;
-    &--primary { background: $primary-color; color: #FFF; }
-    &--disabled { opacity: 0.4; pointer-events: none; }
     &:active { opacity: 0.7; }
+    &--disabled { opacity: 0.4; pointer-events: none; }
   }
 
-  &__save {
-    margin: 16rpx 24rpx;
-    padding: 24rpx 0;
-    text-align: center;
+  // 主按钮
+  &__btn {
+    width: 100%;
+    margin-top: 20rpx;
     background: $primary-color;
-    color: #FFF;
-    border-radius: $radius-md;
+    color: #fff;
+    border: none;
+    border-radius: 16rpx;
+    padding: 20rpx 0;
     font-size: 30rpx;
-    &:active { opacity: 0.7; }
+    &:active { opacity: 0.8; }
+    &--ghost {
+      background: #F5F5F7;
+      color: #3A3A3C;
+    }
   }
 }
 </style>
