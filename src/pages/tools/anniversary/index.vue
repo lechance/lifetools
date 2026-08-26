@@ -13,21 +13,20 @@
         :key="item.id"
         class="ann__card"
         :class="urgencyClass(item.daysToNext)"
+        @tap="editItem(item)"
       >
-        <view class="ann__card-main" @tap="editItem(item)">
-          <view class="ann__card-left">
+        <view class="ann__card-top">
+          <view class="ann__card-info">
             <text class="ann__card-name">{{ item.name }}</text>
             <text class="ann__card-date">{{ item.dateStr }}</text>
           </view>
-          <view class="ann__card-right">
-            <text class="ann__card-days">{{ item.daysToNext }}</text>
-            <text class="ann__card-unit">天后</text>
-          </view>
-        </view>
-        <view class="ann__card-footer">
-          <text class="ann__card-elapsed">已过 {{ item.daysElapsed }} 天</text>
           <text class="ann__card-del" @tap.stop="removeItem(item.id)">✕</text>
         </view>
+        <view class="ann__card-center">
+          <text class="ann__card-elapsed-num">{{ item.daysElapsed }}</text>
+          <text class="ann__card-elapsed-label">已过天数</text>
+        </view>
+        <text class="ann__card-next">还有 {{ item.daysToNext }} 天</text>
       </view>
     </scroll-view>
 
@@ -217,62 +216,62 @@ onShow(() => { loadData() })
     border-radius: $radius-md;
     box-shadow: $shadow-sm;
     margin-bottom: 20rpx;
-    overflow: hidden;
+    padding: 28rpx 28rpx 20rpx;
     border-left: 8rpx solid transparent;
     &--urgent { border-left-color: $danger; }
-    &--soon { border-left-color: #FF9800; }
+    &--soon { border-left-color: $warning; }
   }
-  &__card-main {
+
+  &__card-top {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    padding: 28rpx 24rpx;
+    margin-bottom: 20rpx;
   }
-  &__card-left { flex: 1; min-width: 0; }
+  &__card-info { flex: 1; min-width: 0; }
   &__card-name {
-    font-size: 32rpx;
+    font-size: $font-size-md;
     font-weight: 600;
     color: $text-primary;
     display: block;
-    margin-bottom: 6rpx;
+    margin-bottom: 4rpx;
   }
   &__card-date {
-    font-size: 24rpx;
+    font-size: $font-size-sm;
     color: $text-secondary;
   }
-  &__card-right {
+  &__card-del {
+    font-size: $font-size-sm;
+    color: $text-light;
+    padding: 8rpx 12rpx;
+    flex-shrink: 0;
+    &:active { color: $danger; }
+  }
+
+  &__card-center {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-left: 24rpx;
+    padding: 16rpx 0 20rpx;
   }
-  &__card-days {
-    font-size: 48rpx;
+  &__card-elapsed-num {
+    font-size: 80rpx;
     font-weight: 700;
     color: $text-primary;
     line-height: 1;
+    letter-spacing: -2rpx;
   }
-  &__card-unit {
-    font-size: 22rpx;
-    color: $text-light;
+  &__card-elapsed-label {
+    font-size: $font-size-sm;
+    color: $text-secondary;
     margin-top: 4rpx;
   }
-  &__card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12rpx 24rpx;
-    border-top: 1rpx solid $border-color;
-  }
-  &__card-elapsed {
-    font-size: 22rpx;
+
+  &__card-next {
+    font-size: $font-size-xs;
     color: $text-light;
-  }
-  &__card-del {
-    font-size: 28rpx;
-    color: $text-light;
-    padding: 8rpx 16rpx;
-    &:active { color: $danger; }
+    text-align: center;
+    display: block;
   }
 
   &__fab {
