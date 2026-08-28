@@ -9,6 +9,9 @@ const hiddenTabs = ref([])
 /** 模块级响应式状态：需要广告的工具 id 列表 */
 const adTools = ref([])
 
+/** 模块级响应式状态：需要隐藏的工具 id 列表 */
+const hiddenTools = ref([])
+
 /** 当前缓存的配置原始值（用于判断是否变化） */
 let cachedJson = ''
 
@@ -29,6 +32,9 @@ export function initAppConfig() {
     if (Array.isArray(cached.adTools)) {
       adTools.value = cached.adTools
     }
+    if (Array.isArray(cached.hiddenTools)) {
+      hiddenTools.value = cached.hiddenTools
+    }
     cachedJson = raw
   } catch {}
 
@@ -45,10 +51,12 @@ export function initAppConfig() {
         const cfg = res.data.config || {}
         const newTabs = Array.isArray(cfg.hiddenTabs) ? cfg.hiddenTabs : []
         const newAdTools = Array.isArray(cfg.adTools) ? cfg.adTools : []
-        const newJson = JSON.stringify({ hiddenTabs: newTabs, adTools: newAdTools })
+        const newHiddenTools = Array.isArray(cfg.hiddenTools) ? cfg.hiddenTools : []
+        const newJson = JSON.stringify({ hiddenTabs: newTabs, adTools: newAdTools, hiddenTools: newHiddenTools })
         if (newJson !== cachedJson) {
           hiddenTabs.value = newTabs
           adTools.value = newAdTools
+          hiddenTools.value = newHiddenTools
           cachedJson = newJson
           try { uni.setStorageSync(STORAGE_KEY, newJson) } catch {}
         }
@@ -73,8 +81,15 @@ export function toolRequiresAd(toolId) {
 }
 
 /**
- * 获取当前 adTools 列表
+ * 判断某个工具是否被云端隐藏
  */
-export function getAdTools() {
-  return adTools
+export function isToolHidden(toolId) {
+  return hiddenTools.value.includes(toolId)
+}
+
+/**
+ * 获取当前 hiddenTools 列表
+ */
+export function getHiddenTools() {
+  return hiddenTools
 }

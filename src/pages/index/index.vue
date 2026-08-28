@@ -66,6 +66,7 @@ import {
 import { showToast } from '@/utils/helpers'
 import { switchToTab, hideNativeTabBar } from '@/utils/tab-nav'
 import { openTool } from '@/utils/ad-gate'
+import { isToolHidden } from '@/utils/app-config'
 
 const store = useStore()
 
@@ -86,17 +87,17 @@ const categoryIndex = ref(
   Math.max(0, CATEGORIES.findIndex(c => c.key === currentCategory.value))
 )
 
-// 每个分类对应的工具面板（滑动切换的各个面板）
+// 每个分类对应的工具面板（滑动切换的各个面板，排除隐藏工具）
 const panels = computed(() =>
   CATEGORIES.map(cat => ({
     key: cat.key,
     name: cat.name,
-    tools: getToolsByCategory(cat.key)
+    tools: getToolsByCategory(cat.key).filter(t => !isToolHidden(t.id))
   }))
 )
 
-// 搜索结果（仅搜索模式下使用）
-const searchResults = computed(() => searchTools(searchQuery.value))
+// 搜索结果（排除隐藏工具）
+const searchResults = computed(() => searchTools(searchQuery.value).filter(t => !isToolHidden(t.id)))
 
 /** 搜索处理 */
 function handleSearch(value) {

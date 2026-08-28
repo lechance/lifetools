@@ -60,15 +60,16 @@ import { getToolById } from '@/utils/tools-data'
 import { showToast } from '@/utils/helpers'
 import { switchToTab, hideNativeTabBar } from '@/utils/tab-nav'
 import { openTool } from '@/utils/ad-gate'
+import { isToolHidden } from '@/utils/app-config'
 
 const store = useStore()
 
 // 搜索关键词
 const searchQuery = ref('')
 
-// 收藏的工具对象列表
+// 收藏的工具对象列表（排除隐藏工具）
 const favoriteTools = computed(() =>
-  store.state.favorites.map(id => getToolById(id)).filter(Boolean)
+  store.state.favorites.map(id => getToolById(id)).filter(tool => tool && !isToolHidden(tool.id))
 )
 
 // 过滤后的收藏工具（支持搜索）
