@@ -36,7 +36,7 @@ export function createStore() {
       },
 
       SET_FAVORITES(state, list) {
-        state.favorites = list
+        state.favorites = Array.isArray(list) ? [...list] : list
       },
 
       SET_RECORDS(state, list) {
