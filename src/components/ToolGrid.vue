@@ -24,7 +24,8 @@
         @touchmove="onTouchMove"
       >
         <!-- 图标（最大化）+ 名称，无背景卡片 -->
-        <text class="tool-grid__icon">{{ tool.icon }}</text>
+        <image v-if="tool.iconImage" :src="tool.iconImage" class="tool-grid__icon-img" mode="aspectFit" />
+        <text v-else class="tool-grid__icon">{{ tool.icon }}</text>
         <text class="tool-grid__name">{{ tool.name }}</text>
       </view>
     </view>
@@ -138,6 +139,11 @@ onBeforeUnmount(clearLongPress)
   &__icon {
     font-size: 100rpx;
     line-height: 1.2;
+  }
+
+  &__icon-img {
+    width: 130rpx;
+    height: 130rpx;
   }
 
   // 工具名称

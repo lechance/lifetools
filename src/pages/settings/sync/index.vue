@@ -52,7 +52,8 @@
         :class="{ 'sy__cell--disabled': !enabled }"
         @tap="!enabled && showToast('请先开启云同步')"
       >
-        <text class="sy__cell-icon">{{ tool.icon }}</text>
+        <image v-if="tool.iconImage" :src="tool.iconImage" class="sy__cell-icon-img" mode="aspectFit" />
+        <text v-else class="sy__cell-icon">{{ tool.icon }}</text>
         <view class="sy__cell-main">
           <text class="sy__cell-label">{{ tool.name }}</text>
         </view>
@@ -250,6 +251,13 @@ function onClearCloud() {
 
   &__cell-icon {
     font-size: 36rpx;
+    margin-right: 20rpx;
+    flex-shrink: 0;
+  }
+
+  &__cell-icon-img {
+    width: 68rpx;
+    height: 68rpx;
     margin-right: 20rpx;
     flex-shrink: 0;
   }

@@ -51,7 +51,7 @@ const FUN_TOOLS = [
   { id: 'guess-number', name: '猜数字', icon: '❓', color: COLORS.fun },
   { id: 'rock-scissors', name: '石头剪刀布', icon: '✊', color: COLORS.fun },
   { id: 'ct-scan', name: '搞怪检查', icon: '🩻', color: COLORS.fun },
-  { id: 'wooden-fish', name: '敲木鱼', icon: '🪵', color: COLORS.fun },
+  { id: 'wooden-fish', name: '敲木鱼', icon: '🪵', iconImage: '/static/img/wooden-fish-body.png', color: COLORS.fun },
   { id: 'fart-simulator', name: '放屁模拟器', icon: '💨', color: COLORS.fun }
 ]
 

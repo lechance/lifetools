@@ -1,6 +1,13 @@
 <template>
   <view class="wf" :style="{ background: bgStyle }">
     <!-- 顶部统计 -->
+    <view class="wf__top">
+      <view class="wf__hamburger" @tap="showSettings = true">
+        <view class="wf__hamburger-line" />
+        <view class="wf__hamburger-line" />
+        <view class="wf__hamburger-line" />
+      </view>
+    </view>
     <view class="wf__stats">
       <view class="wf__stat">
         <text class="wf__stat-num">{{ today }}</text>
@@ -90,10 +97,6 @@
       <view class="wf__btn" :class="{ 'wf__btn--on': zen }" @tap="toggleZen">
         <text class="wf__btn-icon">{{ zen ? '⏸' : '🧘' }}</text>
         <text class="wf__btn-text">{{ zen ? '停止' : '禅模式' }}</text>
-      </view>
-      <view class="wf__btn" @tap="showSettings = true">
-        <text class="wf__btn-icon">⚙️</text>
-        <text class="wf__btn-text">设置</text>
       </view>
     </view>
 
@@ -531,6 +534,31 @@ onUnmounted(() => {
   padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
   position: relative;
   overflow: hidden;
+
+  /* ===== 顶部导航 ===== */
+  &__top {
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    padding: 16rpx 24rpx 0;
+  }
+  &__hamburger {
+    display: flex;
+    flex-direction: column;
+    gap: 6rpx;
+    padding: 16rpx;
+    z-index: 10;
+  }
+  &__hamburger-line {
+    width: 32rpx;
+    height: 4rpx;
+    border-radius: 2rpx;
+    background: rgba(255, 255, 255, 0.35);
+    transition: background 0.2s;
+  }
+  &__hamburger:active &__hamburger-line {
+    background: rgba(255, 255, 255, 0.6);
+  }
 
   /* ===== 顶部统计 ===== */
   &__stats {
