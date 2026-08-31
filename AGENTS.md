@@ -1,6 +1,6 @@
 # AGENTS.md
 
-微信小程序「治点工具箱」，uni-app 3.x (Vue 3 + Vite)。编译目标：mp-weixin 与 H5。Vuex 状态管理。55 个工具页面，全部已实现（工具总数由 `TOTAL_TOOL_COUNT = getAllTools().length` 自动计算，加工具无需手动改计数）。
+微信小程序「治点工具箱」，uni-app 3.x (Vue 3 + Vite)。编译目标：mp-weixin 与 H5。Vuex 状态管理。63 个工具页面，全部已实现（工具总数由 `TOTAL_TOOL_COUNT = getAllTools().length` 自动计算，加工具无需手动改计数）。
 
 ## Commands
 
@@ -53,6 +53,10 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 
 - 导出必须在 `ctx.draw(false, cb)` 回调里调 `canvasToTempFilePath`，否则导出为空；需要高分辨率输出用 `destWidth/destHeight`。
 
+## WebGL 工具（敲木鱼）
+
+`wooden-fish` 使用 three.js 渲染 3D 模型。**H5** 直接用 `import * as THREE from 'three'`；**mp-weixin** 用 `threejs-miniprogram-tn` 适配器（`createScopedThreejs(canvas)` 返回 scoped THREE 对象）。canvas 用 `<canvas type="webgl">`，`requestAnimationFrame` 在 mp-weixin 走 `canvas.requestAnimationFrame` 而非 `window`。模型为程序化生成（`LatheGeometry` + `CylinderGeometry`），无外部 GLTF 文件。
+
 ## 图片选图统一模式
 
 图片工具（压缩/裁剪/滤镜/拼接/取色/表情包/证件照/头像/九宫格/水印）的「选择图片」统一走共享组件：
@@ -91,14 +95,14 @@ npm run build:mp-weixin   # 产物 → dist/build/mp-weixin
 - **TabBar**：自定义 `TabBar.vue`（非原生 tabBar），`uni.reLaunch()` 切页清栈。
 - **持久化**：`utils/storage.js` 封装 `uni.getStorageSync/setStorageSync`（收藏ID、最近50条使用记录、搜索历史）。
 - **状态**：`store/index.js` → Vuex store，`main.js` 用 `createSSRApp` + `app.use(store)`。页面通过 `useStore()` 访问。
-- **样式**：`vite.config.js` 的 `additionalData` 自动 `@import src/uni.scss` 到所有 scss。全局 SCSS 变量在 `src/uni.scss`（`$bg-color`、`$text-primary` 等），CSS 变量（`--primary-color`）也可用。工具卡片纯白简约，不用背景色。工具页面类名前缀用工具缩写（如 `rd__`、`led__`），避免跨页面类名冲突。
+- **样式**：`vite.config.js` 的 `additionalData` 自动 `@import src/uni.scss` 到所有 scss。全局 SCSS 变量在 `src/uni.scss`（`$bg-color`、`$text-primary` 等），CSS 变量（`--primary-color`）也可用。工具类（`.card`、`.btn-primary` 等）在 `src/global-classes.scss`，仅 `App.vue` 引入（**不**像 `uni.scss` 那样自动注入每个组件）。工具卡片纯白简约，不用背景色。工具页面类名前缀用工具缩写（如 `rd__`、`led__`），避免跨页面类名冲突。
 - **构建**：`vite.config.js` 配置了 `@` 别名指向 `src/`、`vue-vendor` 手动分包（vue + vuex）。
 
 ## 外部 API 与例外
 
 - **外部 API 工具**：天气 `wttr.in`、汇率 `open.er-api.com`、历史上的今天 `v2.xxapi.cn`、诗泉 `poetry.palemoky.com`。H5 直接可用；**mp-weixin 需在公众平台把域名加入 request 合法域名白名单**。Key 在「我的 → API 设置」页填写，配置集中在 `utils/api-config.js`。
 - **例外 `api-balance`**：不走 API 设置页，在工具页内按厂商（DeepSeek/Kimi/MiniMax/GLM）配置 Key 并本地缓存余额（独立 storage key `lifetool_api_balance_keys`），改它时勿套用 api-config。
-- **`birthday-countdown`**：仅支持阳历生日（不支持农历），微信订阅提醒仅完成授权，模板 ID 在 `api-config.js` 的 `BIRTHDAY_TEMPLATE_ID` 代码配置。
+- **`birthday-countdown`**：仅支持阳历生日（不支持农历），微信订阅提醒仅完成授权。
 
 ## 目录速查
 

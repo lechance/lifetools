@@ -451,14 +451,6 @@
       }
     },
     {
-      "path": "pages/tools/watermark-remove/index",
-      "style": {
-        "navigationBarTitleText": "去水印",
-        "navigationBarBackgroundColor": "#FFFFFF",
-        "navigationBarTextStyle": "black"
-      }
-    },
-    {
       "path": "pages/tools/gold-price/index",
       "style": {
         "navigationBarTitleText": "国际实时金价",
