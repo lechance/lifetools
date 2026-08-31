@@ -119,6 +119,7 @@ function handleTabChange(key) {
 
 onShow(() => {
   hideNativeTabBar()
+  store.dispatch('refreshFavorites')
 })
 </script>
 

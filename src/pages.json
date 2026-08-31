@@ -435,14 +435,6 @@
       }
     },
     {
-      "path": "pages/tools/fart-simulator/index",
-      "style": {
-        "navigationBarTitleText": "放屁模拟器",
-        "navigationBarBackgroundColor": "#1A1A1A",
-        "navigationBarTextStyle": "white"
-      }
-    },
-    {
       "path": "pages/tools/anniversary/index",
       "style": {
         "navigationBarTitleText": "纪念日",
