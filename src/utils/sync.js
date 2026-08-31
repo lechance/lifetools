@@ -36,6 +36,7 @@ export const TOOL_DATA_KEYS = {
   decibel: ['lifetool_decibel_records'],
   'birthday-countdown': ['lifetool_birthdays', 'lifetool_birthday_settings'],
   'anniversary': ['lifetool_anniversaries'],
+  'wooden-fish': ['lifetool_wooden_fish'],
 }
 
 // #ifdef MP-WEIXIN
