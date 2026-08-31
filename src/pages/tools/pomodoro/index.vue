@@ -406,7 +406,9 @@ watch(status, (newVal) => {
 
 <style lang="scss" scoped>
 .pomodoro {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: linear-gradient(180deg, #FFF5F5 0%, #F5F5F7 100%);
   display: flex;
   flex-direction: column;

@@ -85,7 +85,9 @@ onShow(() => {
 
 <style lang="scss" scoped>
 .page-coupons {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: $bg-color;
   padding-top: 16rpx;
 

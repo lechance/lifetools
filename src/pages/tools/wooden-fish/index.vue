@@ -525,7 +525,9 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .wf {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: center;

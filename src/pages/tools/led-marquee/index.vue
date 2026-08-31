@@ -310,7 +310,9 @@ function selectBgColor(b) {
 
 <style lang="scss" scoped>
 .led {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: #F5F5F7;
   padding-bottom: calc(160rpx + env(safe-area-inset-bottom));
 

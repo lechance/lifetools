@@ -36,16 +36,16 @@ export function createStore() {
       },
 
       SET_FAVORITES(state, list) {
-        state.favorites = Array.isArray(list) ? [...list] : list
+        state.favorites = [...list]
       },
 
       SET_RECORDS(state, list) {
-        state.records = list
+        state.records = [...list]
         state._recordsLoaded = true
       },
 
       SET_SEARCH_HISTORY(state, list) {
-        state.searchHistory = list
+        state.searchHistory = [...list]
         state._searchHistoryLoaded = true
       }
     },

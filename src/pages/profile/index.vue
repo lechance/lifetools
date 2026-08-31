@@ -325,7 +325,9 @@ function handleSyncSettings() {
 
 <style lang="scss" scoped>
 .page-profile {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: $bg-color;
 
   // 用户信息卡片

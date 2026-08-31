@@ -44,7 +44,9 @@ function handlePrivacy() {
 
 <style lang="scss" scoped>
 .page-about {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: $bg-color;
   padding-bottom: 60rpx;
 

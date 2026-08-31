@@ -106,7 +106,9 @@
 
 <style lang="scss" scoped>
 .doc-page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: $card-bg;
   padding: 40rpx 32rpx 60rpx;
 

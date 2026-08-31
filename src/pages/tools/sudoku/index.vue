@@ -167,7 +167,9 @@ newGame()
 
 <style lang="scss" scoped>
 .page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: #F5F5F7;
   padding: 24rpx;
 }

@@ -109,7 +109,9 @@ onUnmounted(() => { stopFlash(); uni.setKeepScreenOn({ keepScreenOn: false }) })
 
 <style lang="scss" scoped>
 .pf {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: #000;
 
   &__camera {
@@ -209,7 +211,9 @@ onUnmounted(() => { stopFlash(); uni.setKeepScreenOn({ keepScreenOn: false }) })
   }
 
   &__h5 {
-    min-height: 100vh;
+    height: 100vh;
+    overflow-y: auto;
+    box-sizing: border-box;
     background: #1A1A1E;
     display: flex;
     flex-direction: column;

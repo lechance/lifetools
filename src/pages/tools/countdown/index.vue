@@ -313,7 +313,9 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .countdown {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: #F5F5F7;
   display: flex;
   flex-direction: column;

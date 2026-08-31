@@ -27,13 +27,16 @@
 /* 工具页面通用容器 */
 .tool-container {
   padding: $spacing-base;
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
   box-sizing: border-box;
 }
 
 /* 工具页面基础样式（在工具页 .page scoped 中使用） */
 .tool-page {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: $bg-color;
   padding: $spacing-base;
 }

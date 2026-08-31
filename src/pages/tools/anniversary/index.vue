@@ -193,7 +193,9 @@ onShow(() => { loadData() })
 
 <style lang="scss" scoped>
 .ann {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: $bg-color;
 
   &__list {

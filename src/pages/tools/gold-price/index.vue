@@ -149,7 +149,9 @@ onUnmounted(() => {
 
 <style lang="scss" scoped>
 .gp {
-  min-height: 100vh;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: $bg-color;
   padding: 24rpx;
 
