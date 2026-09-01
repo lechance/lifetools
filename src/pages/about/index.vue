@@ -8,7 +8,7 @@
     <view class="page-about__header">
       <text class="page-about__logo">🧰</text>
       <text class="page-about__name">治点工具箱</text>
-      <text class="page-about__version">v1.0.0</text>
+      <text class="page-about__version">v{{ version }}</text>
       <text class="page-about__desc">一款集合日常生活常用工具的微信小程序</text>
     </view>
 
@@ -31,6 +31,8 @@
 </template>
 
 <script setup>
+const version = __APP_VERSION__
+
 /** 用户协议 */
 function handleAgreement() {
   uni.navigateTo({ url: '/pages/agreement/index' })
